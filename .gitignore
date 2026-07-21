@@ -1,0 +1,26 @@
+# Dependencias y salida de build
+node_modules/
+dist/
+
+# Entorno y overrides locales
+.env
+.env.*
+!.env.example
+*.local
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ── Material interno — se mantiene FUERA del repo público ──
+# Docs de estrategia, crítica y skills de proceso (guardar backup privado aparte)
+/files/*
+!/files/pantallas
+# Arte fuente, maquetas de diseño y referencias de terceros
+/brand/
+# Másters de imagen pesados (los derivados optimizados en assets/upscale/ son los que se despliegan)
+assets/efecto-fake3d/*_clean.jpg
+assets/efecto-xray/*_clean.jpg
+assets/efecto-galeria/*_Apagadas.png

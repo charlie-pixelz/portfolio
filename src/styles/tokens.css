@@ -1,0 +1,48 @@
+/* Charlie Pixelz — Tokens de sistema · paleta ART_DIRECTION §2 + tipografía §3 */
+
+/* ── Tipografías ──────────────────────────────────────────────────────────
+   TTF variable por ahora. Fase 1: subset agresivo → woff2 (latin + á é í ó ú ü ñ ¿ ¡),
+   objetivo ≤ ~150 KB total (ver CLAUDE.md §3).                              */
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('/fonts/SpaceGrotesk-Variable.ttf') format('truetype');
+  font-weight: 300 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Doto';
+  src: url('/fonts/Doto-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Glitch Goblin';
+  src: url('/fonts/GlitchGoblin.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  /* Mundo — escenas, letreros, hero */
+  --void: #010135;
+  --deep: #00026c;
+  --magenta: #f202cd;
+  --purple: #9303aa;
+  --cyan: #4bdff4;
+
+  /* Capa OS — interfaz de sistema */
+  --phosphor: #33ff66;
+  --phosphor-dim: #1fa648;
+  --phosphor-glow: rgba(51, 255, 102, 0.35);
+  --red-eye: #ff2a2a;
+
+  /* Texto de lectura (AA sobre --void) */
+  --ink: #e8e8f2;
+
+  /* Familias por rol (ART_DIRECTION §3) */
+  --font-body: 'Space Grotesk', system-ui, sans-serif;
+  --font-display: 'Doto', 'Space Grotesk', sans-serif;
+  --font-brand: 'Glitch Goblin', 'Doto', sans-serif;
+
+  --space: clamp(1rem, 2.5vw, 2rem);
+}
