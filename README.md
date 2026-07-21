@@ -28,4 +28,4 @@ npm run preview  # sirve /dist para verificar el build de producción
 Reglas operativas, precedencias, compuertas y presupuestos en [`CLAUDE.md`](CLAUDE.md). El detalle de dirección vive en `/files` (local, no publicado). Orden de implementación: **P1 → P2 → P3 → P4**.
 
 ---
-Deploy objetivo: user site → **https://charlie-pixelz.github.io**
+Deploy: repo de proyecto → **https://charlie-pixelz.github.io/portfolio/** · base `/portfolio/`. Con dominio propio (`.design`) → base `/` + `CNAME` + actualizar `hreflang`.

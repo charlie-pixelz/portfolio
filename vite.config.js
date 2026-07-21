@@ -1,10 +1,11 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
-// User site (charlie-pixelz.github.io) → se sirve en la raíz: base '/'.
+// Repo de proyecto "portfolio" → se sirve en /portfolio/ (charlie-pixelz.github.io/portfolio/).
+// Cuando llegue el dominio propio (.design), cambiar base a '/' + añadir CNAME (ver CLAUDE.md §7).
 // MPA real: /es/ y /en/ son HTML independientes (cierra F5: deep links + SEO en GitHub Pages).
 export default defineConfig({
-  base: '/',
+  base: '/portfolio/',
   appType: 'mpa',
   build: {
     outDir: 'dist',

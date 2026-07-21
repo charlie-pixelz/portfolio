@@ -5,19 +5,19 @@
    objetivo ≤ ~150 KB total (ver CLAUDE.md §3).                              */
 @font-face {
   font-family: 'Space Grotesk';
-  src: url('/fonts/SpaceGrotesk-Variable.ttf') format('truetype');
+  src: url('../fonts/SpaceGrotesk-Variable.ttf') format('truetype');
   font-weight: 300 700;
   font-display: swap;
 }
 @font-face {
   font-family: 'Doto';
-  src: url('/fonts/Doto-Variable.ttf') format('truetype');
+  src: url('../fonts/Doto-Variable.ttf') format('truetype');
   font-weight: 100 900;
   font-display: swap;
 }
 @font-face {
   font-family: 'Glitch Goblin';
-  src: url('/fonts/GlitchGoblin.ttf') format('truetype');
+  src: url('../fonts/GlitchGoblin.ttf') format('truetype');
   font-weight: 400;
   font-display: swap;
 }

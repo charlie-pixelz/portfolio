@@ -131,7 +131,7 @@ Optimizados listos en **`assets/upscale/`**; máster/fuente en `assets/efecto-*/
 ## 8. Estado y próximos pasos
 
 - **Esqueleto listo (20/7):** Vite MPA `/es/` `/en/` + selector de idioma persistente + tema (paleta/fuentes/CRT). `npm run build` verde; render verificado. `git init` + staged; **commit y push pendientes** de la cuenta de Charlie.
-- **Deploy:** target **`charlie-pixelz.github.io`** (user site, base `/`). El MCP de GitHub está en otra cuenta (`cperez-brand`) → el push lo hace **Charlie con sus credenciales** (bloque de comandos entregado). Falta activar Pages → source "GitHub Actions".
+- **Deploy:** repo de proyecto **`portfolio`** → `charlie-pixelz.github.io/portfolio/` (**base `/portfolio/`**). El MCP de GitHub está en otra cuenta (`cperez-brand`) → el push lo hace **Charlie con sus credenciales**. Falta activar Pages → source "GitHub Actions". Con dominio propio (`.design`) → base `/` + `CNAME` + actualizar `hreflang`.
 - **Ratificado 20/7:** alias "Charlie Pixelz" · P1→P2→P3→P4 · analytics sin cookies · i18n HTML por ruta.
 - **Abierto por Charlie:** push del repo · fecha Hito 2 (F7) · TLD/dominio (F8) · datos de contacto · copy Bio ES/EN · contenido de los 8 casos.
 - **Próximo (Fase 1, tras deploy):** fijar presupuestos numéricos + decisión Three.js vs OGL (F6); subset de fuentes → woff2 (los TTF actuales suman ~628 KB); arquitectura canvas persistente + RAF único + PointerManager + QualityManager + Lenis.
