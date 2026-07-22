@@ -145,6 +145,41 @@ body {
   outline-offset: 2px;
 }
 
+/* ── Canvas WebGL persistente (Fase 1: escena vacía, detrás del contenido) ── */
+#gl {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Lenis (scroll suave) ── */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+/* ── HUD de depuración (solo con ?debug) ── */
+.debug-hud {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 9999;
+  padding: 4px 8px;
+  font: 11px / 1.4 var(--font-body);
+  letter-spacing: 0.02em;
+  color: var(--phosphor);
+  background: rgba(1, 1, 30, 0.72);
+  border: 1px solid var(--phosphor-dim);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* ── Accesibilidad: sin parpadeos con reduce-motion (WCAG 2.3.1) ── */
 @media (prefers-reduced-motion: reduce) {
   .cursor {
