@@ -31,20 +31,17 @@ const fragment = /* glsl */ `
   uniform float uTime;
   varying vec2 vUv;
 
-  // UV tipo background-size: cover (rellena y recorta, centrado)
-  vec2 coverUv(vec2 uv, vec2 res, vec2 img) {
-    vec2 ratio = vec2(
-      min((res.x / res.y) / (img.x / img.y), 1.0),
-      min((res.y / res.x) / (img.y / img.x), 1.0)
-    );
-    return vec2(
-      uv.x * ratio.x + (1.0 - ratio.x) * 0.5,
-      uv.y * ratio.y + (1.0 - ratio.y) * 0.5
-    );
-  }
-
   void main() {
-    vec2 cuv = coverUv(vUv, uResolution, uImageSize);
+    // contain: la ilustración se ve completa (aspect-lock). Barras --void donde sobra,
+    // para que la nav diegética caiga exacta sobre los edificios (ADENDUM §1).
+    float ra = uResolution.x / uResolution.y;
+    float ia = uImageSize.x / uImageSize.y;
+    vec2 scale = ra > ia ? vec2(ia / ra, 1.0) : vec2(1.0, ra / ia);
+    vec2 cuv = (vUv - 0.5) / scale + 0.5;
+    if (cuv.x < 0.0 || cuv.x > 1.0 || cuv.y < 0.0 || cuv.y > 1.0) {
+      gl_FragColor = vec4(0.004, 0.004, 0.21, 1.0); // --void en las barras
+      return;
+    }
     vec2 drift = vec2(sin(uTime * 0.25), cos(uTime * 0.2)) * 0.18;
     vec2 look = uMouse + drift;
     // fondo se mueve poco, personaje más → separación de profundidad, sin duplicado

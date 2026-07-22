@@ -14,17 +14,21 @@
     <script type="module" src="/src/main.js"></script>
   </head>
   <body>
-    <main class="stage">
+    <main class="hero" id="hero">
+      <nav class="neon-nav" aria-label="Navigation">
+        <a class="sign" style="--sign: var(--purple); left: 5.9%; top: 15.7%; width: 11.2%; height: 43.6%" href="#" aria-current="page"><span>Home</span></a>
+        <a class="sign" style="--sign: var(--magenta); left: 26.9%; top: 2%; width: 10.5%; height: 35.6%" href="#"><span>Projects</span></a>
+        <a class="sign" style="--sign: var(--purple); left: 58.8%; top: 3%; width: 13.4%; height: 29.3%" href="#"><span>Bio</span></a>
+        <a class="sign" style="--sign: var(--magenta); left: 78.7%; top: 17.9%; width: 13.4%; height: 41.4%" href="#"><span>Contact</span></a>
+      </nav>
       <h1 class="brand">
         <span class="brand__charlie">Charlie</span><span class="brand__pixelz">PIXELZ</span>
       </h1>
-      <p class="tagline">Design, illustration, motion and web development supercharged with AI.</p>
-      <p class="readout">Building the site<span class="cursor" aria-hidden="true"></span></p>
-      <nav class="lang" aria-label="Language">
-        <a href="../es/" data-lang="es">ESP</a>
-        <a href="../en/" data-lang="en" aria-current="true">ENG</a>
-      </nav>
     </main>
+    <nav class="lang lang--corner" aria-label="Language">
+      <a href="../es/" data-lang="es">ESP</a>
+      <a href="../en/" data-lang="en" aria-current="true">ENG</a>
+    </nav>
     <div class="crt" aria-hidden="true"></div>
   </body>
 </html>

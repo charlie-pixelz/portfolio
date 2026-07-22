@@ -118,6 +118,74 @@ body {
   outline: none;
 }
 
+/* ── Hero: contenedor aspect-lock (ADENDUM §1) + nav diegética ── */
+.hero {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(100vw, calc(100vh * 4602 / 2810));
+  aspect-ratio: 4602 / 2810;
+  z-index: 1;
+}
+
+/* lockup a altura del pecho, dentro del hero */
+.hero .brand {
+  position: absolute;
+  left: 50%;
+  top: 68%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+/* letreros de neón: el <a> ES el marco + label + área táctil */
+.neon-nav {
+  position: absolute;
+  inset: 0;
+}
+.sign {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--sign);
+  border-radius: 3px;
+  color: var(--sign);
+  text-decoration: none;
+  opacity: 0.32; /* apagado */
+  transition:
+    opacity 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.sign span {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(0.7rem, 1.4vw, 1.05rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.sign:hover,
+.sign:focus-visible,
+.sign[aria-current='page'] {
+  opacity: 1;
+  background: color-mix(in srgb, var(--sign) 12%, transparent);
+  box-shadow:
+    0 0 14px var(--sign),
+    inset 0 0 10px color-mix(in srgb, var(--sign) 30%, transparent);
+  outline: none;
+}
+
+/* switch de idioma en esquina (siempre visible) */
+.lang--corner {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 3;
+  margin: 0;
+}
+
 /* ── CRT global: scanlines + viñeta (decorativo, GPU-barato) ── */
 .crt {
   position: fixed;
