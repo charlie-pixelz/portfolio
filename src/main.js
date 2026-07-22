@@ -3,8 +3,8 @@
 
 import './styles/tokens.css'
 import './styles/base.css'
-import heroUrl from '../assets/upscale/hero_desktop_clean_2400w.webp'
-import depthUrl from '../assets/upscale/hero_depth_1600w.webp'
+import heroBgUrl from '../assets/upscale/hero_bg_2400w.webp'
+import heroCharUrl from '../assets/upscale/hero_character_2400w.webp'
 import { ticker } from './core/ticker.js'
 import { quality } from './core/quality.js'
 import { pointer } from './core/pointer.js'
@@ -26,7 +26,7 @@ if (lang) {
 document.documentElement.dataset.tier = quality.tier
 stage.init()
 pointer.init()
-if (lang) initHero(heroUrl, depthUrl) // hero solo en las home; la raíz es el preloader (P1.A)
+if (lang) initHero(heroBgUrl, heroCharUrl) // hero multi-capa; solo en las home /es/ /en/
 initLenis()
 initDebug()
 ticker.add(() => stage.render()) // render AL FINAL del frame, tras las actualizaciones

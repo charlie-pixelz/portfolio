@@ -1,7 +1,7 @@
-// P1.B — Hero con profundidad (fake 3D por depth-map).
-// Un plano fullscreen con la ilustración + su mapa de profundidad; las UVs se desplazan
-// según (depth - 0.5) * puntero * uStrength, con drift ambiental para que "respire".
-// Fallback: reduced-motion / tier low → uStrength 0 (imagen estática). Sin WebGL → clase CSS.
+// P1.B — Hero con profundidad, versión MULTI-CAPA (sin fantasma).
+// Un shader compone dos planos: fondo (opaco) + personaje (alpha), cada uno con su propio
+// parallax. Como el fondo tiene data real detrás del personaje, al moverse no lo duplica.
+// Fallback: reduced-motion / tier low → strengths 0 (estático). Sin WebGL → clase CSS.
 
 import { Program, Mesh, Plane, Texture } from 'ogl'
 import { stage } from './stage.js'
@@ -21,12 +21,13 @@ const vertex = /* glsl */ `
 
 const fragment = /* glsl */ `
   precision highp float;
-  uniform sampler2D uTexture;
-  uniform sampler2D uDepth;
+  uniform sampler2D uBg;
+  uniform sampler2D uChar;
   uniform vec2 uResolution;
   uniform vec2 uImageSize;
   uniform vec2 uMouse;
-  uniform float uStrength;
+  uniform float uStrengthBg;
+  uniform float uStrengthChar;
   uniform float uTime;
   varying vec2 vUv;
 
@@ -44,62 +45,57 @@ const fragment = /* glsl */ `
 
   void main() {
     vec2 cuv = coverUv(vUv, uResolution, uImageSize);
-    float depth = texture2D(uDepth, cuv).r;
-    // drift ambiental sutil para que respire sin input
-    vec2 drift = vec2(sin(uTime * 0.25), cos(uTime * 0.2)) * 0.22;
+    vec2 drift = vec2(sin(uTime * 0.25), cos(uTime * 0.2)) * 0.18;
     vec2 look = uMouse + drift;
-    vec2 offset = (depth - 0.5) * look * uStrength;
-    gl_FragColor = vec4(texture2D(uTexture, cuv + offset).rgb, 1.0);
+    // fondo se mueve poco, personaje más → separación de profundidad, sin duplicado
+    vec3 bg = texture2D(uBg, cuv + look * uStrengthBg).rgb;
+    vec4 ch = texture2D(uChar, cuv + look * uStrengthChar);
+    gl_FragColor = vec4(mix(bg, ch.rgb, ch.a), 1.0);
   }
 `
 
-export function initHero(heroUrl, depthUrl) {
+export function initHero(bgUrl, charUrl) {
   const renderer = stage.renderer
   if (!renderer) {
     document.body.classList.add('no-webgl') // fallback CSS
     return
   }
   const gl = renderer.gl
-
   const texOpts = { generateMipmaps: false, wrapS: gl.CLAMP_TO_EDGE, wrapT: gl.CLAMP_TO_EDGE }
-  const uTexture = new Texture(gl, texOpts)
-  const uDepth = new Texture(gl, texOpts)
+  const uBg = new Texture(gl, texOpts)
+  const uChar = new Texture(gl, texOpts)
 
-  // Intensidad contenida: con una sola imagen, un desplazamiento chico mantiene el
-  // "fantasma" de profundidad imperceptible. El fix definitivo (sin fantasma) es multi-capa.
-  const strength =
-    quality.reducedMotion || quality.tier === 'low' ? 0.0 : quality.isTouch ? 0.007 : 0.01
+  const still = quality.reducedMotion || quality.tier === 'low'
+  const kBg = still ? 0 : quality.isTouch ? 0.004 : 0.006
+  const kChar = still ? 0 : quality.isTouch ? 0.011 : 0.016
 
   const program = new Program(gl, {
     vertex,
     fragment,
     uniforms: {
-      uTexture: { value: uTexture },
-      uDepth: { value: uDepth },
+      uBg: { value: uBg },
+      uChar: { value: uChar },
       uResolution: { value: [window.innerWidth, window.innerHeight] },
       uImageSize: { value: [2400, 1465] }, // se corrige con el tamaño real al cargar
       uMouse: { value: [0, 0] },
-      uStrength: { value: strength },
+      uStrengthBg: { value: kBg },
+      uStrengthChar: { value: kChar },
       uTime: { value: 0 },
     },
   })
-
   const mesh = new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program })
   mesh.setParent(stage.scene)
 
-  // Cargar imágenes → texturas
-  const colorImg = new Image()
-  colorImg.onload = () => {
-    uTexture.image = colorImg
-    program.uniforms.uImageSize.value = [colorImg.naturalWidth, colorImg.naturalHeight]
+  const load = (tex, url, setSize) => {
+    const img = new Image()
+    img.onload = () => {
+      tex.image = img
+      if (setSize) program.uniforms.uImageSize.value = [img.naturalWidth, img.naturalHeight]
+    }
+    img.src = url
   }
-  colorImg.src = heroUrl
-
-  const depthImg = new Image()
-  depthImg.onload = () => {
-    uDepth.image = depthImg
-  }
-  depthImg.src = depthUrl
+  load(uBg, bgUrl, true)
+  load(uChar, charUrl, false)
 
   window.addEventListener(
     'resize',
