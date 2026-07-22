@@ -46,6 +46,9 @@ const fragment = /* glsl */ `
       float revealed = step(th, uProgress);                    // dither global atado al %
       vec3 tint = vec3(0.72, 0.92, 0.95);                      // cian-blanco de "pantalla"
       col = mix(voidc, tint * pow(lum, 0.8) * 1.08 * scan, revealed);
+      float edge = smoothstep(0.0, 0.03, cuv.x) * smoothstep(1.0, 0.97, cuv.x) *
+                   smoothstep(0.0, 0.03, cuv.y) * smoothstep(1.0, 0.97, cuv.y);
+      col = mix(voidc, col, edge); // disuelve la costura de las barras
     }
 
     // ojo rojo + pupila que sigue al cursor (rango restringido). Visible desde 0%.

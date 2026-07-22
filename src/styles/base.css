@@ -133,38 +133,60 @@ body {
   position: absolute;
   left: 50%;
   top: 68%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, calc(-50% + 40px)); /* 40px más abajo */
   text-align: center;
+}
+.hero .brand__charlie {
+  font-size: clamp(2.2rem, 10.5vw, 5.6rem); /* -30% */
+  color: #fff; /* CHARLIE en blanco (glitch de letras: P2, pendiente) */
+  text-shadow:
+    0 0 14px rgba(255, 255, 255, 0.4),
+    0 0 40px rgba(147, 3, 170, 0.25);
+}
+.hero .brand__pixelz {
+  font-size: clamp(1rem, 4.9vw, 2.4rem); /* -30% */
 }
 
 /* letreros de neón: el <a> ES el marco + label + área táctil */
 .neon-nav {
   position: absolute;
   inset: 0;
+  perspective: 1400px; /* fuga del callejón */
 }
 .sign {
   position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   border: 2px solid var(--sign);
   border-radius: 3px;
   color: var(--sign);
   text-decoration: none;
-  opacity: 0.32; /* apagado */
+  opacity: 0.34; /* apagado */
+  transform: rotateY(var(--ry, 0deg)); /* perspectiva sutil por letrero */
   transition:
     opacity 0.25s ease,
     background 0.25s ease,
     box-shadow 0.25s ease;
 }
-.sign span {
-  writing-mode: vertical-rl;
-  text-orientation: upright;
+/* label por sílabas: apiladas, centradas, padding uniforme, más grandes */
+.sign .label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.06em;
+  width: 100%;
+  height: 100%;
+  padding: 7% 6%;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(0.7rem, 1.4vw, 1.05rem);
-  letter-spacing: 0.12em;
+  line-height: 0.92;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+.sign .label span {
+  display: block;
+  font-size: clamp(0.9rem, 2vw, 1.55rem);
 }
 .sign:hover,
 .sign:focus-visible,

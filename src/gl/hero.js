@@ -47,7 +47,11 @@ const fragment = /* glsl */ `
     // fondo se mueve poco, personaje más → separación de profundidad, sin duplicado
     vec3 bg = texture2D(uBg, cuv + look * uStrengthBg).rgb;
     vec4 ch = texture2D(uChar, cuv + look * uStrengthChar);
-    gl_FragColor = vec4(mix(bg, ch.rgb, ch.a), 1.0);
+    vec3 comp = mix(bg, ch.rgb, ch.a);
+    // difuminar bordes hacia --void: disuelve la costura de las barras (aspect-lock)
+    float edge = smoothstep(0.0, 0.03, cuv.x) * smoothstep(1.0, 0.97, cuv.x) *
+                 smoothstep(0.0, 0.03, cuv.y) * smoothstep(1.0, 0.97, cuv.y);
+    gl_FragColor = vec4(mix(vec3(0.004, 0.004, 0.21), comp, edge), 1.0);
   }
 `
 
@@ -63,8 +67,12 @@ export function initHero(bgUrl, charUrl) {
   const uChar = new Texture(gl, texOpts)
 
   const still = quality.reducedMotion || quality.tier === 'low'
-  const kBg = still ? 0 : quality.isTouch ? 0.004 : 0.006
-  const kChar = still ? 0 : quality.isTouch ? 0.011 : 0.016
+  const inv = new URLSearchParams(location.search).get('parallax') === 'inv'
+  const big = quality.isTouch ? 0.011 : 0.016
+  const small = quality.isTouch ? 0.004 : 0.006
+  // normal: el personaje se mueve más. ?parallax=inv: el fondo se mueve más (comparar en vivo)
+  const kBg = still ? 0 : inv ? big : small
+  const kChar = still ? 0 : inv ? small : big
 
   const program = new Program(gl, {
     vertex,
