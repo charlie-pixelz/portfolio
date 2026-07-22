@@ -68,9 +68,7 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
   const langSelect = document.getElementById('langSelect')
   const links = langSelect ? [...langSelect.querySelectorAll('a[data-lang]')] : []
 
-  // preselección por idioma del navegador
-  const navLang = (navigator.language || 'es').toLowerCase().startsWith('en') ? 'en' : 'es'
-  links.forEach((a) => a.dataset.lang === navLang && a.setAttribute('aria-current', 'true'))
+  // ambas opciones "apagadas" por defecto (sin preselección lit); Charlie elige.
 
   // click → guardar idioma + glitch + navegar
   links.forEach((a) =>

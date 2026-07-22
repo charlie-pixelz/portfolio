@@ -277,11 +277,15 @@ body {
   inset: 0;
   z-index: 3;
 }
+/* selector arriba-centro (maqueta ~15%). Centrado por margin-auto para NO usar transform:
+   así la animación fadeUp (que anima transform) no rompe el centrado horizontal. */
 .preloader .lang-select {
   position: absolute;
-  top: 6%;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 14%;
+  left: 0;
+  right: 0;
+  width: max-content;
+  margin-inline: auto;
   text-align: center;
 }
 .lang-select:not([hidden]) {
@@ -295,50 +299,60 @@ body {
   letter-spacing: 0.08em;
   opacity: 0.82;
 }
-.pct {
+
+/* lockup del preloader: %, marca y tagline como columna compacta anclada abajo
+   (composición de la maqueta Pre-loader_full: cluster inferior, tagline pegada a PIXELZ) */
+.preloader__lockup {
   position: absolute;
-  top: 55%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  left: 0;
+  right: 0;
+  bottom: 5%;
+  margin-inline: auto;
+  width: max-content;
+  max-width: 92vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.pct {
+  margin-bottom: 0.15em;
   font-family: var(--font-pixel);
   font-weight: 600;
-  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-size: clamp(1.7rem, 4.4vw, 3rem);
   letter-spacing: 0.06em;
   color: var(--cream);
   text-shadow: 0 0 12px rgba(210, 210, 203, 0.3);
 }
 .brand--preloader {
-  position: absolute;
-  top: 68%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
   filter: none;
 }
-.brand--preloader .brand__charlie,
+.brand--preloader .brand__charlie {
+  color: var(--cream);
+  font-size: clamp(3.2rem, 12vw, 10rem);
+  text-shadow: 0 0 16px rgba(210, 210, 203, 0.35);
+}
 .brand--preloader .brand__pixelz {
   color: var(--cream);
+  margin-top: 0.05em;
   text-shadow: 0 0 16px rgba(210, 210, 203, 0.35);
 }
 .tagline--cream {
-  position: absolute;
-  top: 91%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 90vw;
+  margin-top: 0.7rem;
+  max-width: 92vw;
   text-align: center;
   color: var(--cream);
   opacity: 0.8;
   font-size: clamp(0.8rem, 2vw, 1rem);
 }
-/* selector crema (inversión al hover/actual) */
+/* selector crema: ambos "apagados" por defecto (borde + texto en el mismo crema atenuado);
+   ambos reaccionan al hover/foco invirtiendo (relleno crema, texto void). */
 .lang--cream {
-  border-color: color-mix(in srgb, var(--cream) 55%, transparent);
+  border-color: color-mix(in srgb, var(--cream) 45%, transparent);
 }
 .lang--cream a {
-  color: var(--cream);
+  color: color-mix(in srgb, var(--cream) 72%, transparent);
 }
-.lang--cream a[aria-current='true'],
 .lang--cream a:hover,
 .lang--cream a:focus-visible {
   background: var(--cream);
