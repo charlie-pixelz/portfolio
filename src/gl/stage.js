@@ -1,9 +1,8 @@
 // Stage — canvas WebGL ÚNICO y persistente (#gl, fixed inset:0), sobre OGL.
-// En Fase 1 la escena está vacía (solo limpia cada frame); es la base sobre la que
-// P1+ montará los planos: hero depth-map, CRT, imágenes DOM→WebGL, VideoTexture, glitch.
+// No se auto-suscribe al ticker: expone render() y main.js lo llama AL FINAL del frame,
+// después de que todos los módulos actualizaron sus uniforms (evita 1 frame de lag).
 
 import { Renderer, Transform } from 'ogl'
-import { ticker } from '../core/ticker.js'
 import { quality } from '../core/quality.js'
 
 let renderer
@@ -13,7 +12,7 @@ export const stage = {
   init() {
     renderer = new Renderer({ alpha: true, antialias: false, dpr: quality.dpr })
     const gl = renderer.gl
-    gl.clearColor(0, 0, 0, 0) // transparente: deja ver el fondo CSS; aún sin escena
+    gl.clearColor(0, 0, 0, 0) // transparente hasta que una escena lo llene
 
     const canvas = gl.canvas
     canvas.id = 'gl'
@@ -26,10 +25,10 @@ export const stage = {
     window.addEventListener('resize', resize, { passive: true })
     resize()
 
-    // Render dentro del RAF único.
-    ticker.add(() => renderer.render({ scene }))
-
     return { renderer, scene }
+  },
+  render() {
+    if (renderer) renderer.render({ scene })
   },
   get renderer() {
     return renderer

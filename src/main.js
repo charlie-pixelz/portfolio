@@ -1,13 +1,15 @@
 // Charlie Pixelz — entrada compartida.
-// Fase 1: arquitectura base invisible (canvas persistente, RAF único, PointerManager,
-// QualityManager, Lenis). Los efectos visibles (preloader matriz, hero depth-map…) llegan en P1+.
+// Fase 1: arquitectura base. P1.B: hero con depth-map en las home /es/ /en/.
 
 import './styles/tokens.css'
 import './styles/base.css'
+import heroUrl from '../assets/upscale/hero_desktop_clean_2400w.webp'
+import depthUrl from '../assets/upscale/hero_depth_1600w.webp'
 import { ticker } from './core/ticker.js'
 import { quality } from './core/quality.js'
 import { pointer } from './core/pointer.js'
 import { stage } from './gl/stage.js'
+import { initHero } from './gl/hero.js'
 import { initLenis } from './core/lenis.js'
 import { initDebug } from './core/debug.js'
 
@@ -20,10 +22,12 @@ if (lang) {
   } catch {}
 }
 
-// Arranque de la arquitectura (ANIMATION_SPEC §0).
+// Arquitectura (ANIMATION_SPEC §0)
 document.documentElement.dataset.tier = quality.tier
-stage.init() // canvas WebGL persistente + escena vacía
-pointer.init() // mouse + touch → mismos valores normalizados
-initLenis() // scroll suave (salvo reduced-motion)
-initDebug() // HUD solo con ?debug
-ticker.start() // único RAF: arranca todo
+stage.init()
+pointer.init()
+if (lang) initHero(heroUrl, depthUrl) // hero solo en las home; la raíz es el preloader (P1.A)
+initLenis()
+initDebug()
+ticker.add(() => stage.render()) // render AL FINAL del frame, tras las actualizaciones
+ticker.start()
