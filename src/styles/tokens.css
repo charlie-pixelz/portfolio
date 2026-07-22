@@ -21,6 +21,12 @@
   font-weight: 400;
   font-display: swap;
 }
+@font-face {
+  font-family: 'Handjet';
+  src: url('../fonts/Handjet-subset.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
 
 :root {
   /* Mundo — escenas, letreros, hero */
@@ -35,14 +41,18 @@
   --phosphor-dim: #1fa648;
   --phosphor-glow: rgba(51, 255, 102, 0.35);
   --red-eye: #ff2a2a;
+  --eye-idle: #780000; /* ojo en reposo (Charlie) */
+  --eye-active: #f80000; /* ojo activo / hover-CTA (Charlie) */
 
   /* Texto de lectura (AA sobre --void) */
   --ink: #e8e8f2;
+  --cream: #d2d2cb; /* textos/UI del preloader (Charlie) */
 
   /* Familias por rol (ART_DIRECTION §3) */
   --font-body: 'Space Grotesk', system-ui, sans-serif;
   --font-display: 'Doto', 'Space Grotesk', sans-serif;
   --font-brand: 'Glitch Goblin', 'Doto', sans-serif;
+  --font-pixel: 'Handjet', 'Doto', monospace;
 
   --space: clamp(1rem, 2.5vw, 2rem);
 }

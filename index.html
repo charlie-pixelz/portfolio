@@ -11,27 +11,34 @@
     <link rel="alternate" hreflang="es" href="https://charlie-pixelz.github.io/portfolio/es/" />
     <link rel="alternate" hreflang="en" href="https://charlie-pixelz.github.io/portfolio/en/" />
     <link rel="alternate" hreflang="x-default" href="https://charlie-pixelz.github.io/portfolio/" />
-    <script>
-      // Si ya hay idioma elegido, salta el selector. La 1.ª visita elige explícitamente.
-      ;(function () {
-        try {
-          var saved = localStorage.getItem('cp-lang')
-          if (saved === 'es' || saved === 'en') location.replace(saved + '/')
-        } catch (e) {}
-      })()
-    </script>
     <script type="module" src="/src/main.js"></script>
   </head>
   <body>
-    <main class="stage">
-      <h1 class="brand">
+    <main class="preloader">
+      <div class="lang-select" id="langSelect" hidden>
+        <p class="lang-prompt">Selecciona idioma · Choose language</p>
+        <nav class="lang lang--cream" aria-label="Selector de idioma / Language selector">
+          <a href="es/" data-lang="es">ESP</a>
+          <a href="en/" data-lang="en">ENG</a>
+        </nav>
+      </div>
+      <p
+        class="pct"
+        id="pct"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+        aria-label="Cargando / Loading"
+      >
+        0%
+      </p>
+      <h1 class="brand brand--preloader">
         <span class="brand__charlie">Charlie</span><span class="brand__pixelz">PIXELZ</span>
       </h1>
-      <p class="tagline">Elige un idioma · Choose a language</p>
-      <nav class="lang" aria-label="Selector de idioma / Language selector">
-        <a href="es/" data-lang="es">ESP</a>
-        <a href="en/" data-lang="en">ENG</a>
-      </nav>
+      <p class="tagline tagline--cream">
+        Diseño, ilustración, motion y desarrollo web potenciados con IA.
+      </p>
     </main>
     <div class="crt" aria-hidden="true"></div>
   </body>
