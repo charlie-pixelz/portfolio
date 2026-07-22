@@ -3,6 +3,7 @@
 // en crudo: interpola con lerp. Todos los efectos leen de aquí.
 
 import { ticker } from './ticker.js'
+import { damp } from './math.js'
 
 const LERP = 0.12
 
@@ -33,11 +34,11 @@ export const pointer = {
     // Mouse y touch alimentan EXACTAMENTE los mismos valores (DoD Fase 1).
     window.addEventListener('mousemove', onMouse, { passive: true })
     window.addEventListener('touchmove', onTouch, { passive: true })
-    ticker.add(() => {
+    ticker.add((t, dt) => {
       const px = pos.x
       const py = pos.y
-      pos.x += (target.x - pos.x) * LERP
-      pos.y += (target.y - pos.y) * LERP
+      pos.x = damp(pos.x, target.x, LERP, dt)
+      pos.y = damp(pos.y, target.y, LERP, dt)
       vel.x = pos.x - px
       vel.y = pos.y - py
     })
