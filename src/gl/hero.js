@@ -46,7 +46,7 @@ const fragment = /* glsl */ `
     vec2 cuv = coverUv(vUv, uResolution, uImageSize);
     float depth = texture2D(uDepth, cuv).r;
     // drift ambiental sutil para que respire sin input
-    vec2 drift = vec2(sin(uTime * 0.25), cos(uTime * 0.2)) * 0.35;
+    vec2 drift = vec2(sin(uTime * 0.25), cos(uTime * 0.2)) * 0.22;
     vec2 look = uMouse + drift;
     vec2 offset = (depth - 0.5) * look * uStrength;
     gl_FragColor = vec4(texture2D(uTexture, cuv + offset).rgb, 1.0);
@@ -65,8 +65,10 @@ export function initHero(heroUrl, depthUrl) {
   const uTexture = new Texture(gl, texOpts)
   const uDepth = new Texture(gl, texOpts)
 
+  // Intensidad contenida: con una sola imagen, un desplazamiento chico mantiene el
+  // "fantasma" de profundidad imperceptible. El fix definitivo (sin fantasma) es multi-capa.
   const strength =
-    quality.reducedMotion || quality.tier === 'low' ? 0.0 : quality.isTouch ? 0.012 : 0.018
+    quality.reducedMotion || quality.tier === 'low' ? 0.0 : quality.isTouch ? 0.007 : 0.01
 
   const program = new Program(gl, {
     vertex,
