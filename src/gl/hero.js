@@ -67,12 +67,12 @@ export function initHero(bgUrl, charUrl) {
   const uChar = new Texture(gl, texOpts)
 
   const still = quality.reducedMotion || quality.tier === 'low'
-  const inv = new URLSearchParams(location.search).get('parallax') === 'inv'
+  const normal = new URLSearchParams(location.search).get('parallax') === 'normal'
   const big = quality.isTouch ? 0.011 : 0.016
   const small = quality.isTouch ? 0.004 : 0.006
-  // normal: el personaje se mueve más. ?parallax=inv: el fondo se mueve más (comparar en vivo)
-  const kBg = still ? 0 : inv ? big : small
-  const kChar = still ? 0 : inv ? small : big
+  // Charlie eligió el parallax INVERTIDO (fondo se mueve más) como default; ?parallax=normal lo invierte
+  const kBg = still ? 0 : normal ? small : big
+  const kChar = still ? 0 : normal ? big : small
 
   const program = new Program(gl, {
     vertex,

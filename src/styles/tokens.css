@@ -44,6 +44,15 @@
   --eye-idle: #780000; /* ojo en reposo (Charlie) */
   --eye-active: #f80000; /* ojo activo / hover-CTA (Charlie) */
 
+  /* Letreros de neón (valores del prototipo v6) */
+  --tube-off: #5a5f76; /* borde apagado (gris, no opacidad) */
+  --texto-off: #7d8299; /* texto apagado (gris) */
+  --halo-off: rgba(120, 126, 150, 0.12);
+  --sign-violeta: #a97dff;
+  --sign-violeta-halo: rgba(150, 90, 255, 0.45);
+  --sign-magenta: #ff54c8;
+  --sign-magenta-halo: rgba(255, 60, 180, 0.42);
+
   /* Texto de lectura (AA sobre --void) */
   --ink: #e8e8f2;
   --cream: #d2d2cb; /* textos/UI del preloader (Charlie) */

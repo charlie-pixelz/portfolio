@@ -126,77 +126,139 @@ body {
   width: min(100vw, calc(100vh * 4602 / 2810));
   aspect-ratio: 4602 / 2810;
   z-index: 1;
+  container-type: inline-size; /* cqw = ancho del hero ≈ ancho del personaje */
 }
 
 /* lockup a altura del pecho, dentro del hero */
 .hero .brand {
   position: absolute;
   left: 50%;
-  top: 68%;
-  transform: translate(-50%, calc(-50% + 40px)); /* 40px más abajo */
+  top: 66%;
+  transform: translate(-50%, -50%);
   text-align: center;
 }
 .hero .brand__charlie {
-  font-size: clamp(2.2rem, 10.5vw, 5.6rem); /* -30% */
+  font-size: clamp(2.6rem, 11cqw, 9.5rem); /* relativo al ancho del hero ≈ personaje */
   color: #fff; /* CHARLIE en blanco (glitch de letras: P2, pendiente) */
   text-shadow:
-    0 0 14px rgba(255, 255, 255, 0.4),
-    0 0 40px rgba(147, 3, 170, 0.25);
+    0 0 14px rgba(169, 125, 255, 0.55),
+    0 0 42px rgba(255, 84, 200, 0.45); /* glow violeta + magenta */
 }
 .hero .brand__pixelz {
-  font-size: clamp(1rem, 4.9vw, 2.4rem); /* -30% */
+  font-size: clamp(1.1rem, 5.2cqw, 3rem);
+  color: #fff;
+  text-shadow: 0 0 12px rgba(75, 223, 244, 0.5); /* glow cian */
 }
 
 /* letreros de neón: el <a> ES el marco + label + área táctil */
 .neon-nav {
   position: absolute;
   inset: 0;
-  perspective: 1400px; /* fuga del callejón */
+  pointer-events: none;
+  perspective: 1500px; /* fuga del callejón (sutil) */
 }
 .sign {
   position: absolute;
   display: grid;
   place-items: center;
-  border: 2px solid var(--sign);
-  border-radius: 3px;
-  color: var(--sign);
+  padding: clamp(14px, 1.6vw, 34px);
   text-decoration: none;
-  opacity: 0.34; /* apagado */
-  transform: rotateY(var(--ry, 0deg)); /* perspectiva sutil por letrero */
+  pointer-events: auto;
+  --c: var(--tube-off); /* apagado = gris (no opacidad) */
+  --halo: var(--halo-off);
+  border: 2.5px solid var(--c);
+  border-radius: 16px;
+  background: rgba(8, 3, 24, 0.3);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.5);
+  transform: rotateY(var(--ry, 0deg));
   transition:
-    opacity 0.25s ease,
-    background 0.25s ease,
+    border-color 0.25s ease,
     box-shadow 0.25s ease;
 }
-/* label por sílabas: apiladas, centradas, padding uniforme, más grandes */
-.sign .label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.06em;
-  width: 100%;
-  height: 100%;
-  padding: 7% 6%;
-  font-family: var(--font-display);
-  font-weight: 800;
-  line-height: 0.92;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.sign.violeta {
+  --c-on: var(--sign-violeta);
+  --halo-on: var(--sign-violeta-halo);
 }
-.sign .label span {
+.sign.magenta {
+  --c-on: var(--sign-magenta);
+  --halo-on: var(--sign-magenta-halo);
+}
+/* label silabeado: cada sílaba llena el ancho del marco (fitSigns() en JS) */
+.label {
+  display: grid;
+  gap: 0.1em;
+  text-align: center;
+}
+.label i {
+  font-style: normal;
   display: block;
-  font-size: clamp(0.9rem, 2vw, 1.55rem);
+  width: max-content;
+  margin-inline: auto;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-variation-settings: 'ROND' 0, 'wght' 900;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  line-height: 0.92;
+  color: var(--texto-off);
+  font-size: clamp(18px, 2.2vw, 44px); /* base; fitSigns() lo ajusta al ancho */
+  transition:
+    color 0.25s ease,
+    text-shadow 0.25s ease;
 }
+/* ENCENDIDO: sección actual / hover / foco → borde blanco + glow de color, texto blanco */
+.sign[aria-current='page'],
 .sign:hover,
-.sign:focus-visible,
-.sign[aria-current='page'] {
-  opacity: 1;
-  background: color-mix(in srgb, var(--sign) 12%, transparent);
+.sign:focus-visible {
+  --c: var(--c-on);
+  --halo: var(--halo-on);
+  border-color: #fff;
   box-shadow:
-    0 0 14px var(--sign),
-    inset 0 0 10px color-mix(in srgb, var(--sign) 30%, transparent);
-  outline: none;
+    0 0 6px rgba(255, 255, 255, 0.4),
+    0 0 14px var(--c),
+    0 0 38px var(--c),
+    0 0 90px var(--halo),
+    inset 0 0 22px var(--halo);
+}
+.sign[aria-current='page'] .label i,
+.sign:hover .label i,
+.sign:focus-visible .label i {
+  color: #fff;
+  text-shadow:
+    0 0 8px var(--c),
+    0 0 22px var(--c);
+}
+.sign:focus-visible {
+  outline: 2px dashed #fff;
+  outline-offset: 6px;
+}
+/* parpadeo de neón antiguo: ignición al encender + idle lento e irregular (WCAG 2.3.1) */
+@keyframes ignite {
+  0% { opacity: 1; }
+  30% { opacity: 0.45; }
+  55% { opacity: 0.95; }
+  75% { opacity: 0.55; }
+  100% { opacity: 1; }
+}
+@keyframes neonIdle {
+  0%, 100% { opacity: 1; }
+  7% { opacity: 0.85; }
+  8.5% { opacity: 1; }
+  41.5% { opacity: 0.78; }
+  43% { opacity: 1; }
+  71% { opacity: 0.9; }
+  72.5% { opacity: 1; }
+}
+.sign[aria-current='page'] {
+  animation: neonIdle 6.5s linear 1.2s infinite;
+}
+@media (hover: hover) {
+  .sign:hover,
+  .sign:focus-visible {
+    animation:
+      ignite 0.5s steps(4, end) 1,
+      neonIdle 6.5s linear 0.5s infinite;
+  }
 }
 
 /* switch de idioma en esquina (siempre visible) */
@@ -386,6 +448,7 @@ html.lenis body {
 @media (prefers-reduced-motion: reduce) {
   .cursor,
   .lang-select:not([hidden]),
+  .sign,
   body.glitch-out {
     animation: none;
   }

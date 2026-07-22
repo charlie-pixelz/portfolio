@@ -12,6 +12,7 @@ import { pointer } from './core/pointer.js'
 import { stage } from './gl/stage.js'
 import { initHero } from './gl/hero.js'
 import { initPreloader } from './gl/preloader.js'
+import { initSigns } from './ui/signs.js'
 import { initLenis } from './core/lenis.js'
 import { initDebug } from './core/debug.js'
 
@@ -28,8 +29,12 @@ if (lang) {
 document.documentElement.dataset.tier = quality.tier
 stage.init()
 pointer.init()
-if (lang) initHero(heroBgUrl, heroCharUrl) // hero multi-capa en las home /es/ /en/
-else initPreloader({ sceneUrl: heroCleanUrl, preloadUrls: [heroBgUrl, heroCharUrl] }) // raíz = preloader
+if (lang) {
+  initHero(heroBgUrl, heroCharUrl) // hero multi-capa en las home /es/ /en/
+  initSigns() // iguala el ancho de las sílabas de los letreros
+} else {
+  initPreloader({ sceneUrl: heroCleanUrl, preloadUrls: [heroBgUrl, heroCharUrl] }) // raíz = preloader
+}
 initLenis()
 initDebug()
 ticker.add(() => stage.render()) // render AL FINAL del frame, tras las actualizaciones
