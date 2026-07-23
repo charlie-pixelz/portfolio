@@ -140,21 +140,45 @@ export function initHero(bgUrl, charUrl) {
   load(uBg, bgUrl, true)
   load(uChar, charUrl, false)
 
+  // Nav diegética: los letreros siguen el MISMO desplazamiento que el fondo (look * kBg),
+  // así se sienten montados en los edificios de la escena en vez de flotar (ADENDUM §1).
+  const nav = document.querySelector('.neon-nav')
+  const heroEl = document.querySelector('.hero')
+  let heroW = 0
+  let heroH = 0
+  const measure = () => {
+    if (!heroEl) return
+    const r = heroEl.getBoundingClientRect()
+    heroW = r.width
+    heroH = r.height
+  }
+  measure()
+
   window.addEventListener(
     'resize',
     () => {
       program.uniforms.uResolution.value = [window.innerWidth, window.innerHeight]
+      measure()
     },
     { passive: true },
   )
 
   ticker.add((t, dt) => {
-    program.uniforms.uTime.value = t * 0.001
+    const time = t * 0.001
+    program.uniforms.uTime.value = time
     program.uniforms.uMouse.value = [pointer.pos.x, pointer.pos.y]
     if (entering) {
       const g = Math.max(0, program.uniforms.uGlitch.value - dt / ENTER)
       program.uniforms.uGlitch.value = g
       if (g <= 0) entering = false
+    }
+    // desplazamiento del fondo = -look * kBg (look = puntero + drift, igual que el shader)
+    if (nav && kBg > 0) {
+      if (!heroW) measure() // layout puede no estar listo en el init
+
+      const lx = pointer.pos.x + Math.sin(time * 0.25) * 0.18
+      const ly = pointer.pos.y + Math.cos(time * 0.2) * 0.18
+      nav.style.transform = `translate(${(-lx * kBg * heroW).toFixed(2)}px, ${(-ly * kBg * heroH).toFixed(2)}px)`
     }
   })
 }
