@@ -151,6 +151,7 @@ body {
   --gx: 0em;
   display: inline-block;
   position: relative;
+  vertical-align: middle; /* pivota por el centro → el swap de fuente/tamaño no salta hacia arriba */
   will-change: transform;
   text-shadow:
     var(--gx) 0 rgba(75, 223, 244, 0.9),
@@ -164,6 +165,7 @@ body {
 .hero .brand__charlie .ch.is-pixels {
   font-family: var(--font-pixels); /* paso 2: "pixelado" 8-bit */
   font-size: 0.84em; /* iguala el cap height de Glitch Goblin (medido: 146/175) */
+  letter-spacing: -0.18em; /* Press Start trae mucho aire → tighten para que no se expanda tanto */
 }
 .hero .brand__pixelz {
   font-size: clamp(0.88rem, 4.16cqw, 2.4rem);
