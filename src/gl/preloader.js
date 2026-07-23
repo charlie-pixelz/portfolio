@@ -26,6 +26,7 @@ const fragment = /* glsl */ `
   uniform vec2 uMouse;
   uniform float uEyeActive;
   uniform float uDpr;
+  uniform float uGlitch; // 0 limpio · 1 glitch de salida (transición al hero)
   varying vec2 vUv;
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(41.31, 289.17))) * 43758.5453); }
@@ -37,15 +38,34 @@ const fragment = /* glsl */ `
     vec2 scale = ra > ia ? vec2(ia / ra, 1.0) : vec2(1.0, ra / ia);
     vec2 cuv = (vUv - 0.5) / scale + 0.5;
 
+    // glitch de salida "cambio de canal": desplazamiento de bandas horizontales
+    float g = uGlitch;
+    if (g > 0.001) {
+      float band = floor(cuv.y * 22.0);
+      cuv.x += (hash(vec2(band, floor(uTime * 16.0))) - 0.5) * 0.08 * g;
+    }
+
     vec3 col = voidc;
     if (cuv.x >= 0.0 && cuv.x <= 1.0 && cuv.y >= 0.0 && cuv.y <= 1.0) {
-      float lum = dot(texture2D(uScene, cuv).rgb, vec3(0.299, 0.587, 0.114));
+      vec3 W = vec3(0.299, 0.587, 0.114);
+      vec3 lc; // luminancia por canal (aberración cromática al glitchear)
+      if (g > 0.001) {
+        float ca = 0.006 * g;
+        lc = vec3(
+          dot(texture2D(uScene, cuv + vec2(ca, 0.0)).rgb, W),
+          dot(texture2D(uScene, cuv).rgb, W),
+          dot(texture2D(uScene, cuv - vec2(ca, 0.0)).rgb, W)
+        );
+      } else {
+        lc = vec3(dot(texture2D(uScene, cuv).rgb, W));
+      }
       float row = gl_FragCoord.y / uDpr;
       float scan = 0.55 + 0.45 * step(0.5, fract(row / 3.0)); // scanlines
       float th = hash(floor(gl_FragCoord.xy / uDpr));         // umbral de generación
       float revealed = step(th, uProgress);                    // dither global atado al %
       vec3 tint = vec3(0.72, 0.92, 0.95);                      // cian-blanco de "pantalla"
-      col = mix(voidc, tint * pow(lum, 0.8) * 1.08 * scan, revealed);
+      col = mix(voidc, tint * pow(lc, vec3(0.8)) * 1.08 * scan, revealed);
+      if (g > 0.001) col += (hash(cuv * vec2(420.0, 320.0) + uTime) - 0.5) * 0.3 * g; // estática
       float edge = smoothstep(0.0, 0.03, cuv.x) * smoothstep(1.0, 0.97, cuv.x) *
                    smoothstep(0.0, 0.03, cuv.y) * smoothstep(1.0, 0.97, cuv.y);
       col = mix(voidc, col, edge); // disuelve la costura de las barras
@@ -70,15 +90,25 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
 
   // ambas opciones "apagadas" por defecto (sin preselección lit); Charlie elige.
 
-  // click → guardar idioma + glitch + navegar
+  const EXIT = 0.42 // duración del glitch de salida (≈500 ms con el margen de navegación)
+  let exiting = false
+
+  // click → guardar idioma + glitch de salida (o crossfade si reduced-motion) + navegar
   links.forEach((a) =>
     a.addEventListener('click', (e) => {
       e.preventDefault()
       try {
         localStorage.setItem('cp-lang', a.dataset.lang)
       } catch {}
-      document.body.classList.add('glitch-out')
-      setTimeout(() => (location.href = a.getAttribute('href')), 320)
+      const href = a.getAttribute('href')
+      const main = document.querySelector('.preloader')
+      if (main) main.classList.add('is-exiting') // desvanece la UI (%/marca/selector)
+      if (quality.reducedMotion || !stage.renderer) {
+        setTimeout(() => (location.href = href), 260) // crossfade corto (a11y)
+      } else {
+        exiting = true // arranca el glitch de shader desde el ticker central
+        setTimeout(() => (location.href = href), 460)
+      }
     }),
   )
 
@@ -111,6 +141,7 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
       uMouse: { value: [0, 0] },
       uEyeActive: { value: 0 },
       uDpr: { value: quality.dpr },
+      uGlitch: { value: 0 },
     },
   })
   new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program }).setParent(stage.scene)
@@ -160,6 +191,11 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
     if (!done && p >= 1) {
       done = true
       reveal()
+    }
+
+    // glitch de salida: 0 → 1 al elegir idioma (justo antes de navegar)
+    if (exiting) {
+      program.uniforms.uGlitch.value = Math.min(1, program.uniforms.uGlitch.value + dt / EXIT)
     }
   })
 }

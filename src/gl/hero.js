@@ -29,29 +29,59 @@ const fragment = /* glsl */ `
   uniform float uStrengthBg;
   uniform float uStrengthChar;
   uniform float uTime;
+  uniform float uGlitch; // 0 = limpio · 1 = glitch máximo (transición de entrada)
   varying vec2 vUv;
+
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(41.31, 289.17))) * 43758.5453); }
+
+  // compone fondo (opaco) + personaje (alpha) en una uv dada
+  vec3 scene(vec2 uv, vec2 look) {
+    vec3 bg = texture2D(uBg, uv + look * uStrengthBg).rgb;
+    vec4 ch = texture2D(uChar, uv + look * uStrengthChar);
+    return mix(bg, ch.rgb, ch.a);
+  }
 
   void main() {
     // contain: la ilustración se ve completa (aspect-lock). Barras --void donde sobra,
     // para que la nav diegética caiga exacta sobre los edificios (ADENDUM §1).
+    vec3 voidc = vec3(0.0, 0.0039, 0.0824); // #000115
     float ra = uResolution.x / uResolution.y;
     float ia = uImageSize.x / uImageSize.y;
     vec2 scale = ra > ia ? vec2(ia / ra, 1.0) : vec2(1.0, ra / ia);
     vec2 cuv = (vUv - 0.5) / scale + 0.5;
+
+    // glitch "cambio de canal": desplazamiento de bandas horizontales
+    float g = uGlitch;
+    if (g > 0.001) {
+      float band = floor(cuv.y * 22.0);
+      float j = hash(vec2(band, floor(uTime * 16.0)));
+      cuv.x += (j - 0.5) * 0.08 * g;
+    }
+
     if (cuv.x < 0.0 || cuv.x > 1.0 || cuv.y < 0.0 || cuv.y > 1.0) {
-      gl_FragColor = vec4(0.0, 0.0039, 0.0824, 1.0); // #000115 en las barras (mezcla mejor con la imagen)
+      gl_FragColor = vec4(voidc, 1.0);
       return;
     }
+
     vec2 drift = vec2(sin(uTime * 0.25), cos(uTime * 0.2)) * 0.18;
     vec2 look = uMouse + drift;
-    // fondo se mueve poco, personaje más → separación de profundidad, sin duplicado
-    vec3 bg = texture2D(uBg, cuv + look * uStrengthBg).rgb;
-    vec4 ch = texture2D(uChar, cuv + look * uStrengthChar);
-    vec3 comp = mix(bg, ch.rgb, ch.a);
+
+    vec3 comp;
+    if (g > 0.001) {
+      float ca = 0.006 * g; // aberración cromática (separa R/B)
+      comp.r = scene(cuv + vec2(ca, 0.0), look).r;
+      comp.g = scene(cuv, look).g;
+      comp.b = scene(cuv - vec2(ca, 0.0), look).b;
+      float st = hash(cuv * vec2(420.0, 320.0) + uTime); // estática
+      comp += (st - 0.5) * 0.35 * g;
+    } else {
+      comp = scene(cuv, look);
+    }
+
     // difuminar bordes hacia --void: disuelve la costura de las barras (aspect-lock)
     float edge = smoothstep(0.0, 0.03, cuv.x) * smoothstep(1.0, 0.97, cuv.x) *
                  smoothstep(0.0, 0.03, cuv.y) * smoothstep(1.0, 0.97, cuv.y);
-    gl_FragColor = vec4(mix(vec3(0.0, 0.0039, 0.0824), comp, edge), 1.0); // #000115
+    gl_FragColor = vec4(mix(voidc, comp, edge), 1.0);
   }
 `
 
@@ -86,16 +116,24 @@ export function initHero(bgUrl, charUrl) {
       uStrengthBg: { value: kBg },
       uStrengthChar: { value: kChar },
       uTime: { value: 0 },
+      uGlitch: { value: still ? 0 : 1 }, // entra glitcheado y se resuelve (continúa la transición del preloader)
     },
   })
   const mesh = new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program })
   mesh.setParent(stage.scene)
 
+  // glitch de entrada: al cargar el fondo, resolvemos uGlitch 1 → 0 (≈550 ms) desde el ticker central
+  const ENTER = 0.55
+  let entering = false
+
   const load = (tex, url, setSize) => {
     const img = new Image()
     img.onload = () => {
       tex.image = img
-      if (setSize) program.uniforms.uImageSize.value = [img.naturalWidth, img.naturalHeight]
+      if (setSize) {
+        program.uniforms.uImageSize.value = [img.naturalWidth, img.naturalHeight]
+        if (!still) entering = true // arranca la resolución del glitch cuando hay señal
+      }
     }
     img.src = url
   }
@@ -110,8 +148,13 @@ export function initHero(bgUrl, charUrl) {
     { passive: true },
   )
 
-  ticker.add((t) => {
+  ticker.add((t, dt) => {
     program.uniforms.uTime.value = t * 0.001
     program.uniforms.uMouse.value = [pointer.pos.x, pointer.pos.y]
+    if (entering) {
+      const g = Math.max(0, program.uniforms.uGlitch.value - dt / ENTER)
+      program.uniforms.uGlitch.value = g
+      if (g <= 0) entering = false
+    }
   })
 }
