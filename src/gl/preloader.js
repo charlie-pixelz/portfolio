@@ -176,26 +176,7 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
   const forced = new URLSearchParams(location.search).get('p')
   const forcedP = forced !== null ? Math.max(0, Math.min(1, parseFloat(forced))) : null
   const reduced = quality.reducedMotion
-  // Ritmo de la barra: sube y se PAUSA 3 veces (~0.7s c/u) antes del 100%, para apreciar la generación.
-  // Nunca supera la carga real (se combina con Math.min) → no miente; solo pausa por debajo.
-  const PACE = [
-    [0.0, 0.0],
-    [0.4, 0.33],
-    [0.6, 0.33], // pausa 1 (~0.2s)
-    [1.0, 0.66],
-    [1.2, 0.66], // pausa 2 (~0.2s)
-    [1.6, 1.0],
-  ]
-  const paced = (t) => {
-    for (let i = 1; i < PACE.length; i++) {
-      if (t <= PACE[i][0]) {
-        const [t0, v0] = PACE[i - 1]
-        const [t1, v1] = PACE[i]
-        return v0 + ((v1 - v0) * (t - t0)) / (t1 - t0)
-      }
-    }
-    return 1
-  }
+  const RAMP = 1.6 // duración del ramp continuo del % (sin pausas), para apreciar la generación
   let elapsed = 0
   let done = false
   let eyeActive = 0
@@ -205,7 +186,7 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
     let p
     if (forcedP !== null) p = forcedP
     else if (reduced) p = state.progress
-    else p = Math.min(state.progress, paced(elapsed)) // nunca miente: cap por carga real Y por el ritmo con pausas
+    else p = Math.min(state.progress, elapsed / RAMP) // nunca miente: cap por carga real Y por el ramp
 
     program.uniforms.uProgress.value = p
     program.uniforms.uTime.value = t * 0.001
