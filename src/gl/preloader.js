@@ -181,10 +181,10 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
   const PACE = [
     [0.0, 0.0],
     [0.4, 0.33],
-    [0.8, 0.33], // pausa 1 (~0.4s)
-    [1.2, 0.66],
-    [1.6, 0.66], // pausa 2 (~0.4s)
-    [2.0, 1.0],
+    [0.6, 0.33], // pausa 1 (~0.2s)
+    [1.0, 0.66],
+    [1.2, 0.66], // pausa 2 (~0.2s)
+    [1.6, 1.0],
   ]
   const paced = (t) => {
     for (let i = 1; i < PACE.length; i++) {
