@@ -163,7 +163,7 @@ body {
 }
 .hero .brand__charlie .ch.is-pixels {
   font-family: var(--font-pixels); /* paso 2: "pixelado" 8-bit */
-  font-size: 0.55em; /* Press Start 2P tiene métricas grandes → escala a un ancho similar a las otras 2 */
+  font-size: 0.84em; /* iguala el cap height de Glitch Goblin (medido: 146/175) */
 }
 .hero .brand__pixelz {
   font-size: clamp(0.88rem, 4.16cqw, 2.4rem);
