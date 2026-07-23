@@ -74,7 +74,7 @@ const fragment = /* glsl */ `
       float th = clamp(dc, 0.0, 1.0) * 0.82 + hash(cell) * 0.18;
       float revealed = smoothstep(th - 0.06, th + 0.02, uProgress);
       vec3 tint = vec3(0.58, 0.96, 0.90);                     // fósforo teal (referencia)
-      col = mix(voidc, tint * pow(lc, vec3(0.85)) * 1.15 * soft, revealed);
+      col = mix(voidc, tint * pow(lc, vec3(0.85)) * 1.38 * soft, revealed); // brillo +20%
       if (g > 0.001) col += (hash(cell + uTime) - 0.5) * 0.3 * g; // estática
       float edge = smoothstep(0.0, 0.03, cuv.x) * smoothstep(1.0, 0.97, cuv.x) *
                    smoothstep(0.0, 0.03, cuv.y) * smoothstep(1.0, 0.97, cuv.y);
@@ -180,13 +180,11 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
   // Nunca supera la carga real (se combina con Math.min) → no miente; solo pausa por debajo.
   const PACE = [
     [0.0, 0.0],
-    [0.45, 0.3],
-    [1.15, 0.3], // pausa 1
-    [1.45, 0.58],
-    [2.15, 0.58], // pausa 2
-    [2.45, 0.85],
-    [3.15, 0.85], // pausa 3
-    [3.45, 1.0],
+    [0.4, 0.33],
+    [0.8, 0.33], // pausa 1 (~0.4s)
+    [1.2, 0.66],
+    [1.6, 0.66], // pausa 2 (~0.4s)
+    [2.0, 1.0],
   ]
   const paced = (t) => {
     for (let i = 1; i < PACE.length; i++) {
