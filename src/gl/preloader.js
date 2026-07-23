@@ -26,6 +26,7 @@ const fragment = /* glsl */ `
   uniform vec2 uMouse;
   uniform float uEyeActive;
   uniform float uDpr;
+  uniform float uTime;
   uniform float uGlitch; // 0 limpio · 1 glitch de salida (transición al hero)
   varying vec2 vUv;
 
@@ -141,6 +142,7 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
       uMouse: { value: [0, 0] },
       uEyeActive: { value: 0 },
       uDpr: { value: quality.dpr },
+      uTime: { value: 0 },
       uGlitch: { value: 0 },
     },
   })
@@ -176,6 +178,7 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
     else p = Math.min(state.progress, elapsed / MIN) // nunca miente: cap por carga real Y por tiempo
 
     program.uniforms.uProgress.value = p
+    program.uniforms.uTime.value = t * 0.001
     program.uniforms.uMouse.value = [pointer.pos.x, pointer.pos.y]
 
     // ojo se aviva al acercar el cursor al selector (arriba-centro), una vez visible

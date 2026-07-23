@@ -29,15 +29,18 @@ export function initCharlie() {
     gsap.killTweensOf(chars)
     chars.forEach((ch, i) => {
       gsap
-        .timeline({ delay: i * 0.03 })
+        .timeline({ delay: i * 0.035 })
         .to(ch, {
-          '--gx': '0.06em',
+          '--gx': '0.07em',
           y: () => Math.random() * 6 - 3,
-          duration: 0.07,
+          duration: 0.06,
           ease: 'power2.in',
         })
         .add(() => ch.classList.toggle('is-swap', swap)) // swap de fuente en el pico del glitch
-        .to(ch, { '--gx': '0em', y: 0, duration: 0.13, ease: 'power2.out' })
+        // flicker: parpadeos rápidos por letra (escalonados, nunca strobe de pantalla completa)
+        .to(ch, { opacity: 0.35, duration: 0.05, repeat: 3, yoyo: true })
+        .to(ch, { '--gx': '0em', y: 0, duration: 0.12, ease: 'power2.out' }, '<')
+        .set(ch, { opacity: 1 })
     })
   }
 
