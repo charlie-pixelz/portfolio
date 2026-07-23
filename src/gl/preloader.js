@@ -49,10 +49,11 @@ const fragment = /* glsl */ `
     vec3 col = voidc;
     if (cuv.x >= 0.0 && cuv.x <= 1.0 && cuv.y >= 0.0 && cuv.y <= 1.0) {
       vec3 W = vec3(0.299, 0.587, 0.114);
-      // motivo de "generación": celdas horizontales axis-aligned (sin diagonal). El mismo grid
-      // pixela la imagen (mosaico) y dispara el dither por celda. Menos celdas = motivo más grande.
+      // grid horizontal: el mismo motivo pixela la imagen (mosaico) y dibuja las filas de fósforo.
       vec2 CELLS = vec2(150.0, 190.0); // celda ≈ 2:1 (ancha) → trazos horizontales
-      vec2 cell = floor(cuv * CELLS);
+      vec2 cf = cuv * CELLS;
+      vec2 cell = floor(cf);
+      vec2 cfrac = fract(cf) - 0.5;    // posición dentro de la celda (-0.5..0.5)
       vec2 quv = (cell + 0.5) / CELLS; // centro de celda → imagen pixelada a la escala del motivo
       vec3 lc; // luminancia por canal (aberración cromática al glitchear)
       if (g > 0.001) {
@@ -65,12 +66,15 @@ const fragment = /* glsl */ `
       } else {
         lc = vec3(dot(texture2D(uScene, quv).rgb, W));
       }
-      float row = gl_FragCoord.y / uDpr;
-      float scan = 0.55 + 0.45 * step(0.5, fract(row / 3.0)); // scanlines
-      float th = hash(cell);                                   // umbral por celda (generación bloque a bloque)
-      float revealed = step(th, uProgress);                    // dither atado al %
-      vec3 tint = vec3(0.72, 0.92, 0.95);                      // cian-blanco de "pantalla"
-      col = mix(voidc, tint * pow(lc, vec3(0.8)) * 1.08 * scan, revealed);
+      // pixel SUAVE (no bloque duro): cada celda es un blob de fósforo con bordes redondeados,
+      // más comprimido en vertical → lee como filas horizontales (motivo tipo ASCII/CRT).
+      float soft = 0.42 + 0.58 * smoothstep(0.58, 0.12, max(abs(cfrac.x) * 0.82, abs(cfrac.y) * 1.5));
+      // generación RADIAL desde el centro hacia afuera (+ dither por celda = borde irregular)
+      float dc = distance(cuv, vec2(0.5)) / 0.72;             // 0 centro → ~1 esquinas
+      float th = clamp(dc, 0.0, 1.0) * 0.82 + hash(cell) * 0.18;
+      float revealed = smoothstep(th - 0.06, th + 0.02, uProgress);
+      vec3 tint = vec3(0.58, 0.96, 0.90);                     // fósforo teal (referencia)
+      col = mix(voidc, tint * pow(lc, vec3(0.85)) * 1.15 * soft, revealed);
       if (g > 0.001) col += (hash(cell + uTime) - 0.5) * 0.3 * g; // estática
       float edge = smoothstep(0.0, 0.03, cuv.x) * smoothstep(1.0, 0.97, cuv.x) *
                    smoothstep(0.0, 0.03, cuv.y) * smoothstep(1.0, 0.97, cuv.y);
@@ -172,7 +176,28 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
   const forced = new URLSearchParams(location.search).get('p')
   const forcedP = forced !== null ? Math.max(0, Math.min(1, parseFloat(forced))) : null
   const reduced = quality.reducedMotion
-  const MIN = 1.2 // duración mínima para que la generación se lea
+  // Ritmo de la barra: sube y se PAUSA 3 veces (~0.7s c/u) antes del 100%, para apreciar la generación.
+  // Nunca supera la carga real (se combina con Math.min) → no miente; solo pausa por debajo.
+  const PACE = [
+    [0.0, 0.0],
+    [0.45, 0.3],
+    [1.15, 0.3], // pausa 1
+    [1.45, 0.58],
+    [2.15, 0.58], // pausa 2
+    [2.45, 0.85],
+    [3.15, 0.85], // pausa 3
+    [3.45, 1.0],
+  ]
+  const paced = (t) => {
+    for (let i = 1; i < PACE.length; i++) {
+      if (t <= PACE[i][0]) {
+        const [t0, v0] = PACE[i - 1]
+        const [t1, v1] = PACE[i]
+        return v0 + ((v1 - v0) * (t - t0)) / (t1 - t0)
+      }
+    }
+    return 1
+  }
   let elapsed = 0
   let done = false
   let eyeActive = 0
@@ -182,7 +207,7 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
     let p
     if (forcedP !== null) p = forcedP
     else if (reduced) p = state.progress
-    else p = Math.min(state.progress, elapsed / MIN) // nunca miente: cap por carga real Y por tiempo
+    else p = Math.min(state.progress, paced(elapsed)) // nunca miente: cap por carga real Y por el ritmo con pausas
 
     program.uniforms.uProgress.value = p
     program.uniforms.uTime.value = t * 0.001
