@@ -164,8 +164,8 @@ body {
 }
 .hero .brand__charlie .ch.is-pixels {
   font-family: var(--font-pixels); /* paso 2: "pixelado" 8-bit */
-  font-size: 0.59em; /* -30% respecto al alto de Glitch Goblin */
-  letter-spacing: -0.14em; /* ~20% más de espacio entre letras (menos compresión que -0.18) */
+  font-size: 0.68em; /* +15% respecto al 0.59 previo */
+  letter-spacing: -0.1em; /* menos compresión (más espacio entre letras) */
 }
 .hero .brand__pixelz {
   font-size: clamp(0.88rem, 4.16cqw, 2.4rem);
