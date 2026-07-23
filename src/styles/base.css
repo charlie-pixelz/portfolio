@@ -175,6 +175,160 @@ body {
     0 0 30px rgba(75, 223, 244, 0.4); /* glow cian */
 }
 
+/* ── P3: sala de Proyectos (monitores) + router ── */
+.room {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: #000107;
+}
+.room[hidden],
+.hero[hidden] {
+  display: none;
+}
+.room__frame {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100vw, calc(100vh * 2400 / 1344));
+  aspect-ratio: 2400 / 1344;
+  background: var(--room-bg) center / cover no-repeat;
+}
+/* cada pantalla: textura de callejón recortada al polígono del monitor (clip-path inline) + etiqueta */
+.screen {
+  position: absolute;
+  inset: 0;
+  background: var(--alley) center / cover no-repeat;
+  filter: brightness(0.8) saturate(1.05) contrast(1.05);
+  text-decoration: none;
+}
+.screen[data-cat] {
+  cursor: pointer;
+}
+.screen__label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  padding: 0.3em 0.55em;
+  border: 3px solid var(--phosphor);
+  border-radius: 10px;
+  background: rgba(1, 12, 5, 0.45);
+  font-family: var(--font-pixel);
+  font-weight: 600;
+  font-size: clamp(0.5rem, 1.5cqw, 1.15rem);
+  line-height: 1.05;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--phosphor);
+  text-shadow: 0 0 8px var(--phosphor-glow);
+  box-shadow:
+    0 0 8px var(--phosphor-glow),
+    inset 0 0 12px var(--phosphor-glow);
+  pointer-events: none; /* el click lo recibe el .screen recortado */
+}
+.room__frame {
+  container-type: inline-size; /* cqw para escalar las etiquetas con la sala */
+}
+/* hover: la pantalla se aviva + glitch cromático sostenido en la etiqueta */
+.screen[data-cat]:hover,
+.screen[data-cat]:focus-visible {
+  filter: brightness(1.05) saturate(1.15) contrast(1.05);
+  outline: none;
+}
+.screen[data-cat]:hover .screen__label,
+.screen[data-cat]:focus-visible .screen__label {
+  animation: screenGlitch 0.5s steps(2, end) infinite;
+}
+@keyframes screenGlitch {
+  0%,
+  100% {
+    text-shadow:
+      0 0 8px var(--phosphor-glow),
+      1px 0 rgba(75, 223, 244, 0.6),
+      -1px 0 rgba(242, 2, 205, 0.6);
+  }
+  50% {
+    text-shadow:
+      0 0 8px var(--phosphor-glow),
+      -2px 0 rgba(75, 223, 244, 0.7),
+      2px 0 rgba(242, 2, 205, 0.7);
+  }
+}
+/* botón "volver" (flecha-U), estilo terminal verde, esquina superior derecha */
+.room__back {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 4;
+  width: 2.6rem;
+  height: 2.6rem;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--phosphor-dim);
+  border-radius: 6px;
+  background: rgba(1, 12, 5, 0.55);
+  color: var(--phosphor);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  text-shadow: 0 0 8px var(--phosphor-glow);
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.room__back:hover,
+.room__back:focus-visible {
+  background: var(--phosphor);
+  color: var(--void);
+  box-shadow: 0 0 16px var(--phosphor-glow);
+  outline: none;
+}
+/* la sala NO lleva CRT global (ART_DIR §6.3): solo las pantallas */
+body.route-room .crt {
+  display: none;
+}
+/* transición glitch entre vistas del router */
+@keyframes routeOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: none;
+  }
+  40% {
+    transform: translateX(-8px);
+    filter: hue-rotate(20deg) saturate(1.5);
+    clip-path: inset(12% 0 28% 0);
+  }
+  70% {
+    transform: translateX(10px);
+    clip-path: inset(42% 0 8% 0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+}
+@keyframes routeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  50% {
+    opacity: 1;
+    filter: hue-rotate(-20deg) saturate(1.4);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: none;
+  }
+}
+.route-out {
+  animation: routeOut 0.3s steps(5, end) forwards;
+}
+.route-in {
+  animation: routeIn 0.36s steps(6, end) forwards;
+}
+
 /* letreros de neón: el <a> ES el marco + label + área táctil */
 .neon-nav {
   position: absolute;

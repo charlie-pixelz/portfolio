@@ -17,7 +17,7 @@
     <main class="hero" id="hero">
       <nav class="neon-nav" aria-label="Navegación">
         <a class="sign violeta" style="--ry: 14deg; left: 5.9%; top: 15.7%; width: 11.2%; height: 43.6%" href="#" aria-current="page" aria-label="Inicio"><span class="label"><i>IN</i><i>IC</i><i>IO</i></span></a>
-        <a class="sign magenta" style="--ry: 8deg; left: 26.6%; top: 3.8%; width: 11.1%; height: 32%" href="#" aria-label="Proyectos"><span class="label"><i>PRO</i><i>YEC</i><i>TOS</i></span></a>
+        <a class="sign magenta" data-route="projects" style="--ry: 8deg; left: 26.6%; top: 3.8%; width: 11.1%; height: 32%" href="proyectos/" aria-label="Proyectos"><span class="label"><i>PRO</i><i>YEC</i><i>TOS</i></span></a>
         <a class="sign violeta" style="--ry: -8deg; left: 58.8%; top: 3%; width: 13.4%; height: 29.3%" href="#" aria-label="Biografía"><span class="label"><i>BIO</i><i>GRA</i><i>FÍA</i></span></a>
         <a class="sign magenta" style="--ry: -14deg; left: 78.7%; top: 17.9%; width: 13.4%; height: 41.4%" href="#" aria-label="Contacto"><span class="label"><i>CON</i><i>TAC</i><i>TO</i></span></a>
       </nav>
@@ -25,6 +25,16 @@
         <span class="brand__charlie">Charlie</span><span class="brand__pixelz">PIXELZ</span>
       </h1>
     </main>
+    <section class="room" hidden aria-label="Proyectos">
+      <div class="room__frame">
+        <a class="screen" data-cat="ilustracion" href="#" aria-label="Ilustraciones" style="clip-path: polygon(10.55% 15.34%, 22.17% 18.31%, 33.79% 21.45%, 33.5% 43.59%, 22.17% 44.29%, 10.16% 42.89%)"><span class="screen__label" style="left: 22%; top: 30%">Ilustraciones</span></a>
+        <a class="screen" data-cat="motion" href="#" aria-label="Diseño Audiovisual" style="clip-path: polygon(10.55% 47.78%, 21.88% 47.95%, 33.3% 47.6%, 34.08% 71.32%, 21.88% 72.89%, 10.25% 74.98%)"><span class="screen__label" style="left: 22%; top: 61%">Diseño<br />Audiovisual</span></a>
+        <a class="screen" data-cat="web" href="#" aria-label="Diseño Web" style="clip-path: polygon(66.11% 15.52%, 78.03% 11.33%, 90.04% 7.5%, 91.21% 35.57%, 78.03% 38.01%, 67.29% 37.84%)"><span class="screen__label" style="left: 78.5%; top: 24%">Diseño Web</span></a>
+        <a class="screen" data-cat="ia" href="#" aria-label="Proyectos con IA" style="clip-path: polygon(66.7% 47.08%, 78.03% 47.25%, 89.36% 46.9%, 89.65% 73.41%, 78.03% 71.67%, 66.41% 69.4%)"><span class="screen__label" style="left: 78%; top: 59%">Proyectos<br />con IA</span></a>
+        <div class="screen screen--central" style="clip-path: polygon(35.84% 38.71%, 50.1% 38.71%, 64.36% 38.71%, 64.36% 66.96%, 50.1% 66.96%, 35.84% 66.26%)"><span class="screen__label screen__label--home" style="left: 50%; top: 53%">Inicio</span></div>
+      </div>
+      <button class="room__back" data-route="home" aria-label="Volver a Inicio">↪</button>
+    </section>
     <nav class="lang lang--corner" aria-label="Idioma">
       <a href="../es/" data-lang="es" aria-current="true">ESP</a>
       <a href="../en/" data-lang="en">ENG</a>
