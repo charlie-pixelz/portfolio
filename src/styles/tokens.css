@@ -35,9 +35,9 @@
   font-display: swap;
 }
 @font-face {
-  /* swap por hover del lockup, paso 2 "pixelado" (subset a "Charlie") */
-  font-family: 'Rubik Pixels';
-  src: url('../fonts/RubikPixels-subset.woff2') format('woff2');
+  /* swap por hover del lockup, paso 2 "pixelado" 8-bit (subset a "Charlie") */
+  font-family: 'Press Start 2P';
+  src: url('../fonts/PressStart2P-subset.woff2') format('woff2');
   font-weight: 400;
   font-display: swap;
 }
@@ -76,7 +76,7 @@
   --font-display: 'Doto', 'Space Grotesk', sans-serif;
   --font-brand: 'Glitch Goblin', 'Doto', sans-serif;
   --font-glitch: 'Rubik Glitch', 'Glitch Goblin', sans-serif; /* swap hover, paso 1 "roto" */
-  --font-pixels: 'Rubik Pixels', 'Glitch Goblin', sans-serif; /* swap hover, paso 2 "pixelado" */
+  --font-pixels: 'Press Start 2P', 'Glitch Goblin', sans-serif; /* swap hover, paso 2 "pixelado" 8-bit */
   --font-pixel: 'Handjet', 'Doto', monospace;
 
   --space: clamp(1rem, 2.5vw, 2rem);
