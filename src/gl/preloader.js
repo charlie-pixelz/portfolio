@@ -49,35 +49,42 @@ const fragment = /* glsl */ `
     vec3 col = voidc;
     if (cuv.x >= 0.0 && cuv.x <= 1.0 && cuv.y >= 0.0 && cuv.y <= 1.0) {
       vec3 W = vec3(0.299, 0.587, 0.114);
+      // motivo de "generación": celdas horizontales axis-aligned (sin diagonal). El mismo grid
+      // pixela la imagen (mosaico) y dispara el dither por celda. Menos celdas = motivo más grande.
+      vec2 CELLS = vec2(150.0, 190.0); // celda ≈ 2:1 (ancha) → trazos horizontales
+      vec2 cell = floor(cuv * CELLS);
+      vec2 quv = (cell + 0.5) / CELLS; // centro de celda → imagen pixelada a la escala del motivo
       vec3 lc; // luminancia por canal (aberración cromática al glitchear)
       if (g > 0.001) {
         float ca = 0.006 * g;
         lc = vec3(
-          dot(texture2D(uScene, cuv + vec2(ca, 0.0)).rgb, W),
-          dot(texture2D(uScene, cuv).rgb, W),
-          dot(texture2D(uScene, cuv - vec2(ca, 0.0)).rgb, W)
+          dot(texture2D(uScene, quv + vec2(ca, 0.0)).rgb, W),
+          dot(texture2D(uScene, quv).rgb, W),
+          dot(texture2D(uScene, quv - vec2(ca, 0.0)).rgb, W)
         );
       } else {
-        lc = vec3(dot(texture2D(uScene, cuv).rgb, W));
+        lc = vec3(dot(texture2D(uScene, quv).rgb, W));
       }
       float row = gl_FragCoord.y / uDpr;
       float scan = 0.55 + 0.45 * step(0.5, fract(row / 3.0)); // scanlines
-      float th = hash(floor(gl_FragCoord.xy / uDpr));         // umbral de generación
-      float revealed = step(th, uProgress);                    // dither global atado al %
+      float th = hash(cell);                                   // umbral por celda (generación bloque a bloque)
+      float revealed = step(th, uProgress);                    // dither atado al %
       vec3 tint = vec3(0.72, 0.92, 0.95);                      // cian-blanco de "pantalla"
       col = mix(voidc, tint * pow(lc, vec3(0.8)) * 1.08 * scan, revealed);
-      if (g > 0.001) col += (hash(cuv * vec2(420.0, 320.0) + uTime) - 0.5) * 0.3 * g; // estática
+      if (g > 0.001) col += (hash(cell + uTime) - 0.5) * 0.3 * g; // estática
       float edge = smoothstep(0.0, 0.03, cuv.x) * smoothstep(1.0, 0.97, cuv.x) *
                    smoothstep(0.0, 0.03, cuv.y) * smoothstep(1.0, 0.97, cuv.y);
       col = mix(voidc, col, edge); // disuelve la costura de las barras
     }
 
     // ojo rojo + pupila que sigue al cursor (rango restringido). Visible desde 0%.
-    vec2 pupil = vec2(0.52, 0.57) + uMouse * vec2(0.006, 0.006); // zona de movimiento más chica
+    // 10% menos de recorrido hacia la izquierda: más allá del hombro se pierde la ilusión de estar "dentro del ojo".
+    float mx = uMouse.x < 0.0 ? uMouse.x * 0.9 : uMouse.x;
+    vec2 pupil = vec2(0.52, 0.57) + vec2(mx, uMouse.y) * vec2(0.006, 0.006);
     float d = distance(cuv, pupil);
     vec3 red = mix(vec3(0.470, 0.0, 0.0), vec3(0.973, 0.0, 0.0), uEyeActive); // #780000→#F80000
-    float core = smoothstep(0.0104, 0.0, d); // pupila -20%
-    float halo = (0.35 + 0.55 * uEyeActive) * smoothstep(0.06, 0.0, d);
+    float core = smoothstep(0.00988, 0.0, d); // tamaño -5%
+    float halo = (0.35 + 0.55 * uEyeActive) * smoothstep(0.057, 0.0, d); // -5%
     col += red * (core + halo);
 
     gl_FragColor = vec4(col, 1.0);
