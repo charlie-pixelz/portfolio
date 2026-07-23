@@ -36,12 +36,12 @@ export function initCharlie() {
     gsap.killTweensOf(chars)
     chars.forEach((ch, i) => {
       gsap
-        .timeline({ delay: i * 0.035 })
-        .to(ch, { '--gx': '0.07em', y: () => Math.random() * 6 - 3, duration: 0.06, ease: 'power2.in' })
+        .timeline({ delay: i * 0.045 })
+        .to(ch, { '--gx': '0.07em', y: () => Math.random() * 6 - 3, duration: 0.1, ease: 'power2.in' })
         .add(() => setFont(ch, 'glitch')) // paso intermedio "roto"
-        .to(ch, { opacity: 0.35, duration: 0.045, repeat: 2, yoyo: true }) // flicker
+        .to(ch, { opacity: 0.4, duration: 0.06, repeat: 4, yoyo: true }) // ~0.3s en "roto" (más lento)
         .add(() => setFont(ch, swap ? 'pixels' : 'base')) // asienta en "pixelado" o vuelve a Goblin
-        .to(ch, { '--gx': '0em', y: 0, duration: 0.12, ease: 'power2.out' }, '<')
+        .to(ch, { '--gx': '0em', y: 0, duration: 0.14, ease: 'power2.out' })
         .set(ch, { opacity: 1 })
     })
   }

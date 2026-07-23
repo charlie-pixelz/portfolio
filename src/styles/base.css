@@ -42,6 +42,7 @@ body {
   font-size: clamp(3.2rem, 15vw, 8rem);
   color: var(--magenta);
   letter-spacing: 0.02em;
+  text-transform: uppercase; /* siempre mayúsculas (Rubik Glitch/Pixels tienen minúsculas reales) */
   text-shadow:
     0 0 12px rgba(242, 2, 205, 0.55),
     0 0 40px rgba(147, 3, 170, 0.35);
