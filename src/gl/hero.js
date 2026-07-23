@@ -39,7 +39,7 @@ const fragment = /* glsl */ `
     vec2 scale = ra > ia ? vec2(ia / ra, 1.0) : vec2(1.0, ra / ia);
     vec2 cuv = (vUv - 0.5) / scale + 0.5;
     if (cuv.x < 0.0 || cuv.x > 1.0 || cuv.y < 0.0 || cuv.y > 1.0) {
-      gl_FragColor = vec4(0.004, 0.004, 0.21, 1.0); // --void en las barras
+      gl_FragColor = vec4(0.0, 0.0039, 0.0824, 1.0); // #000115 en las barras (mezcla mejor con la imagen)
       return;
     }
     vec2 drift = vec2(sin(uTime * 0.25), cos(uTime * 0.2)) * 0.18;
@@ -51,7 +51,7 @@ const fragment = /* glsl */ `
     // difuminar bordes hacia --void: disuelve la costura de las barras (aspect-lock)
     float edge = smoothstep(0.0, 0.03, cuv.x) * smoothstep(1.0, 0.97, cuv.x) *
                  smoothstep(0.0, 0.03, cuv.y) * smoothstep(1.0, 0.97, cuv.y);
-    gl_FragColor = vec4(mix(vec3(0.004, 0.004, 0.21), comp, edge), 1.0);
+    gl_FragColor = vec4(mix(vec3(0.0, 0.0039, 0.0824), comp, edge), 1.0); // #000115
   }
 `
 

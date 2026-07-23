@@ -14,12 +14,24 @@ export function initSigns() {
     }
     frames.forEach((frame) => {
       const cs = getComputedStyle(frame)
-      const target = frame.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
-      frame.querySelectorAll('.label i').forEach((el) => {
+      const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)
+      const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)
+      const targetW = frame.clientWidth - padX
+      const availH = frame.clientHeight - padY
+      const lines = [...frame.querySelectorAll('.label i')]
+      // 1) cada sílaba llena el ancho del marco (look "justificado" del v6)
+      const sizes = lines.map((el) => {
         el.style.fontSize = '100px'
         const w = el.offsetWidth
-        if (w > 0) el.style.fontSize = ((100 * target) / w).toFixed(1) + 'px'
+        return w > 0 ? (100 * targetW) / w : 100
       })
+      lines.forEach((el, i) => (el.style.fontSize = sizes[i].toFixed(2) + 'px'))
+      // 2) si el stack (p. ej. C/O/N/T/A/C/T) es más alto que el marco, escala todo para que quepa
+      const label = frame.querySelector('.label')
+      if (label && label.scrollHeight > availH) {
+        const k = availH / label.scrollHeight
+        lines.forEach((el, i) => (el.style.fontSize = (sizes[i] * k).toFixed(2) + 'px'))
+      }
     })
   }
 

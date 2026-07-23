@@ -129,23 +129,23 @@ body {
   container-type: inline-size; /* cqw = ancho del hero ≈ ancho del personaje */
 }
 
-/* lockup a altura del pecho, dentro del hero */
+/* lockup a altura del pecho, dentro del hero (más abajo; -20% respecto al tamaño previo) */
 .hero .brand {
   position: absolute;
   left: 50%;
-  top: 66%;
+  top: 75%;
   transform: translate(-50%, -50%);
   text-align: center;
 }
 .hero .brand__charlie {
-  font-size: clamp(2.6rem, 11cqw, 9.5rem); /* relativo al ancho del hero ≈ personaje */
+  font-size: clamp(2.08rem, 8.8cqw, 7.6rem); /* relativo al ancho del hero ≈ personaje */
   color: #fff; /* CHARLIE en blanco (glitch de letras: P2, pendiente) */
   text-shadow:
     0 0 14px rgba(169, 125, 255, 0.55),
     0 0 42px rgba(255, 84, 200, 0.45); /* glow violeta + magenta */
 }
 .hero .brand__pixelz {
-  font-size: clamp(1.1rem, 5.2cqw, 3rem);
+  font-size: clamp(0.88rem, 4.16cqw, 2.4rem);
   color: #fff;
   text-shadow: 0 0 12px rgba(75, 223, 244, 0.5); /* glow cian */
 }
@@ -155,7 +155,7 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  perspective: 1500px; /* fuga del callejón (sutil) */
+  perspective: 1100px; /* fuga del callejón (más marcada; giros mayores siguen legibles) */
 }
 .sign {
   position: absolute;
@@ -281,12 +281,16 @@ body {
    así la animación fadeUp (que anima transform) no rompe el centrado horizontal. */
 .preloader .lang-select {
   position: absolute;
-  top: 14%;
+  top: 11%;
   left: 0;
   right: 0;
   width: max-content;
   margin-inline: auto;
   text-align: center;
+}
+/* juntar el prompt con la caja (anula el margin-top de 2.6rem del .lang base) */
+.preloader .lang--cream {
+  margin-top: 0.5rem;
 }
 .lang-select:not([hidden]) {
   animation: fadeUp 0.5s ease both;
@@ -329,11 +333,12 @@ body {
 }
 .brand--preloader .brand__charlie {
   color: var(--cream);
-  font-size: clamp(3.2rem, 12vw, 10rem);
+  font-size: clamp(2.56rem, 9.6vw, 8rem); /* -20% respecto al tamaño previo */
   text-shadow: 0 0 16px rgba(210, 210, 203, 0.35);
 }
 .brand--preloader .brand__pixelz {
   color: var(--cream);
+  font-size: clamp(1.12rem, 5.6vw, 2.72rem); /* -20% */
   margin-top: 0.05em;
   text-shadow: 0 0 16px rgba(210, 210, 203, 0.35);
 }

@@ -31,7 +31,7 @@ const fragment = /* glsl */ `
   float hash(vec2 p) { return fract(sin(dot(p, vec2(41.31, 289.17))) * 43758.5453); }
 
   void main() {
-    vec3 voidc = vec3(0.004, 0.004, 0.21);
+    vec3 voidc = vec3(0.0118, 0.0157, 0.0157); // #030404 (se mezcla más con la imagen)
     float ra = uResolution.x / uResolution.y;
     float ia = uImageSize.x / uImageSize.y;
     vec2 scale = ra > ia ? vec2(ia / ra, 1.0) : vec2(1.0, ra / ia);
@@ -52,10 +52,10 @@ const fragment = /* glsl */ `
     }
 
     // ojo rojo + pupila que sigue al cursor (rango restringido). Visible desde 0%.
-    vec2 pupil = vec2(0.52, 0.57) + uMouse * vec2(0.010, 0.010);
+    vec2 pupil = vec2(0.52, 0.57) + uMouse * vec2(0.006, 0.006); // zona de movimiento más chica
     float d = distance(cuv, pupil);
     vec3 red = mix(vec3(0.470, 0.0, 0.0), vec3(0.973, 0.0, 0.0), uEyeActive); // #780000→#F80000
-    float core = smoothstep(0.013, 0.0, d);
+    float core = smoothstep(0.0104, 0.0, d); // pupila -20%
     float halo = (0.35 + 0.55 * uEyeActive) * smoothstep(0.06, 0.0, d);
     col += red * (core + halo);
 
