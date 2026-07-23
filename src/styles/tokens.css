@@ -28,9 +28,16 @@
   font-display: swap;
 }
 @font-face {
-  /* solo el swap por hover del lockup (ruptura deliberada, ART_DIR §3) — subset a "Charlie" */
-  font-family: 'Protest Revolution';
-  src: url('../fonts/ProtestRevolution-subset.woff2') format('woff2');
+  /* swap por hover del lockup, paso 1 "roto" (subset a "Charlie") */
+  font-family: 'Rubik Glitch';
+  src: url('../fonts/RubikGlitch-subset.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  /* swap por hover del lockup, paso 2 "pixelado" (subset a "Charlie") */
+  font-family: 'Rubik Pixels';
+  src: url('../fonts/RubikPixels-subset.woff2') format('woff2');
   font-weight: 400;
   font-display: swap;
 }
@@ -68,7 +75,8 @@
   --font-body: 'Space Grotesk', system-ui, sans-serif;
   --font-display: 'Doto', 'Space Grotesk', sans-serif;
   --font-brand: 'Glitch Goblin', 'Doto', sans-serif;
-  --font-swap: 'Protest Revolution', 'Glitch Goblin', sans-serif; /* swap por hover del lockup */
+  --font-glitch: 'Rubik Glitch', 'Glitch Goblin', sans-serif; /* swap hover, paso 1 "roto" */
+  --font-pixels: 'Rubik Pixels', 'Glitch Goblin', sans-serif; /* swap hover, paso 2 "pixelado" */
   --font-pixel: 'Handjet', 'Doto', monospace;
 
   --space: clamp(1rem, 2.5vw, 2rem);

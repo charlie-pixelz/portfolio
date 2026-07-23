@@ -156,13 +156,18 @@ body {
     0 0 14px rgba(169, 125, 255, 0.55),
     0 0 42px rgba(255, 84, 200, 0.45);
 }
-.hero .brand__charlie .ch.is-swap {
-  font-family: var(--font-swap);
+.hero .brand__charlie .ch.is-glitch {
+  font-family: var(--font-glitch); /* paso 1: "roto" */
+}
+.hero .brand__charlie .ch.is-pixels {
+  font-family: var(--font-pixels); /* paso 2: "pixelado" */
 }
 .hero .brand__pixelz {
   font-size: clamp(0.88rem, 4.16cqw, 2.4rem);
-  color: #fff;
-  text-shadow: 0 0 12px rgba(75, 223, 244, 0.5); /* glow cian */
+  color: var(--cyan); /* PIXELZ en cian (contraste con CHARLIE blanco) */
+  text-shadow:
+    0 0 12px rgba(75, 223, 244, 0.65),
+    0 0 30px rgba(75, 223, 244, 0.4); /* glow cian */
 }
 
 /* letreros de neón: el <a> ES el marco + label + área táctil */
