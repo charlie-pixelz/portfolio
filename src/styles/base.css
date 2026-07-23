@@ -139,10 +139,25 @@ body {
 }
 .hero .brand__charlie {
   font-size: clamp(2.08rem, 8.8cqw, 7.6rem); /* relativo al ancho del hero ≈ personaje */
-  color: #fff; /* CHARLIE en blanco (glitch de letras: P2, pendiente) */
+  color: #fff; /* CHARLIE en blanco */
   text-shadow:
     0 0 14px rgba(169, 125, 255, 0.55),
     0 0 42px rgba(255, 84, 200, 0.45); /* glow violeta + magenta */
+}
+/* glitch por carácter (P2.B): --gx separa R/B (aberración cromática); .is-swap cambia la fuente */
+.hero .brand__charlie .ch {
+  --gx: 0em;
+  display: inline-block;
+  position: relative;
+  will-change: transform;
+  text-shadow:
+    var(--gx) 0 rgba(75, 223, 244, 0.9),
+    calc(-1 * var(--gx)) 0 rgba(255, 84, 200, 0.9),
+    0 0 14px rgba(169, 125, 255, 0.55),
+    0 0 42px rgba(255, 84, 200, 0.45);
+}
+.hero .brand__charlie .ch.is-swap {
+  font-family: var(--font-swap);
 }
 .hero .brand__pixelz {
   font-size: clamp(0.88rem, 4.16cqw, 2.4rem);

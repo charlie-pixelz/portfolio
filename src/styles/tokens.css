@@ -27,6 +27,13 @@
   font-weight: 100 900;
   font-display: swap;
 }
+@font-face {
+  /* solo el swap por hover del lockup (ruptura deliberada, ART_DIR §3) — subset a "Charlie" */
+  font-family: 'Protest Revolution';
+  src: url('../fonts/ProtestRevolution-subset.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
 
 :root {
   /* Mundo — escenas, letreros, hero */
@@ -61,6 +68,7 @@
   --font-body: 'Space Grotesk', system-ui, sans-serif;
   --font-display: 'Doto', 'Space Grotesk', sans-serif;
   --font-brand: 'Glitch Goblin', 'Doto', sans-serif;
+  --font-swap: 'Protest Revolution', 'Glitch Goblin', sans-serif; /* swap por hover del lockup */
   --font-pixel: 'Handjet', 'Doto', monospace;
 
   --space: clamp(1rem, 2.5vw, 2rem);

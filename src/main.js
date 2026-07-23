@@ -13,6 +13,7 @@ import { stage } from './gl/stage.js'
 import { initHero } from './gl/hero.js'
 import { initPreloader } from './gl/preloader.js'
 import { initSigns } from './ui/signs.js'
+import { initCharlie } from './ui/charlie.js'
 import { initLenis } from './core/lenis.js'
 import { initDebug } from './core/debug.js'
 
@@ -32,6 +33,7 @@ pointer.init()
 if (lang) {
   initHero(heroBgUrl, heroCharUrl) // hero multi-capa en las home /es/ /en/
   initSigns() // iguala el ancho de las sílabas de los letreros
+  initCharlie() // glitch/swap por carácter del lockup al hover (P2.B)
 } else {
   initPreloader({ sceneUrl: heroCleanUrl, preloadUrls: [heroBgUrl, heroCharUrl] }) // raíz = preloader
 }
