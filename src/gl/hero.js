@@ -172,13 +172,12 @@ export function initHero(bgUrl, charUrl) {
       program.uniforms.uGlitch.value = g
       if (g <= 0) entering = false
     }
-    // desplazamiento del fondo = -look * kBg (look = puntero + drift, igual que el shader)
-    if (nav && kBg > 0) {
+    // los letreros siguen la intensidad del PERSONAJE (kChar), no la del fondo → se mueven menos
+    if (nav && kChar > 0) {
       if (!heroW) measure() // layout puede no estar listo en el init
-
       const lx = pointer.pos.x + Math.sin(time * 0.25) * 0.18
       const ly = pointer.pos.y + Math.cos(time * 0.2) * 0.18
-      nav.style.transform = `translate(${(-lx * kBg * heroW).toFixed(2)}px, ${(-ly * kBg * heroH).toFixed(2)}px)`
+      nav.style.transform = `translate(${(-lx * kChar * heroW).toFixed(2)}px, ${(-ly * kChar * heroH).toFixed(2)}px)`
     }
   })
 }
