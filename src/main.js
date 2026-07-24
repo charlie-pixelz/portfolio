@@ -42,8 +42,13 @@ if (lang) {
   initHero(heroBgUrl, heroCharUrl) // hero multi-capa en las home /es/ /en/
   initSigns() // iguala el ancho de las sílabas de los letreros
   initCharlie() // glitch/swap por carácter del lockup al hover (P2.B)
+  const calMode = new URLSearchParams(location.search).has('cal') // capturar antes de que el router limpie la URL
   initScreens() // proyecta el contenido de cada pantalla sobre el plano en perspectiva del monitor
   initRouter({ lang, base: '/portfolio/' }) // Inicio ↔ Proyectos (client-side)
+  // modo calibración de pantallas (dev): /es/?cal → arrastrar esquinas al vidrio real
+  if (calMode) {
+    import('./ui/calibrate.js').then((m) => m.initCalibrate())
+  }
   // MVP: click de categoría aún sin página de destino (zoom-in es el siguiente paso)
   document
     .querySelectorAll('.screen[data-cat]')
