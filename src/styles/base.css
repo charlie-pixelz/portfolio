@@ -199,24 +199,33 @@ body {
   transform-origin: 0 0; /* el router zoomea sobre este frame */
   will-change: transform;
 }
-/* cada pantalla = su propia caja (bbox del monitor) con copia COMPLETA del callejón,
-   recortada al polígono del monitor (clip-path local, inline). Así cada una queda nítida. */
+/* cada pantalla = su propia caja (bbox del monitor). El contenido va en .screen__plane,
+   que se deforma con una homografía (matrix3d, en screens.js) hacia el cuadrilátero del
+   monitor → se ve PROYECTADO en la pantalla inclinada, no como un recorte plano. */
 .screen {
   position: absolute; /* left/top/width/height inline por pantalla */
-  background: var(--alley) center / cover no-repeat;
   filter: brightness(0.82) saturate(1.05) contrast(1.05);
   container-type: size; /* cqw/cqh: la etiqueta escala con la pantalla */
   text-decoration: none;
   overflow: hidden;
 }
+.screen__plane {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0; /* la homografía mapea desde el origen de la caja */
+  background: var(--alley) center / cover no-repeat; /* copia completa y nítida por pantalla */
+}
 .screen[data-cat] {
   cursor: pointer;
 }
-/* central: proyecta el Inicio (imagen limpia del hero); clic = volver con zoom-in */
+/* central: proyecta el Inicio (imagen limpia del hero); clic = volver con zoom-in.
+   Sin homografía (el monitor central es casi frontal) para que el empalme del zoom quede limpio. */
 .screen--central {
-  background: var(--home-shot) center / cover no-repeat;
   filter: contrast(1.04) saturate(1.05);
   cursor: pointer;
+}
+.screen--central .screen__plane {
+  background: var(--home-shot) center / cover no-repeat;
 }
 .screen--central::after {
   content: '';
@@ -254,12 +263,13 @@ body {
     opacity: 0;
   }
 }
-/* etiqueta de categoría: ancha, alta y con la MISMA perspectiva (skewY) del monitor */
+/* etiqueta de categoría: ancha y alta. Va DENTRO del plano deformado, así hereda
+   la perspectiva del monitor sin skew manual. */
 .screen__label {
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%) skewY(var(--sk, 0deg));
+  transform: translate(-50%, -50%);
   width: 82%;
   padding: 0.34em 0.3em;
   border: 2.5px solid var(--phosphor);

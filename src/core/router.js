@@ -65,6 +65,7 @@ export function initRouter({ lang, base }) {
       hero.hidden = view === 'projects'
       gsap.set(frame, { clearProps: 'transform' })
       setState(view, push)
+      if (view === 'home') dispatchEvent(new Event('cp:refit-signs'))
       return
     }
 
@@ -101,6 +102,7 @@ export function initRouter({ lang, base }) {
           hero.hidden = false
           room.hidden = true
           gsap.set(frame, { clearProps: 'transform' })
+          dispatchEvent(new Event('cp:refit-signs')) // la home estaba oculta: re-medir letreros
           busy = false
         },
       })

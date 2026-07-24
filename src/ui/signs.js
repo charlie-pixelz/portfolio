@@ -12,6 +12,9 @@ export function initSigns() {
       document.querySelectorAll('.label i').forEach((el) => (el.style.fontSize = ''))
       return
     }
+    // si la home está oculta (estamos en la sala de Proyectos), NO medir: clientWidth=0
+    // dispararía tamaños enormes que quedan pegados al volver. Se re-mide al regresar.
+    if (!frames[0].clientWidth) return
     frames.forEach((frame) => {
       const cs = getComputedStyle(frame)
       const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)
@@ -46,4 +49,6 @@ export function initSigns() {
     },
     { passive: true },
   )
+  // el router lo dispara al volver a Inicio (la home estaba oculta al medir)
+  addEventListener('cp:refit-signs', fit)
 }
