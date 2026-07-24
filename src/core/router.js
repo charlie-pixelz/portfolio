@@ -15,7 +15,6 @@ const TITLE = {
 }
 const DUR = 0.8
 const XF = 0.18 // crossfade que disimula el salto hero <-> central en el empalme del zoom
-const OVERSCAN = 1.02 // mínimo para tapar los bordes recortados sin agrandar la central
 
 export function initRouter({ lang, base }) {
   const hero = document.querySelector('.hero')
@@ -40,7 +39,10 @@ export function initRouter({ lang, base }) {
     const cr = central.getBoundingClientRect()
     const vw = window.innerWidth
     const vh = window.innerHeight
-    const scale = Math.max(vw / cr.width, vh / cr.height) * OVERSCAN
+    // CONTAIN (min, no max): mete la caja central dentro del viewport igual que el hero
+    // "contiene" su imagen (todas las imágenes del hero son 2400×1465 y la caja central
+    // tiene ese mismo aspecto), así el encuadre calza EXACTO y no se ve más grande.
+    const scale = Math.min(vw / cr.width, vh / cr.height)
     const lx = cr.x + cr.width / 2 - fr.x // centro de la central en coords locales del frame
     const ly = cr.y + cr.height / 2 - fr.y
     return {

@@ -225,7 +225,9 @@ body {
   cursor: pointer;
 }
 .screen--central .screen__plane {
-  background: var(--home-shot) center / cover no-repeat;
+  /* contain (igual que el hero: imagen completa + barras --void) para que el encuadre
+     de la central calce EXACTO con el Inicio en el empalme del zoom */
+  background: var(--void) var(--home-shot) center / contain no-repeat;
 }
 .screen--central::after {
   content: '';
