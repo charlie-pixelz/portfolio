@@ -270,14 +270,15 @@ body {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 82%;
-  padding: 0.34em 0.3em;
+  width: 84%; /* ancho uniforme entre pantallas (todas ~igual de anchas) */
+  padding: 0.42em 0.3em;
   border: 2.5px solid var(--phosphor);
   border-radius: 10px;
   background: rgba(1, 12, 5, 0.42);
   font-family: var(--font-pixel);
   font-weight: 600;
-  font-size: clamp(0.72rem, 13.5cqw, 2.6rem);
+  font-size: clamp(0.5rem, 9cqw, 1.5rem); /* 1 línea, tamaño moderado (cabe "Proyectos con IA") */
+  white-space: nowrap;
   line-height: 1.02;
   letter-spacing: 0.02em;
   text-align: center;

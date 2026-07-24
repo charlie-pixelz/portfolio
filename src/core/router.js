@@ -14,7 +14,8 @@ const TITLE = {
   en: { home: null, projects: 'Projects — Charlie Pixelz' },
 }
 const DUR = 0.8
-const OVERSCAN = 1.05 // esconde los bordes recortados de la central al llenar el viewport
+const XF = 0.18 // crossfade que disimula el salto hero <-> central en el empalme del zoom
+const OVERSCAN = 1.02 // mínimo para tapar los bordes recortados sin agrandar la central
 
 export function initRouter({ lang, base }) {
   const hero = document.querySelector('.hero')
@@ -75,22 +76,27 @@ export function initRouter({ lang, base }) {
     if (view === 'projects') {
       // zoom-OUT: partimos con la central llenando el viewport (≈ Inicio) y nos alejamos
       room.hidden = false
+      dispatchEvent(new Event('cp:refit-screens')) // aplicar la perspectiva ahora que la sala es visible
       gsap.set(frame, { x: 0, y: 0, scale: 1 })
       const z = zoomToCentral()
       gsap.set(frame, { x: z.x, y: z.y, scale: z.scale })
-      hero.hidden = true // la sala (opaca) ya cubre el hero
+      // crossfade hero -> central (mismo encuadre) y recién después empezar a alejar
+      gsap.set(room, { opacity: 0 })
+      gsap.to(room, { opacity: 1, duration: XF, onComplete: () => (hero.hidden = true) })
       gsap.to(frame, {
         x: 0,
         y: 0,
         scale: 1,
         duration: DUR,
+        delay: XF,
         ease: 'power3.inOut',
         onComplete: () => {
           busy = false
         },
       })
     } else {
-      // zoom-IN: acercamos hasta que la central llena el viewport, luego revelamos el hero vivo
+      // zoom-IN: acercamos hasta que la central llena el viewport, luego crossfade a hero vivo
+      hero.hidden = false // hero vivo listo detrás de la sala
       const z = zoomToCentral()
       gsap.to(frame, {
         x: z.x,
@@ -99,11 +105,17 @@ export function initRouter({ lang, base }) {
         duration: DUR,
         ease: 'power3.inOut',
         onComplete: () => {
-          hero.hidden = false
-          room.hidden = true
-          gsap.set(frame, { clearProps: 'transform' })
-          dispatchEvent(new Event('cp:refit-signs')) // la home estaba oculta: re-medir letreros
-          busy = false
+          gsap.to(room, {
+            opacity: 0,
+            duration: XF,
+            onComplete: () => {
+              room.hidden = true
+              gsap.set(room, { clearProps: 'opacity' })
+              gsap.set(frame, { clearProps: 'transform' })
+              dispatchEvent(new Event('cp:refit-signs')) // la home estaba oculta: re-medir letreros
+              busy = false
+            },
+          })
         },
       })
     }

@@ -79,4 +79,7 @@ export function initScreens() {
     },
     { passive: true },
   )
+  // el router lo dispara al abrir la sala: al cargar estaba oculta (offsetWidth=0)
+  // y la homografía no se podía medir. Aquí ya es visible.
+  addEventListener('cp:refit-screens', fit)
 }
