@@ -225,9 +225,9 @@ body {
   cursor: pointer;
 }
 .screen--central .screen__plane {
-  /* contain (igual que el hero: imagen completa + barras --void) para que el encuadre
-     de la central calce EXACTO con el Inicio en el empalme del zoom */
-  background: var(--void) var(--home-shot) center / contain no-repeat;
+  /* contain (igual que el hero) para que el encuadre calce EXACTO con el Inicio en el zoom.
+     Barras transparentes: dejan ver el monitor oscuro real de la foto → se camuflan solas. */
+  background: var(--home-shot) center / contain no-repeat;
 }
 .screen--central::after {
   content: '';
