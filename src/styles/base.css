@@ -186,6 +186,9 @@ body {
 .hero[hidden] {
   display: none;
 }
+.room {
+  overflow: hidden; /* el zoom escala el frame por encima del viewport */
+}
 .room__frame {
   position: absolute;
   inset: 0;
@@ -193,30 +196,80 @@ body {
   width: min(100vw, calc(100vh * 2400 / 1344));
   aspect-ratio: 2400 / 1344;
   background: var(--room-bg) center / cover no-repeat;
+  transform-origin: 0 0; /* el router zoomea sobre este frame */
+  will-change: transform;
 }
-/* cada pantalla: textura de callejón recortada al polígono del monitor (clip-path inline) + etiqueta */
+/* cada pantalla = su propia caja (bbox del monitor) con copia COMPLETA del callejón,
+   recortada al polígono del monitor (clip-path local, inline). Así cada una queda nítida. */
 .screen {
-  position: absolute;
-  inset: 0;
+  position: absolute; /* left/top/width/height inline por pantalla */
   background: var(--alley) center / cover no-repeat;
-  filter: brightness(0.8) saturate(1.05) contrast(1.05);
+  filter: brightness(0.82) saturate(1.05) contrast(1.05);
+  container-type: size; /* cqw/cqh: la etiqueta escala con la pantalla */
   text-decoration: none;
+  overflow: hidden;
 }
 .screen[data-cat] {
   cursor: pointer;
 }
+/* central: proyecta el Inicio (imagen limpia del hero); clic = volver con zoom-in */
+.screen--central {
+  background: var(--home-shot) center / cover no-repeat;
+  filter: contrast(1.04) saturate(1.05);
+  cursor: pointer;
+}
+.screen--central::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--home-shot) center / cover no-repeat;
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  animation: homeGlitch 7s steps(2, end) infinite; /* parpadeo breve y ocasional (WCAG: no full-screen, <3/s) */
+}
+.screen--central:hover,
+.screen--central:focus-visible {
+  filter: contrast(1.08) saturate(1.12) brightness(1.06);
+  outline: none;
+}
+@keyframes homeGlitch {
+  0%,
+  90%,
+  100% {
+    opacity: 0;
+    transform: none;
+    filter: none;
+  }
+  91% {
+    opacity: 0.5;
+    transform: translateX(-3px);
+    filter: hue-rotate(35deg);
+  }
+  94% {
+    opacity: 0.35;
+    transform: translateX(4px);
+  }
+  97% {
+    opacity: 0;
+  }
+}
+/* etiqueta de categoría: ancha, alta y con la MISMA perspectiva (skewY) del monitor */
 .screen__label {
   position: absolute;
-  transform: translate(-50%, -50%);
-  padding: 0.3em 0.55em;
-  border: 3px solid var(--phosphor);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) skewY(var(--sk, 0deg));
+  width: 82%;
+  padding: 0.34em 0.3em;
+  border: 2.5px solid var(--phosphor);
   border-radius: 10px;
-  background: rgba(1, 12, 5, 0.45);
+  background: rgba(1, 12, 5, 0.42);
   font-family: var(--font-pixel);
   font-weight: 600;
-  font-size: clamp(0.5rem, 1.5cqw, 1.15rem);
-  line-height: 1.05;
-  letter-spacing: 0.04em;
+  font-size: clamp(0.72rem, 13.5cqw, 2.6rem);
+  line-height: 1.02;
+  letter-spacing: 0.02em;
   text-align: center;
   color: var(--phosphor);
   text-shadow: 0 0 8px var(--phosphor-glow);
@@ -224,9 +277,6 @@ body {
     0 0 8px var(--phosphor-glow),
     inset 0 0 12px var(--phosphor-glow);
   pointer-events: none; /* el click lo recibe el .screen recortado */
-}
-.room__frame {
-  container-type: inline-size; /* cqw para escalar las etiquetas con la sala */
 }
 /* hover: la pantalla se aviva + glitch cromático sostenido en la etiqueta */
 .screen[data-cat]:hover,
@@ -253,80 +303,9 @@ body {
       2px 0 rgba(242, 2, 205, 0.7);
   }
 }
-/* botón "volver" (flecha-U), estilo terminal verde, esquina superior derecha */
-.room__back {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 4;
-  width: 2.6rem;
-  height: 2.6rem;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--phosphor-dim);
-  border-radius: 6px;
-  background: rgba(1, 12, 5, 0.55);
-  color: var(--phosphor);
-  font-size: 1.4rem;
-  line-height: 1;
-  cursor: pointer;
-  text-shadow: 0 0 8px var(--phosphor-glow);
-  transition:
-    background 0.2s ease,
-    box-shadow 0.2s ease;
-}
-.room__back:hover,
-.room__back:focus-visible {
-  background: var(--phosphor);
-  color: var(--void);
-  box-shadow: 0 0 16px var(--phosphor-glow);
-  outline: none;
-}
 /* la sala NO lleva CRT global (ART_DIR §6.3): solo las pantallas */
 body.route-room .crt {
   display: none;
-}
-/* transición glitch entre vistas del router */
-@keyframes routeOut {
-  0% {
-    opacity: 1;
-    transform: translateX(0);
-    filter: none;
-  }
-  40% {
-    transform: translateX(-8px);
-    filter: hue-rotate(20deg) saturate(1.5);
-    clip-path: inset(12% 0 28% 0);
-  }
-  70% {
-    transform: translateX(10px);
-    clip-path: inset(42% 0 8% 0);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.02);
-  }
-}
-@keyframes routeIn {
-  0% {
-    opacity: 0;
-    transform: translateX(10px);
-  }
-  50% {
-    opacity: 1;
-    filter: hue-rotate(-20deg) saturate(1.4);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-    filter: none;
-  }
-}
-.route-out {
-  animation: routeOut 0.3s steps(5, end) forwards;
-}
-.route-in {
-  animation: routeIn 0.36s steps(6, end) forwards;
 }
 
 /* letreros de neón: el <a> ES el marco + label + área táctil */

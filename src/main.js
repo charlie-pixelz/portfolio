@@ -34,9 +34,10 @@ document.documentElement.dataset.tier = quality.tier
 stage.init()
 pointer.init()
 if (lang) {
-  // texturas de la sala de Proyectos (fondo de monitores + callejón de las pantallas)
+  // texturas de la sala de Proyectos (fondo de monitores + callejón de las pantallas + Inicio en la central)
   document.documentElement.style.setProperty('--room-bg', `url(${roomBgUrl})`)
   document.documentElement.style.setProperty('--alley', `url(${alleyUrl})`)
+  document.documentElement.style.setProperty('--home-shot', `url(${heroCleanUrl})`)
   initHero(heroBgUrl, heroCharUrl) // hero multi-capa en las home /es/ /en/
   initSigns() // iguala el ancho de las sílabas de los letreros
   initCharlie() // glitch/swap por carácter del lockup al hover (P2.B)
