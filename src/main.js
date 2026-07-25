@@ -16,6 +16,7 @@ import { initHero } from './gl/hero.js'
 import { initPreloader } from './gl/preloader.js'
 import { initSigns } from './ui/signs.js'
 import { initScreens } from './ui/screens.js'
+import { initCentralHome } from './ui/central-home.js'
 import { initCharlie } from './ui/charlie.js'
 import { initRouter } from './core/router.js'
 import { initLenis } from './core/lenis.js'
@@ -42,6 +43,7 @@ if (lang) {
   initHero(heroBgUrl, heroCharUrl) // hero multi-capa en las home /es/ /en/
   initSigns() // iguala el ancho de las sílabas de los letreros
   initCharlie() // glitch/swap por carácter del lockup al hover (P2.B)
+  initCentralHome() // Punto 4: réplica del Home en la pantalla central con "Proyectos" activo
   const calMode = new URLSearchParams(location.search).has('cal') // capturar antes de que el router limpie la URL
   initScreens() // proyecta el contenido de cada pantalla sobre el plano en perspectiva del monitor
   initRouter({ lang, base: '/portfolio/' }) // Inicio ↔ Proyectos (client-side)

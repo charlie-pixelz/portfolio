@@ -131,15 +131,18 @@ body {
   container-type: inline-size; /* cqw = ancho del hero ≈ ancho del personaje */
 }
 
-/* lockup a altura del pecho, dentro del hero (más abajo; -20% respecto al tamaño previo) */
-.hero .brand {
+/* lockup a altura del pecho, dentro del hero (más abajo; -20% respecto al tamaño previo).
+   .central-home = réplica del Home dentro de la pantalla central (Punto 4): mismas reglas. */
+.hero .brand,
+.central-home .brand {
   position: absolute;
   left: 50%;
   top: 75%;
   transform: translate(-50%, -50%);
   text-align: center;
 }
-.hero .brand__charlie {
+.hero .brand__charlie,
+.central-home .brand__charlie {
   font-size: clamp(2.08rem, 8.8cqw, 7.6rem); /* relativo al ancho del hero ≈ personaje */
   color: #fff; /* CHARLIE en blanco */
   text-shadow:
@@ -147,7 +150,8 @@ body {
     0 0 42px rgba(255, 84, 200, 0.45); /* glow violeta + magenta */
 }
 /* glitch por carácter (P2.B): --gx separa R/B (aberración cromática); .is-swap cambia la fuente */
-.hero .brand__charlie .ch {
+.hero .brand__charlie .ch,
+.central-home .brand__charlie .ch {
   --gx: 0em;
   display: inline-block;
   position: relative;
@@ -167,12 +171,33 @@ body {
   font-size: 0.68em; /* +15% respecto al 0.59 previo */
   letter-spacing: -0.1em; /* menos compresión (más espacio entre letras) */
 }
-.hero .brand__pixelz {
+.hero .brand__pixelz,
+.central-home .brand__pixelz {
   font-size: clamp(0.88rem, 4.16cqw, 2.4rem);
   color: var(--cyan); /* PIXELZ en cian (contraste con CHARLIE blanco) */
   text-shadow:
     0 0 12px rgba(75, 223, 244, 0.65),
     0 0 30px rgba(75, 223, 244, 0.4); /* glow cian */
+}
+/* Punto 4: caja réplica del Home dentro de la pantalla central. Mismo aspecto (1.638) que
+   el hero y que la imagen limpia → los letreros y el lockup caen en las MISMAS posiciones,
+   y en el empalme del zoom cruzan con el Home real (Proyectos → Inicio). */
+.central-home {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 100%;
+  aspect-ratio: 4602 / 2810;
+  container-type: inline-size; /* cqw = ancho de la réplica (letreros + lockup escalan con ella) */
+  pointer-events: none;
+}
+/* los letreros de la réplica son chicos: padding/borde/radio proporcionales (cqw), si no
+   el padding fijo se come todo el ancho y fitSigns no tiene dónde poner el texto */
+.central-home .sign {
+  padding: 1.6cqw;
+  border-width: 1.2px;
+  border-radius: 1.4cqw;
 }
 
 /* ── P3: sala de Proyectos (monitores) + router ── */
