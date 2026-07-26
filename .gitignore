@@ -29,3 +29,6 @@ assets/efecto-galeria/*_Apagadas.png
 # Fuentes pesadas de proyectos (los optimizados sí se versionan)
 assets/proyectos/**/_src/
 assets/*.docx
+
+# Artefactos de Playwright (verificación en navegador)
+.playwright-mcp/

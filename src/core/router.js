@@ -6,6 +6,7 @@
 
 import { gsap } from 'gsap'
 import { quality } from './quality.js'
+import { flattenScreen } from '../ui/screens.js'
 
 const SEG = { es: 'proyectos', en: 'projects' }
 const CATS = ['ilustracion', 'motion', 'web', 'ia']
@@ -32,6 +33,26 @@ export function initRouter({ lang, base, category }) {
   const reduced = quality.reducedMotion
 
   gsap.set(frame, { transformOrigin: '0 0' })
+
+  // overlay de "cambio de canal" (glitch de TV) — se crea una vez y lo comparte todo el router
+  const glitchEl =
+    document.querySelector('.tv-glitch') ||
+    (() => {
+      const d = document.createElement('div')
+      d.className = 'tv-glitch'
+      d.setAttribute('aria-hidden', 'true')
+      document.body.appendChild(d)
+      return d
+    })()
+  let glitchTimer
+  const tvGlitch = () => {
+    if (reduced) return
+    glitchEl.classList.remove('is-on')
+    void glitchEl.offsetWidth // reinicia la animación
+    glitchEl.classList.add('is-on')
+    clearTimeout(glitchTimer)
+    glitchTimer = setTimeout(() => glitchEl.classList.remove('is-on'), 340)
+  }
 
   let current = 'home'
   let busy = false
@@ -85,9 +106,14 @@ export function initRouter({ lang, base, category }) {
     setState(view, push)
 
     if (toCat) {
-      // Proyectos → Categoría: zoom-in al monitor, crossfade al billboard, encendido
+      // Proyectos → Categoría: zoom-in al monitor, ENDEREZANDO la pantalla (t 0→1), crossfade
+      // al billboard, encendido. Al llegar arriba la pantalla ya es frontal → el cambio de
+      // perspectiva a la galería deja de ser brusco.
       category.prepare(toCat)
       gsap.set(frame, { x: 0, y: 0, scale: 1 })
+      flattenScreen(toCat, 0)
+      const flat = { t: 0 }
+      gsap.to(flat, { t: 1, duration: DUR, ease: 'power3.inOut', onUpdate: () => flattenScreen(toCat, flat.t) })
       const z = zoomTo(catScreens[toCat], 'cover')
       gsap.to(frame, {
         x: z.x,
@@ -112,9 +138,13 @@ export function initRouter({ lang, base, category }) {
         },
       })
     } else if (fromCat && view === 'projects') {
-      // Categoría → Proyectos: crossfade billboard → sala (con el monitor llenando), zoom-out
+      // Categoría → Proyectos: glitch de "cambio de canal" (enmascara el salto de perspectiva),
+      // crossfade billboard → sala con el monitor FRONTAL, y zoom-out doblando la pantalla de
+      // vuelta a la perspectiva de la sala (t 1→0).
+      tvGlitch()
       room.hidden = false
       dispatchEvent(new Event('cp:refit-screens'))
+      flattenScreen(fromCat, 1) // parte frontal (calza con el encuadre de la galería)
       gsap.set(frame, { x: 0, y: 0, scale: 1 })
       const z = zoomTo(catScreens[fromCat], 'cover')
       gsap.set(frame, { x: z.x, y: z.y, scale: z.scale })
@@ -127,6 +157,8 @@ export function initRouter({ lang, base, category }) {
           category.reset()
         },
       })
+      const flat = { t: 1 }
+      gsap.to(flat, { t: 0, duration: DUR, delay: XF, ease: 'power3.inOut', onUpdate: () => flattenScreen(fromCat, flat.t) })
       gsap.to(frame, {
         x: 0,
         y: 0,

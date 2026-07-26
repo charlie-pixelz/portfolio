@@ -39,34 +39,58 @@ function projection(a1, b1, a2, b2, a3, b3, a4, b4, x1, y1, x2, y2, x3, y3, x4, 
   return mul(basis(x1, y1, x2, y2, x3, y3, x4, y4), adj(basis(a1, b1, a2, b2, a3, b3, a4, b4)))
 }
 
+// cuadrilátero del monitor (data-quad, en % de la caja) para cada categoría, cacheado
+const quads = {}
+const planeOf = {}
+
+// aplica la homografía a un plano, interpolando el cuadrilátero del monitor hacia el
+// rectángulo plano por t (0 = perspectiva de la sala · 1 = frontal, matriz identidad).
+function applyPlane(cat, t = 0) {
+  const plane = planeOf[cat]
+  const q = quads[cat]
+  if (!plane || !q) return
+  const w = plane.offsetWidth
+  const h = plane.offsetHeight
+  if (!w || !h) return // oculto → no medir
+  // rectángulo plano de la caja, en % (TL,TR,BR,BL)
+  const flat = [[0, 0], [100, 0], [100, 100], [0, 100]]
+  const lerp = (i) => [q[i][0] + (flat[i][0] - q[i][0]) * t, q[i][1] + (flat[i][1] - q[i][1]) * t]
+  const px = (i) => {
+    const p = lerp(i)
+    return [(p[0] / 100) * w, (p[1] / 100) * h]
+  }
+  const [tl, tr, br, bl] = [px(0), px(1), px(2), px(3)]
+  // fuente = rectángulo de la caja (TL,TR,BL,BR); destino = cuadrilátero interpolado
+  const m3 = projection(
+    0, 0, w, 0, 0, h, w, h,
+    tl[0], tl[1], tr[0], tr[1], bl[0], bl[1], br[0], br[1],
+  )
+  for (let i = 0; i < 9; i++) m3[i] /= m3[8]
+  const m = [m3[0], m3[3], 0, m3[6], m3[1], m3[4], 0, m3[7], 0, 0, 1, 0, m3[2], m3[5], 0, m3[8]]
+  plane.style.transform = 'matrix3d(' + m.map((n) => +n.toFixed(6)).join(',') + ')'
+}
+
+// el router la llama durante el zoom-in a categoría para "enderezar" la pantalla antes
+// del cambio a la galería (y al revés en el zoom-out).
+export function flattenScreen(cat, t) {
+  applyPlane(cat, t)
+}
+
 export function initScreens() {
   const screens = [...document.querySelectorAll('.screen[data-cat]')]
   if (!screens.length) return
 
-  const fit = () => {
-    screens.forEach((screen) => {
-      const plane = screen.querySelector('.screen__plane')
-      if (!plane) return
-      const w = plane.offsetWidth
-      const h = plane.offsetHeight
-      if (!w || !h) return // oculto → no medir
-      // data-quad = "TLx,TLy TRx,TRy BRx,BRy BLx,BLy" en % de la caja
-      const q = screen.dataset.quad
-        .trim()
-        .split(/\s+/)
-        .map((p) => p.split(',').map(Number))
-      const px = (i) => [(q[i][0] / 100) * w, (q[i][1] / 100) * h]
-      const [tl, tr, br, bl] = [px(0), px(1), px(2), px(3)]
-      // fuente = rectángulo de la caja (TL,TR,BL,BR); destino = cuadrilátero del monitor
-      const t = projection(
-        0, 0, w, 0, 0, h, w, h,
-        tl[0], tl[1], tr[0], tr[1], bl[0], bl[1], br[0], br[1],
-      )
-      for (let i = 0; i < 9; i++) t[i] /= t[8]
-      const m = [t[0], t[3], 0, t[6], t[1], t[4], 0, t[7], 0, 0, 1, 0, t[2], t[5], 0, t[8]]
-      plane.style.transform = 'matrix3d(' + m.map((n) => +n.toFixed(6)).join(',') + ')'
-    })
-  }
+  screens.forEach((screen) => {
+    const cat = screen.dataset.cat
+    planeOf[cat] = screen.querySelector('.screen__plane')
+    // data-quad = "TLx,TLy TRx,TRy BRx,BRy BLx,BLy" en % de la caja
+    quads[cat] = screen.dataset.quad
+      .trim()
+      .split(/\s+/)
+      .map((p) => p.split(',').map(Number))
+  })
+
+  const fit = () => screens.forEach((s) => applyPlane(s.dataset.cat, 0)) // t=0 → perspectiva de sala
 
   if (document.fonts?.ready) document.fonts.ready.then(fit)
   fit()

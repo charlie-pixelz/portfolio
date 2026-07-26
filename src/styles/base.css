@@ -157,6 +157,9 @@ body {
   position: relative;
   vertical-align: middle; /* pivota por el centro → el swap de fuente/tamaño no salta hacia arriba */
   will-change: transform;
+  /* las letras se mueven con el tween (y aleatorio); si reciben hover, el hit-test entra/sale en
+     bucle y dispara la animación infinita. El hover lo maneja la caja estable del lockup, no las letras. */
+  pointer-events: none;
   text-shadow:
     var(--gx) 0 rgba(75, 223, 244, 0.9),
     calc(-1 * var(--gx)) 0 rgba(255, 84, 200, 0.9),
@@ -363,8 +366,17 @@ body.route-room .crt {
   margin: auto;
   width: min(100vw, calc(100vh * 2534 / 1600));
   aspect-ratio: 2534 / 1600;
-  background: var(--cat-bg) center / cover no-repeat;
   container-type: inline-size; /* cqw: flechas/tipografía escalan con el billboard */
+}
+/* fondo del callejón en una capa aparte, con difuminado en los bordes L/R para que el corte
+   de la imagen contra el negro no se note (como el preloader/hero). No enmascara la UI. */
+.cat__stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--cat-bg) center / cover no-repeat;
+  -webkit-mask: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
+  mask: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%);
 }
 /* capa de luz (lámparas + lienzo iluminado). Se enciende animando opacity (category.js) */
 .cat__luces {
@@ -387,11 +399,34 @@ body.route-room .crt {
   overflow: hidden;
 }
 .cat__media {
-  max-width: 100%;
-  max-height: 100%;
+  /* absolute inset:0 → la caja del media ES la del lienzo (no la pista del grid, que crecía
+     con el aspecto del video y hacía desbordar los verticales). object-fit hace el letterbox. */
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* sobre el relleno */
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   display: block;
-  box-shadow: 0 0 24px rgba(0, 0, 0, 0.45);
+}
+/* recorte sutil opcional (it.fit:"cover") para obras que quedarían muy chicas en contain */
+.cat__media--cover {
+  object-fit: cover;
+}
+/* relleno de las zonas vacías del lienzo (obras que no llenan el marco horizontal) */
+.cat__fill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #05060b; /* fallback oscuro */
+}
+/* relleno "de la obra": el mismo medio en cover, borroso y atenuado, tapa el vacío */
+.cat__fill--media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.15);
+  filter: blur(16px) saturate(1.15) brightness(0.55);
 }
 /* flechas pixeladas de navegación, flanqueando el lienzo */
 .cat__arrow {
@@ -431,10 +466,21 @@ body.route-room .crt {
 /* caja de descripción, sobre la zona oscura bajo el lienzo */
 .cat__info {
   position: absolute;
-  left: 23%;
-  top: 72%;
-  width: 54%;
+  left: 22%;
+  top: 71.5%;
+  width: 56%;
+  box-sizing: border-box;
+  padding: 0.7em 1.1em 0.8em;
   color: rgba(232, 238, 242, 0.92);
+  /* recuadro verde con relleno negro 20% para mejorar la lectura (maqueta) */
+  border: 1.6px solid var(--phosphor-dim);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 0 12px var(--phosphor-glow),
+    inset 0 0 16px rgba(51, 255, 102, 0.06);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }
 .cat__meta {
   display: flex;
@@ -446,6 +492,9 @@ body.route-room .crt {
 .cat__title {
   font-family: var(--font-pixel);
   font-weight: 600;
+  /* ELGR 2 funde los elementos LED de Handjet → sin huecos entre filas (elimina las "rayas"
+     que aliasaban sobre algunas letras). Debe incluir 'wght' porque variation-settings lo resetea. */
+  font-variation-settings: 'wght' 600, 'ELGR' 2;
   font-size: clamp(0.85rem, 2.6cqw, 1.7rem);
   color: var(--phosphor);
   text-shadow: 0 0 10px var(--phosphor-glow);
@@ -480,21 +529,23 @@ body.route-room .crt {
 /* breadcrumb + volver (esquina superior izquierda, la reservada para navegación) */
 .cat__crumb {
   position: fixed;
-  top: 1rem;
-  left: 1rem;
+  top: 1.1rem;
+  left: 1.1rem;
   z-index: 5;
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.8rem;
 }
 .cat__back {
   font-family: var(--font-pixel);
-  font-size: 1rem;
+  font-variation-settings: 'wght' 500, 'ELGR' 2; /* sólido, sin huecos (ver .cat__title) */
+  font-size: 1.5rem; /* a la altura del título de cada obra */
+  line-height: 1;
   color: var(--phosphor);
   background: rgba(1, 12, 5, 0.55);
   border: 1.5px solid var(--phosphor-dim);
-  border-radius: 7px;
-  padding: 0.3em 0.75em;
+  border-radius: 8px;
+  padding: 0.28em 0.7em;
   cursor: pointer;
   text-shadow: 0 0 8px var(--phosphor-glow);
   transition:
@@ -510,13 +561,86 @@ body.route-room .crt {
 }
 .cat__name {
   font-family: var(--font-pixel);
-  font-size: 1.05rem;
+  font-variation-settings: 'wght' 500, 'ELGR' 2; /* sólido, sin huecos (ver .cat__title) */
+  font-size: 1.55rem;
+  line-height: 1;
   color: var(--phosphor);
   text-shadow: 0 0 10px var(--phosphor-glow);
+}
+/* botón de audio (solo obras con sonido): esquina inferior derecha del lienzo */
+.cat__mute {
+  position: absolute;
+  right: 16%;
+  top: 62%;
+  z-index: 4;
+  width: 3.4cqw;
+  height: 3.4cqw;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 1.5px solid var(--phosphor-dim);
+  border-radius: 8px;
+  background: rgba(1, 12, 5, 0.6) center / 55% no-repeat;
+  /* icono altavoz ON */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2333ff66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 5 6 9H2v6h4l5 4z'/%3E%3Cpath d='M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13'/%3E%3C/svg%3E");
+  cursor: pointer;
+  filter: drop-shadow(0 0 6px var(--phosphor-glow));
+  transition: box-shadow 0.2s ease;
+}
+.cat__mute.is-muted {
+  /* icono altavoz OFF (silenciado) */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2333ff66' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 5 6 9H2v6h4l5 4z'/%3E%3Cpath d='m23 9-6 6M17 9l6 6'/%3E%3C/svg%3E");
+}
+.cat__mute:hover,
+.cat__mute:focus-visible {
+  box-shadow: 0 0 14px var(--phosphor-glow);
+  outline: none;
 }
 /* la categoría no lleva CRT global (el billboard ya trae su textura); obras limpias */
 body.route-category .crt {
   display: none;
+}
+
+/* ── "Cambio de canal" (glitch de TV): enmascara el salto de perspectiva galería↔sala ── */
+.tv-glitch {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+}
+.tv-glitch.is-on {
+  animation: tvChange 0.34s steps(1, end) 1;
+}
+@keyframes tvChange {
+  /* franja de barrido + estática breve, sin strobe de pantalla completa (WCAG 2.3.1) */
+  0% {
+    opacity: 1;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.28)) 0 12% / 100% 10% no-repeat,
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.55) 0 2px, rgba(255, 255, 255, 0.12) 2px 4px);
+  }
+  35% {
+    opacity: 0.9;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.22)) 0 60% / 100% 14% no-repeat,
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.5) 0 2px, rgba(75, 223, 244, 0.14) 2px 4px);
+  }
+  70% {
+    opacity: 0.6;
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.18)) 0 88% / 100% 8% no-repeat,
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0 2px, rgba(242, 2, 205, 0.12) 2px 4px);
+  }
+  100% {
+    opacity: 0;
+    background: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-glitch.is-on {
+    animation: none;
+  }
 }
 
 /* letreros de neón: el <a> ES el marco + label + área táctil */

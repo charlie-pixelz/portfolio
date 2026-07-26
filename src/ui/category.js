@@ -38,32 +38,91 @@ export function initCategory({ lang }) {
   const nextBtn = el.querySelector('.cat__arrow--next')
   const reveal = [...el.querySelectorAll('.cat__reveal')] // flechas, caja, volver → aparecen tras el encendido
 
+  // botón de audio (solo obras con sonido). Se crea una vez; render() lo muestra/oculta.
+  const muteBtn = document.createElement('button')
+  muteBtn.className = 'cat__mute cat__reveal'
+  muteBtn.hidden = true
+  muteBtn.type = 'button'
+  el.querySelector('.cat__stage')?.appendChild(muteBtn)
+  reveal.push(muteBtn)
+  let currentMedia = null
+  const muteLabel = { es: { on: 'Silenciar', off: 'Activar sonido' }, en: { on: 'Mute', off: 'Unmute' } }
+  const setMuted = (m) => {
+    if (!currentMedia) return
+    currentMedia.muted = m
+    muteBtn.classList.toggle('is-muted', m)
+    muteBtn.setAttribute('aria-label', m ? muteLabel[lang].off : muteLabel[lang].on)
+  }
+  muteBtn.addEventListener('click', (e) => {
+    e.preventDefault()
+    setMuted(!currentMedia?.muted)
+    if (!currentMedia?.muted) currentMedia?.play?.().catch(() => {})
+  })
+
   let items = []
   let idx = 0
+
+  // construye un nodo de media (img/video); blur=true → copia decorativa para el relleno
+  const makeMedia = (it, blur) => {
+    let n
+    if (it.type === 'video') {
+      n = document.createElement('video')
+      n.src = urlFor(it.media)
+      n.muted = true
+      n.loop = true
+      n.autoplay = true
+      n.playsInline = true
+      n.setAttribute('playsinline', '')
+      n.play?.().catch(() => {})
+    } else {
+      n = document.createElement('img')
+      n.src = urlFor(it.media)
+      n.loading = 'lazy'
+    }
+    if (blur) n.setAttribute('aria-hidden', 'true')
+    else if (it.type === 'image') n.alt = it.title[lang]
+    return n
+  }
 
   const render = () => {
     const it = items[idx]
     if (!it) return
     canvas.querySelectorAll('video').forEach((v) => v.pause())
     canvas.textContent = ''
-    let node
-    if (it.type === 'video') {
-      node = document.createElement('video')
-      node.src = urlFor(it.media)
-      node.muted = true
-      node.loop = true
-      node.autoplay = true
-      node.playsInline = true
-      node.setAttribute('playsinline', '')
-      node.play?.().catch(() => {})
+
+    // relleno de las zonas vacías (obras que no calzan con el lienzo horizontal, p. ej. verticales):
+    // copia del mismo medio en "cover" borroso ("relleno de la obra"), o un color fijo (it.bg).
+    const heavy = quality.tier !== 'low'
+    if (it.bg) {
+      const fill = document.createElement('div')
+      fill.className = 'cat__fill'
+      fill.style.background = it.bg
+      canvas.appendChild(fill)
+    } else if (it.type === 'image' || heavy) {
+      const fill = makeMedia(it, true)
+      fill.className = 'cat__fill cat__fill--media'
+      canvas.appendChild(fill)
     } else {
-      node = document.createElement('img')
-      node.src = urlFor(it.media)
-      node.alt = it.title[lang]
-      node.loading = 'lazy'
+      const fill = document.createElement('div')
+      fill.className = 'cat__fill' // fallback oscuro (CSS) en tier bajo con video
+      canvas.appendChild(fill)
     }
-    node.className = 'cat__media'
-    canvas.appendChild(node)
+
+    // media principal (contain por defecto; it.fit:"cover" para un recorte sutil)
+    const media = makeMedia(it, false)
+    media.className = 'cat__media'
+    if (it.fit === 'cover') media.classList.add('cat__media--cover')
+    canvas.appendChild(media)
+    currentMedia = it.type === 'video' ? media : null
+
+    // botón de audio solo si la obra tiene sonido (it.sound)
+    if (it.type === 'video' && it.sound) {
+      muteBtn.hidden = false
+      setMuted(true)
+    } else {
+      muteBtn.hidden = true
+    }
+
     titleEl.textContent = it.title[lang]
     descEl.textContent = it.desc[lang]
     tagsEl.innerHTML = it.tags.map((t) => `<li>${t}</li>`).join('')
