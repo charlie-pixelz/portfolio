@@ -346,6 +346,179 @@ body.route-room .crt {
   display: none;
 }
 
+/* ── P3.B: página de categoría (billboard del callejón) ── */
+.category {
+  position: fixed;
+  inset: 0;
+  z-index: 2; /* sobre la sala (z1) */
+  background: #04050a;
+  overflow: hidden;
+}
+.category[hidden] {
+  display: none;
+}
+.cat__stage {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100vw, calc(100vh * 2534 / 1600));
+  aspect-ratio: 2534 / 1600;
+  background: var(--cat-bg) center / cover no-repeat;
+  container-type: inline-size; /* cqw: flechas/tipografía escalan con el billboard */
+}
+/* capa de luz (lámparas + lienzo iluminado). Se enciende animando opacity (category.js) */
+.cat__luces {
+  position: absolute;
+  inset: 0;
+  background: var(--luces) center / cover no-repeat;
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+}
+/* lienzo del letrero: las obras viven aquí dentro (contain, nunca desbordan) */
+.cat__canvas {
+  position: absolute;
+  left: 23.4%;
+  top: 19.4%;
+  width: 53.2%;
+  height: 49.2%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.cat__media {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.45);
+}
+/* flechas pixeladas de navegación, flanqueando el lienzo */
+.cat__arrow {
+  position: absolute;
+  top: 44%;
+  transform: translateY(-50%);
+  width: 4.2cqw;
+  height: 4.2cqw;
+  padding: 0;
+  border: 0;
+  background: center / contain no-repeat;
+  cursor: pointer;
+  filter: drop-shadow(0 0 6px var(--phosphor-glow));
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease;
+}
+.cat__arrow:hover,
+.cat__arrow:focus-visible {
+  filter: drop-shadow(0 0 12px var(--phosphor-glow)) brightness(1.2);
+  outline: none;
+}
+.cat__arrow--prev {
+  left: 15%;
+  background-image: url('../../assets/icons/icon_arrow-left.png');
+}
+.cat__arrow--prev:hover {
+  transform: translateY(-50%) translateX(-3px);
+}
+.cat__arrow--next {
+  right: 15%;
+  background-image: url('../../assets/icons/icon_arrow-right.png');
+}
+.cat__arrow--next:hover {
+  transform: translateY(-50%) translateX(3px);
+}
+/* caja de descripción, sobre la zona oscura bajo el lienzo */
+.cat__info {
+  position: absolute;
+  left: 23%;
+  top: 72%;
+  width: 54%;
+  color: rgba(232, 238, 242, 0.92);
+}
+.cat__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1em;
+  margin-bottom: 0.35em;
+}
+.cat__title {
+  font-family: var(--font-pixel);
+  font-weight: 600;
+  font-size: clamp(0.85rem, 2.6cqw, 1.7rem);
+  color: var(--phosphor);
+  text-shadow: 0 0 10px var(--phosphor-glow);
+  line-height: 1.05;
+}
+.cat__counter {
+  flex: none;
+  font-family: var(--font-pixel);
+  font-size: clamp(0.6rem, 1.5cqw, 1rem);
+  color: var(--phosphor-dim);
+}
+.cat__desc {
+  font-size: clamp(0.68rem, 1.42cqw, 1rem);
+  line-height: 1.4;
+  margin: 0 0 0.6em;
+}
+.cat__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  list-style: none;
+}
+.cat__tags li {
+  font-family: var(--font-pixel);
+  font-size: clamp(0.55rem, 1.25cqw, 0.85rem);
+  color: var(--phosphor);
+  border: 1px solid var(--phosphor-dim);
+  border-radius: 5px;
+  padding: 0.08em 0.55em;
+  background: rgba(1, 12, 5, 0.35);
+}
+/* breadcrumb + volver (esquina superior izquierda, la reservada para navegación) */
+.cat__crumb {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.cat__back {
+  font-family: var(--font-pixel);
+  font-size: 1rem;
+  color: var(--phosphor);
+  background: rgba(1, 12, 5, 0.55);
+  border: 1.5px solid var(--phosphor-dim);
+  border-radius: 7px;
+  padding: 0.3em 0.75em;
+  cursor: pointer;
+  text-shadow: 0 0 8px var(--phosphor-glow);
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.cat__back:hover,
+.cat__back:focus-visible {
+  background: var(--phosphor);
+  color: var(--void);
+  box-shadow: 0 0 16px var(--phosphor-glow);
+  outline: none;
+}
+.cat__name {
+  font-family: var(--font-pixel);
+  font-size: 1.05rem;
+  color: var(--phosphor);
+  text-shadow: 0 0 10px var(--phosphor-glow);
+}
+/* la categoría no lleva CRT global (el billboard ya trae su textura); obras limpias */
+body.route-category .crt {
+  display: none;
+}
+
 /* letreros de neón: el <a> ES el marco + label + área táctil */
 .neon-nav {
   position: absolute;

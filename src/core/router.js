@@ -1,29 +1,33 @@
-// P3.A — Mini-router client-side dentro de cada idioma (Inicio ↔ Proyectos).
-// History API (URLs limpias /es/proyectos/ · /en/projects/), back/forward, document.title.
-// Transición = ZOOM anidado (estilo unseen.co): el Inicio "vive" en la pantalla central de la sala.
-//   Inicio → Proyectos = zoom-OUT (la cámara se aleja y descubre la sala de monitores).
-//   Proyectos → Inicio = zoom-IN sobre la pantalla central (que proyecta el Inicio).
-// reduced-motion → corte directo (a11y). Páginas HTML reales por ruta (gate F5) = siguiente paso.
+// P3 — Mini-router client-side dentro de cada idioma (Inicio ↔ Proyectos ↔ Categoría).
+// History API (URLs limpias), back/forward, document.title. Transiciones = ZOOM anidado:
+//   Inicio → Proyectos = zoom-OUT (descubre la sala).      Proyectos → Inicio = zoom-IN a la central.
+//   Proyectos → Categoría = zoom-IN al monitor + billboard. Categoría → Proyectos = zoom-OUT.
+// reduced-motion → corte directo (a11y).
 
 import { gsap } from 'gsap'
 import { quality } from './quality.js'
 
 const SEG = { es: 'proyectos', en: 'projects' }
+const CATS = ['ilustracion', 'motion', 'web', 'ia']
 const TITLE = {
   es: { home: null, projects: 'Proyectos — Charlie Pixelz' },
   en: { home: null, projects: 'Projects — Charlie Pixelz' },
 }
 const DUR = 0.8
-const XF = 0.18 // crossfade que disimula el salto hero <-> central en el empalme del zoom
+const XF = 0.18
 
-export function initRouter({ lang, base }) {
+export function initRouter({ lang, base, category }) {
   const hero = document.querySelector('.hero')
   const room = document.querySelector('.room')
   const frame = room && room.querySelector('.room__frame')
   const central = room && room.querySelector('.screen--central')
   if (!hero || !room || !frame || !central) return
 
+  const catScreens = {}
+  CATS.forEach((c) => (catScreens[c] = room.querySelector(`.screen[data-cat="${c}"]`)))
+
   const url = { home: `${base}${lang}/`, projects: `${base}${lang}/${SEG[lang]}/` }
+  const catUrl = (c) => `${base}${lang}/${SEG[lang]}/${c}/`
   TITLE[lang].home = document.title
   const reduced = quality.reducedMotion
 
@@ -32,57 +36,115 @@ export function initRouter({ lang, base }) {
   let current = 'home'
   let busy = false
 
-  // Transform que lleva la pantalla central a cubrir el viewport (= Inicio a pantalla completa).
-  // Requiere que el frame esté en identidad al medir.
-  const zoomToCentral = () => {
+  // transform que lleva un elemento (pantalla) a llenar el viewport. contain=min (encaje
+  // exacto, para la central); cover=max (llenar, para monitores de categoría).
+  const zoomTo = (el, mode) => {
     const fr = frame.getBoundingClientRect()
-    const cr = central.getBoundingClientRect()
+    const cr = el.getBoundingClientRect()
     const vw = window.innerWidth
     const vh = window.innerHeight
-    // CONTAIN (min, no max): mete la caja central dentro del viewport igual que el hero
-    // "contiene" su imagen (todas las imágenes del hero son 2400×1465 y la caja central
-    // tiene ese mismo aspecto), así el encuadre calza EXACTO y no se ve más grande.
-    const scale = Math.min(vw / cr.width, vh / cr.height)
-    const lx = cr.x + cr.width / 2 - fr.x // centro de la central en coords locales del frame
+    const scale = mode === 'cover' ? Math.max(vw / cr.width, vh / cr.height) * 1.02 : Math.min(vw / cr.width, vh / cr.height)
+    const lx = cr.x + cr.width / 2 - fr.x
     const ly = cr.y + cr.height / 2 - fr.y
-    return {
-      scale,
-      x: vw / 2 - fr.x - scale * lx,
-      y: vh / 2 - fr.y - scale * ly,
-    }
+    return { scale, x: vw / 2 - fr.x - scale * lx, y: vh / 2 - fr.y - scale * ly }
   }
 
+  const catOf = (view) => (view.startsWith('cat:') ? view.slice(4) : null)
+
   const setState = (view, push) => {
-    if (push) history.pushState({ view }, '', url[view])
-    document.title = TITLE[lang][view] || TITLE[lang].home
+    const c = catOf(view)
+    const u = c ? catUrl(c) : url[view]
+    if (push) history.pushState({ view }, '', u)
+    document.title = c ? `${category.catTitle(c)} — Charlie Pixelz` : TITLE[lang][view] || TITLE[lang].home
     document.body.classList.toggle('route-room', view === 'projects')
+    document.body.classList.toggle('route-category', !!c)
     current = view
+  }
+
+  const applyInstant = (view, push) => {
+    const c = catOf(view)
+    room.hidden = view !== 'projects'
+    hero.hidden = view !== 'home'
+    category.el.hidden = !c
+    if (c) {
+      category.prepare(c)
+      category.lightOn()
+    }
+    gsap.set(frame, { clearProps: 'transform' })
+    setState(view, push)
+    if (view === 'home') dispatchEvent(new Event('cp:refit-signs'))
   }
 
   const go = (view, push) => {
     if (view === current || busy) return
-
-    if (reduced) {
-      // corte directo, sin zoom
-      room.hidden = view !== 'projects'
-      hero.hidden = view === 'projects'
-      gsap.set(frame, { clearProps: 'transform' })
-      setState(view, push)
-      if (view === 'home') dispatchEvent(new Event('cp:refit-signs'))
-      return
-    }
+    if (reduced) return applyInstant(view, push)
 
     busy = true
+    const toCat = catOf(view)
+    const fromCat = catOf(current)
     setState(view, push)
 
-    if (view === 'projects') {
-      // zoom-OUT: partimos con la central llenando el viewport (≈ Inicio) y nos alejamos
-      room.hidden = false
-      dispatchEvent(new Event('cp:refit-screens')) // aplicar la perspectiva ahora que la sala es visible
+    if (toCat) {
+      // Proyectos → Categoría: zoom-in al monitor, crossfade al billboard, encendido
+      category.prepare(toCat)
       gsap.set(frame, { x: 0, y: 0, scale: 1 })
-      const z = zoomToCentral()
+      const z = zoomTo(catScreens[toCat], 'cover')
+      gsap.to(frame, {
+        x: z.x,
+        y: z.y,
+        scale: z.scale,
+        duration: DUR,
+        ease: 'power3.inOut',
+        onComplete: () => {
+          category.el.hidden = false
+          gsap.set(category.el, { opacity: 0 })
+          gsap.to(category.el, {
+            opacity: 1,
+            duration: XF,
+            onComplete: () => {
+              room.hidden = true
+              gsap.set(frame, { clearProps: 'transform' })
+              gsap.set(category.el, { clearProps: 'opacity' })
+              category.lightOn()
+              busy = false
+            },
+          })
+        },
+      })
+    } else if (fromCat && view === 'projects') {
+      // Categoría → Proyectos: crossfade billboard → sala (con el monitor llenando), zoom-out
+      room.hidden = false
+      dispatchEvent(new Event('cp:refit-screens'))
+      gsap.set(frame, { x: 0, y: 0, scale: 1 })
+      const z = zoomTo(catScreens[fromCat], 'cover')
       gsap.set(frame, { x: z.x, y: z.y, scale: z.scale })
-      // crossfade hero -> central (mismo encuadre) y recién después empezar a alejar
+      gsap.set(room, { opacity: 0 })
+      gsap.to(room, {
+        opacity: 1,
+        duration: XF,
+        onComplete: () => {
+          category.el.hidden = true
+          category.reset()
+        },
+      })
+      gsap.to(frame, {
+        x: 0,
+        y: 0,
+        scale: 1,
+        duration: DUR,
+        delay: XF,
+        ease: 'power3.inOut',
+        onComplete: () => {
+          busy = false
+        },
+      })
+    } else if (view === 'projects') {
+      // Inicio → Proyectos: zoom-OUT
+      room.hidden = false
+      dispatchEvent(new Event('cp:refit-screens'))
+      gsap.set(frame, { x: 0, y: 0, scale: 1 })
+      const z = zoomTo(central, 'contain')
+      gsap.set(frame, { x: z.x, y: z.y, scale: z.scale })
       gsap.set(room, { opacity: 0 })
       gsap.to(room, { opacity: 1, duration: XF, onComplete: () => (hero.hidden = true) })
       gsap.to(frame, {
@@ -97,9 +159,9 @@ export function initRouter({ lang, base }) {
         },
       })
     } else {
-      // zoom-IN: acercamos hasta que la central llena el viewport, luego crossfade a hero vivo
-      hero.hidden = false // hero vivo listo detrás de la sala
-      const z = zoomToCentral()
+      // Proyectos → Inicio: zoom-IN a la central
+      hero.hidden = false
+      const z = zoomTo(central, 'contain')
       gsap.to(frame, {
         x: z.x,
         y: z.y,
@@ -114,7 +176,7 @@ export function initRouter({ lang, base }) {
               room.hidden = true
               gsap.set(room, { clearProps: 'opacity' })
               gsap.set(frame, { clearProps: 'transform' })
-              dispatchEvent(new Event('cp:refit-signs')) // la home estaba oculta: re-medir letreros
+              dispatchEvent(new Event('cp:refit-signs'))
               busy = false
             },
           })
@@ -123,15 +185,29 @@ export function initRouter({ lang, base }) {
     }
   }
 
+  // letreros/botones con ruta explícita (Proyectos, Volver, central=Inicio)
   document.querySelectorAll('[data-route]').forEach((node) =>
     node.addEventListener('click', (e) => {
       e.preventDefault()
       go(node.dataset.route, true)
     }),
   )
+  // monitores de categoría → su página
+  CATS.forEach((c) => {
+    const s = catScreens[c]
+    if (s) s.addEventListener('click', (e) => {
+      e.preventDefault()
+      go('cat:' + c, true)
+    })
+  })
 
   window.addEventListener('popstate', (e) => {
-    const view = (e.state && e.state.view) || (location.pathname.includes(`/${SEG[lang]}`) ? 'projects' : 'home')
+    let view = e.state && e.state.view
+    if (!view) {
+      const p = location.pathname
+      const cat = CATS.find((c) => p.includes(`/${SEG[lang]}/${c}`))
+      view = cat ? 'cat:' + cat : p.includes(`/${SEG[lang]}`) ? 'projects' : 'home'
+    }
     go(view, false)
   })
 

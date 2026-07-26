@@ -34,6 +34,23 @@
         <a class="screen screen--central" data-route="home" href="#" aria-label="Volver a Inicio" style="left: 35.59%; top: 37.72%; width: 29.12%; height: 29.16%; clip-path: polygon(0.14% 0.00%, 100.00% 0.45%, 99.11% 98.99%, 0.00% 100.00%)"><span class="screen__plane"></span></a>
       </div>
     </section>
+    <section class="category" hidden aria-label="Categoría">
+      <div class="cat__stage">
+        <div class="cat__canvas"></div>
+        <div class="cat__luces" aria-hidden="true"></div>
+        <button class="cat__arrow cat__arrow--prev cat__reveal" aria-label="Obra anterior"></button>
+        <button class="cat__arrow cat__arrow--next cat__reveal" aria-label="Obra siguiente"></button>
+        <div class="cat__info cat__reveal">
+          <div class="cat__meta"><h2 class="cat__title"></h2><span class="cat__counter"></span></div>
+          <p class="cat__desc"></p>
+          <ul class="cat__tags"></ul>
+        </div>
+      </div>
+      <div class="cat__crumb">
+        <button class="cat__back cat__reveal" data-route="projects" aria-label="Volver a Proyectos">‹ Proyectos</button>
+        <span class="cat__name"></span>
+      </div>
+    </section>
     <nav class="lang lang--corner" aria-label="Idioma">
       <a href="../es/" data-lang="es" aria-current="true">ESP</a>
       <a href="../en/" data-lang="en">ENG</a>

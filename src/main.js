@@ -8,6 +8,8 @@ import heroCharUrl from '../assets/upscale/hero_character_2400w.webp'
 import heroCleanUrl from '../assets/upscale/hero_desktop_clean_2400w.webp'
 import roomBgUrl from '../assets/upscale/proyectos_desktop_2400w.webp'
 import alleyUrl from '../assets/upscale/pantalla_callejon_1536w.webp'
+import catBgUrl from '../assets/upscale/categoria_desktop_2534w.webp'
+import lucesUrl from '../assets/efecto-galeria/Categoria_Desktop_Luces.png'
 import { ticker } from './core/ticker.js'
 import { quality } from './core/quality.js'
 import { pointer } from './core/pointer.js'
@@ -17,6 +19,7 @@ import { initPreloader } from './gl/preloader.js'
 import { initSigns } from './ui/signs.js'
 import { initScreens } from './ui/screens.js'
 import { initCentralHome } from './ui/central-home.js'
+import { initCategory } from './ui/category.js'
 import { initCharlie } from './ui/charlie.js'
 import { initRouter } from './core/router.js'
 import { initLenis } from './core/lenis.js'
@@ -40,21 +43,20 @@ if (lang) {
   document.documentElement.style.setProperty('--room-bg', `url(${roomBgUrl})`)
   document.documentElement.style.setProperty('--alley', `url(${alleyUrl})`)
   document.documentElement.style.setProperty('--home-shot', `url(${heroCleanUrl})`)
+  document.documentElement.style.setProperty('--cat-bg', `url(${catBgUrl})`)
+  document.documentElement.style.setProperty('--luces', `url(${lucesUrl})`)
   initHero(heroBgUrl, heroCharUrl) // hero multi-capa en las home /es/ /en/
   initSigns() // iguala el ancho de las sílabas de los letreros
   initCharlie() // glitch/swap por carácter del lockup al hover (P2.B)
   initCentralHome() // Punto 4: réplica del Home en la pantalla central con "Proyectos" activo
   const calMode = new URLSearchParams(location.search).has('cal') // capturar antes de que el router limpie la URL
   initScreens() // proyecta el contenido de cada pantalla sobre el plano en perspectiva del monitor
-  initRouter({ lang, base: '/portfolio/' }) // Inicio ↔ Proyectos (client-side)
+  const category = initCategory({ lang }) // P3.B: página de categoría (billboard + galería)
+  initRouter({ lang, base: '/portfolio/', category }) // Inicio ↔ Proyectos ↔ Categoría (client-side)
   // modo calibración de pantallas (dev): /es/?cal → arrastrar esquinas al vidrio real
   if (calMode) {
     import('./ui/calibrate.js').then((m) => m.initCalibrate())
   }
-  // MVP: click de categoría aún sin página de destino (zoom-in es el siguiente paso)
-  document
-    .querySelectorAll('.screen[data-cat]')
-    .forEach((s) => s.addEventListener('click', (e) => e.preventDefault()))
 } else {
   initPreloader({ sceneUrl: heroCleanUrl, preloadUrls: [heroBgUrl, heroCharUrl] }) // raíz = preloader
 }
