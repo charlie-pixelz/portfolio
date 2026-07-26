@@ -390,13 +390,15 @@ body.route-room .crt {
 /* lienzo del letrero: las obras viven aquí dentro (contain, nunca desbordan) */
 .cat__canvas {
   position: absolute;
-  left: 23.4%;
-  top: 19.4%;
-  width: 53.2%;
-  height: 49.2%;
-  display: grid;
-  place-items: center;
+  /* marco del lienzo calibrado por Charlie (?calcat, navegador real) */
+  left: 23.8%;
+  top: 20.1%;
+  width: 52.6%;
+  height: 49.4%;
   overflow: hidden;
+  /* stacking context propio: contiene los z-index de media/relleno y deja que la luz de los
+     focos (.cat__luces, screen) caiga SOBRE las obras en vez de quedar debajo de ellas */
+  isolation: isolate;
 }
 .cat__media {
   /* absolute inset:0 → la caja del media ES la del lienzo (no la pista del grid, que crecía

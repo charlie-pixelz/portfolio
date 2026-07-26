@@ -45,6 +45,7 @@
     {
       "media": "motion-1.mp4",
       "type": "video",
+      "sound": true,
       "title": { "es": "Post de campaña para RRSS", "en": "Social media campaign post" },
       "desc": {
         "es": "Esta pieza se creó para promocionar la campaña de Black Friday con el objetivo de mejorar la conversión y el alcance de la comunicación a una mayor cantidad de usuarios.",
@@ -75,6 +76,7 @@
     {
       "media": "motion-4.mp4",
       "type": "video",
+      "sound": true,
       "title": { "es": "Animación de pieza promocional", "en": "Promotional piece animation" },
       "desc": {
         "es": "Se diseñó tanto el logotipo como las visuales clave de la campaña de Cyberday, luego se creó esta pieza animada para promocionar tanto en ads como en Youtube.",
@@ -159,6 +161,7 @@
     {
       "media": "ia-4.mp4",
       "type": "video",
+      "sound": true,
       "title": { "es": "Pieza promocional para ads", "en": "Promotional piece for ads" },
       "desc": {
         "es": "Para esta pieza se utilizó la IA generativa (Kling 3.0) sobre una imagen trabajada desde Photoshop. El resultado final fue compuesto en Illustrator y animado en After Effects. Es la prueba final de un proceso que utiliza prácticamente una herramienta de cada disciplina que manejo.",

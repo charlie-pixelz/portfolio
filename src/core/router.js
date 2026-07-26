@@ -171,7 +171,10 @@ export function initRouter({ lang, base, category }) {
         },
       })
     } else if (view === 'projects') {
-      // Inicio → Proyectos: zoom-OUT
+      // Inicio → Proyectos: zoom-OUT. Glitch de "cambio de canal" en el empalme: la central es
+      // una captura y el hero real usa tamaños en rem → el lockup/letreros calzan casi, no exacto;
+      // el glitch enmascara ese salto y hace la transición entre pantallas más inmersiva.
+      tvGlitch()
       room.hidden = false
       dispatchEvent(new Event('cp:refit-screens'))
       gsap.set(frame, { x: 0, y: 0, scale: 1 })
@@ -201,6 +204,7 @@ export function initRouter({ lang, base, category }) {
         duration: DUR,
         ease: 'power3.inOut',
         onComplete: () => {
+          tvGlitch() // enmascara el empalme captura-central → hero real (ver Inicio→Proyectos)
           gsap.to(room, {
             opacity: 0,
             duration: XF,
