@@ -249,13 +249,17 @@ body {
 /* central: proyecta el Inicio (imagen limpia del hero); clic = volver con zoom-in.
    Sin homografía (el monitor central es casi frontal) para que el empalme del zoom quede limpio. */
 .screen--central {
-  filter: contrast(1.04) saturate(1.05);
+  /* "apagada" = tan oscura como las de categoría (antes iba sin brightness → se veía muy iluminada).
+     Al hover sube el brillo (abajo) → se "enciende". */
+  filter: brightness(0.78) contrast(1.04) saturate(1.05);
   cursor: pointer;
 }
 .screen--central .screen__plane {
   /* contain (igual que el hero) para que el encuadre calce EXACTO con el Inicio en el zoom.
-     Barras transparentes: dejan ver el monitor oscuro real de la foto → se camuflan solas. */
+     Fondo oscuro DETRÁS de la imagen: las franjas laterales quedan casi negras (como los bordes
+     del hero), en vez de dejar ver la foto del monitor (que era más clara). */
   background: var(--home-shot) center / contain no-repeat;
+  background-color: #050410;
 }
 .screen--central::after {
   content: '';
