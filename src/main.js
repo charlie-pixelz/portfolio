@@ -24,6 +24,7 @@ import { initSigns } from './ui/signs.js'
 import { initScreens } from './ui/screens.js'
 import { initCategory } from './ui/category.js'
 import { initBio } from './ui/bio.js'
+import { initContacto } from './ui/contacto.js'
 import { initCharlie } from './ui/charlie.js'
 import { initRouter } from './core/router.js'
 import { initLenis } from './core/lenis.js'
@@ -62,7 +63,8 @@ if (lang) {
   initScreens() // proyecta el contenido de cada pantalla sobre el plano en perspectiva del monitor
   const category = initCategory({ lang }) // P3.B: página de categoría (billboard + galería)
   const bio = initBio({ lang }) // P3.C: Biografía (modo rayos X)
-  initRouter({ lang, base: '/portfolio/', category, bio }) // Inicio ↔ Proyectos ↔ Categoría ↔ Biografía
+  const contacto = initContacto({ lang }) // P3.D: Contacto (azotea)
+  initRouter({ lang, base: '/portfolio/', category, bio, contacto }) // Inicio ↔ Proyectos ↔ Categoría ↔ Biografía ↔ Contacto
   // precalienta en idle los assets compartidos de la galería (billboard + luces) y la media de
   // los proyectos → la 1.ª apertura de categoría no arranca en negro (el preloader solo cubre el hero)
   const warmGallery = () => {

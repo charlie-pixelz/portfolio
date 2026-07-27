@@ -10,15 +10,16 @@ import { flattenScreen } from '../ui/screens.js'
 
 const SEG = { es: 'proyectos', en: 'projects' }
 const BIO = { es: 'biografia', en: 'biography' }
+const CONTACTO = { es: 'contacto', en: 'contact' }
 const CATS = ['ilustracion', 'motion', 'web', 'ia']
 const TITLE = {
-  es: { home: null, projects: 'Proyectos — Charlie Pixelz', bio: 'Biografía — Charlie Pixelz' },
-  en: { home: null, projects: 'Projects — Charlie Pixelz', bio: 'Biography — Charlie Pixelz' },
+  es: { home: null, projects: 'Proyectos — Charlie Pixelz', bio: 'Biografía — Charlie Pixelz', contacto: 'Contacto — Charlie Pixelz' },
+  en: { home: null, projects: 'Projects — Charlie Pixelz', bio: 'Biography — Charlie Pixelz', contacto: 'Contact — Charlie Pixelz' },
 }
 const DUR = 0.8
 const XF = 0.18
 
-export function initRouter({ lang, base, category, bio }) {
+export function initRouter({ lang, base, category, bio, contacto }) {
   const hero = document.querySelector('.hero')
   const room = document.querySelector('.room')
   const frame = room && room.querySelector('.room__frame')
@@ -28,7 +29,12 @@ export function initRouter({ lang, base, category, bio }) {
   const catScreens = {}
   CATS.forEach((c) => (catScreens[c] = room.querySelector(`.screen[data-cat="${c}"]`)))
 
-  const url = { home: `${base}${lang}/`, projects: `${base}${lang}/${SEG[lang]}/`, bio: `${base}${lang}/${BIO[lang]}/` }
+  const url = {
+    home: `${base}${lang}/`,
+    projects: `${base}${lang}/${SEG[lang]}/`,
+    bio: `${base}${lang}/${BIO[lang]}/`,
+    contacto: `${base}${lang}/${CONTACTO[lang]}/`,
+  }
   const catUrl = (c) => `${base}${lang}/${SEG[lang]}/${c}/`
   TITLE[lang].home = document.title
   const reduced = quality.reducedMotion
@@ -92,6 +98,7 @@ export function initRouter({ lang, base, category, bio }) {
     document.body.classList.toggle('route-room', view === 'projects')
     document.body.classList.toggle('route-category', !!c)
     document.body.classList.toggle('route-bio', view === 'bio')
+    document.body.classList.toggle('route-contacto', view === 'contacto')
     current = view
   }
 
@@ -101,6 +108,7 @@ export function initRouter({ lang, base, category, bio }) {
     hero.hidden = view !== 'home'
     category.el.hidden = !c
     if (bio) bio.el.hidden = view !== 'bio'
+    if (contacto) contacto.el.hidden = view !== 'contacto'
     if (c) {
       category.prepare(c)
       category.lightOn()
@@ -108,6 +116,11 @@ export function initRouter({ lang, base, category, bio }) {
     if (view === 'bio' && bio) {
       bio.prepare()
       bio.reveal()
+    }
+    if (view === 'contacto' && contacto) {
+      contacto.prepare()
+      contacto.enter()
+      contacto.reveal()
     }
     gsap.set(frame, { clearProps: 'transform' })
     setState(view, push)
@@ -122,9 +135,45 @@ export function initRouter({ lang, base, category, bio }) {
     const toCat = catOf(view)
     const fromCat = catOf(current)
     const wasBio = current === 'bio'
+    const wasContacto = current === 'contacto'
     setState(view, push)
 
-    if (view === 'bio') {
+    if (view === 'contacto') {
+      // Inicio → Contacto: BARRIDO a la azotea — la escena entra desde arriba (la "cámara sube")
+      contacto.el.hidden = false
+      contacto.prepare()
+      contacto.enter() // arranca el video durante el barrido
+      gsap.fromTo(
+        contacto.el,
+        { yPercent: -100 },
+        {
+          yPercent: 0,
+          duration: DUR,
+          ease: 'power2.inOut',
+          onComplete: () => {
+            hero.hidden = true
+            gsap.set(contacto.el, { clearProps: 'transform' })
+            contacto.reveal()
+            busy = false
+          },
+        },
+      )
+    } else if (wasContacto) {
+      // Contacto → Inicio: barrido inverso (la "cámara baja"), la azotea sale por arriba
+      hero.hidden = false
+      gsap.to(contacto.el, {
+        yPercent: -100,
+        duration: DUR,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          contacto.el.hidden = true
+          contacto.leave()
+          gsap.set(contacto.el, { clearProps: 'transform' })
+          dispatchEvent(new Event('cp:refit-signs'))
+          busy = false
+        },
+      })
+    } else if (view === 'bio') {
       // Inicio → Biografía: aparece la escena y el módulo dispara el encendido de rayos X + cajas
       bio.el.hidden = false
       bio.prepare()
@@ -292,7 +341,15 @@ export function initRouter({ lang, base, category, bio }) {
     if (!view) {
       const p = location.pathname
       const cat = CATS.find((c) => p.includes(`/${SEG[lang]}/${c}`))
-      view = cat ? 'cat:' + cat : p.includes(`/${SEG[lang]}`) ? 'projects' : p.includes(`/${BIO[lang]}`) ? 'bio' : 'home'
+      view = cat
+        ? 'cat:' + cat
+        : p.includes(`/${SEG[lang]}`)
+          ? 'projects'
+          : p.includes(`/${BIO[lang]}`)
+            ? 'bio'
+            : p.includes(`/${CONTACTO[lang]}`)
+              ? 'contacto'
+              : 'home'
     }
     go(view, false)
   })

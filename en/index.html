@@ -19,7 +19,7 @@
         <a class="sign violeta" style="--ry: 14deg; left: 5.9%; top: 15.7%; width: 11.2%; height: 43.6%" href="#" aria-current="page" aria-label="Home"><span class="label"><i>H</i><i>O</i><i>M</i><i>E</i></span></a>
         <a class="sign magenta" data-route="projects" style="--ry: 8deg; left: 26.6%; top: 3.8%; width: 11.1%; height: 32%" href="projects/" aria-label="Projects"><span class="label"><i>PRO</i><i>JEC</i><i>TS</i></span></a>
         <a class="sign violeta" data-route="bio" style="--ry: -8deg; left: 58.8%; top: 3%; width: 13.4%; height: 29.3%" href="biography/" aria-label="Biography"><span class="label"><i>BIO</i><i>GRA</i><i>PHY</i></span></a>
-        <a class="sign magenta" style="--ry: -14deg; left: 78.7%; top: 17.9%; width: 13.4%; height: 41.4%" href="#" aria-label="Contact me"><span class="label"><i>CON</i><i>TACT</i><i>ME</i></span></a>
+        <a class="sign magenta" data-route="contacto" style="--ry: -14deg; left: 78.7%; top: 17.9%; width: 13.4%; height: 41.4%" href="contact/" aria-label="Contact me"><span class="label"><i>CON</i><i>TACT</i><i>ME</i></span></a>
       </nav>
       <h1 class="brand">
         <span class="brand__charlie">Charlie</span><span class="brand__pixelz">PIXELZ</span>
@@ -68,6 +68,15 @@
         </aside>
       </div>
       <button class="bio__back" data-route="home" aria-label="Back to Home">‹ Home</button>
+    </section>
+    <section class="contacto" hidden aria-label="Contact">
+      <video class="contacto__video" muted loop playsinline preload="none" aria-hidden="true"></video>
+      <div class="contacto__panel">
+        <h2 class="contacto__title"></h2>
+        <p class="contacto__tagline"></p>
+        <ul class="contacto__links"></ul>
+      </div>
+      <a class="contacto__inicio" data-route="home" href="../" aria-label="Back to Home"></a>
     </section>
     <nav class="lang lang--corner" aria-label="Language">
       <a href="../es/" data-lang="es">ESP</a>

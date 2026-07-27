@@ -809,6 +809,133 @@ body.route-category .crt {
   outline: none;
 }
 
+/* ── P3.D: Contacto (azotea) — video loop + panel capa-OS + letrero "Inicio" horizontal ── */
+.contacto {
+  position: fixed;
+  inset: 0;
+  z-index: 2; /* sobre el hero durante el barrido; el CRT (z2, después en el DOM) la trata como pantalla */
+  background: #05060f;
+  overflow: hidden;
+}
+.contacto[hidden] {
+  display: none;
+}
+.contacto__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* panel de datos (capa OS fósforo), a la izquierda sobre la ciudad */
+.contacto__panel {
+  position: absolute;
+  left: 6%;
+  top: 27%;
+  width: min(38%, 30rem);
+  box-sizing: border-box;
+  padding: 1.4rem 1.6rem 1.6rem;
+  border: 1.5px solid var(--phosphor-dim);
+  border-radius: 12px;
+  background: rgba(1, 12, 5, 0.62);
+  box-shadow:
+    0 0 16px var(--phosphor-glow),
+    inset 0 0 20px rgba(51, 255, 102, 0.06);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  color: var(--phosphor);
+}
+.contacto__title {
+  font-family: var(--font-display);
+  font-variation-settings: 'ROND' 0, 'wght' 700;
+  font-size: clamp(1.6rem, 3.2vw, 2.6rem);
+  line-height: 1;
+  text-shadow: 0 0 10px var(--phosphor-glow);
+}
+.contacto__tagline {
+  margin: 0.45em 0 1.1em;
+  font-family: var(--font-body);
+  font-size: clamp(0.95rem, 1.5vw, 1.2rem);
+  color: #cdfdd8;
+}
+.contacto__links {
+  list-style: none;
+  display: grid;
+  gap: 0.7rem;
+}
+.contacto__link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12em;
+  padding: 0.55em 0.85em;
+  border: 1px solid var(--phosphor-dim);
+  border-radius: 8px;
+  text-decoration: none;
+  background: rgba(51, 255, 102, 0.04);
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+.contacto__link:hover,
+.contacto__link:focus-visible {
+  background: rgba(51, 255, 102, 0.14);
+  box-shadow: 0 0 14px var(--phosphor-glow);
+  transform: translateX(4px);
+  outline: none;
+}
+.contacto__link-label {
+  font-family: var(--font-pixel);
+  font-variation-settings: 'wght' 600, 'ELGR' 2;
+  font-size: clamp(0.85rem, 1.4vw, 1.05rem);
+  color: var(--phosphor);
+  text-shadow: 0 0 8px var(--phosphor-glow);
+}
+.contacto__link-value {
+  font-family: var(--font-body);
+  font-size: clamp(0.8rem, 1.2vw, 1rem);
+  color: #cdfdd8;
+  word-break: break-word;
+}
+/* letrero "Inicio" horizontal: apagado (gris) → enciende violeta al hover (como el del Home) */
+.contacto__inicio {
+  position: absolute;
+  left: 6%;
+  bottom: 9%;
+  z-index: 3;
+  font-family: var(--font-display);
+  font-variation-settings: 'ROND' 0, 'wght' 900;
+  font-size: clamp(1rem, 2.2vw, 1.7rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0.5em 1.5em;
+  color: var(--texto-off);
+  border: 2.5px solid var(--tube-off);
+  border-radius: 10px;
+  background: rgba(8, 3, 24, 0.4);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    text-shadow 0.25s ease;
+}
+.contacto__inicio:hover,
+.contacto__inicio:focus-visible {
+  color: #fff;
+  border-color: #fff;
+  box-shadow:
+    0 0 6px rgba(255, 255, 255, 0.4),
+    0 0 14px var(--sign-violeta),
+    0 0 38px var(--sign-violeta-halo);
+  text-shadow:
+    0 0 8px var(--sign-violeta),
+    0 0 22px var(--sign-violeta);
+  outline: none;
+}
+
 /* ── "Cambio de canal" (glitch de TV): enmascara el salto de perspectiva galería↔sala ── */
 .tv-glitch {
   position: fixed;
