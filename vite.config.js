@@ -9,6 +9,9 @@ export default defineConfig({
   appType: 'mpa',
   build: {
     outDir: 'dist',
+    // no inlinear íconos/imágenes chicas como base64: cargan aparte (y solo cuando se necesitan),
+    // sin inflar el JS principal (los íconos de Biografía pesaban ~19 KB gz dentro del bundle)
+    assetsInlineLimit: 1024,
     rollupOptions: {
       input: {
         root: resolve(import.meta.dirname, 'index.html'),

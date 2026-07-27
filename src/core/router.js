@@ -9,15 +9,16 @@ import { quality } from './quality.js'
 import { flattenScreen } from '../ui/screens.js'
 
 const SEG = { es: 'proyectos', en: 'projects' }
+const BIO = { es: 'biografia', en: 'biography' }
 const CATS = ['ilustracion', 'motion', 'web', 'ia']
 const TITLE = {
-  es: { home: null, projects: 'Proyectos — Charlie Pixelz' },
-  en: { home: null, projects: 'Projects — Charlie Pixelz' },
+  es: { home: null, projects: 'Proyectos — Charlie Pixelz', bio: 'Biografía — Charlie Pixelz' },
+  en: { home: null, projects: 'Projects — Charlie Pixelz', bio: 'Biography — Charlie Pixelz' },
 }
 const DUR = 0.8
 const XF = 0.18
 
-export function initRouter({ lang, base, category }) {
+export function initRouter({ lang, base, category, bio }) {
   const hero = document.querySelector('.hero')
   const room = document.querySelector('.room')
   const frame = room && room.querySelector('.room__frame')
@@ -27,7 +28,7 @@ export function initRouter({ lang, base, category }) {
   const catScreens = {}
   CATS.forEach((c) => (catScreens[c] = room.querySelector(`.screen[data-cat="${c}"]`)))
 
-  const url = { home: `${base}${lang}/`, projects: `${base}${lang}/${SEG[lang]}/` }
+  const url = { home: `${base}${lang}/`, projects: `${base}${lang}/${SEG[lang]}/`, bio: `${base}${lang}/${BIO[lang]}/` }
   const catUrl = (c) => `${base}${lang}/${SEG[lang]}/${c}/`
   TITLE[lang].home = document.title
   const reduced = quality.reducedMotion
@@ -90,6 +91,7 @@ export function initRouter({ lang, base, category }) {
     document.title = c ? `${category.catTitle(c)} — Charlie Pixelz` : TITLE[lang][view] || TITLE[lang].home
     document.body.classList.toggle('route-room', view === 'projects')
     document.body.classList.toggle('route-category', !!c)
+    document.body.classList.toggle('route-bio', view === 'bio')
     current = view
   }
 
@@ -98,9 +100,14 @@ export function initRouter({ lang, base, category }) {
     room.hidden = view !== 'projects'
     hero.hidden = view !== 'home'
     category.el.hidden = !c
+    if (bio) bio.el.hidden = view !== 'bio'
     if (c) {
       category.prepare(c)
       category.lightOn()
+    }
+    if (view === 'bio' && bio) {
+      bio.prepare()
+      bio.reveal()
     }
     gsap.set(frame, { clearProps: 'transform' })
     setState(view, push)
@@ -114,9 +121,39 @@ export function initRouter({ lang, base, category }) {
     busy = true
     const toCat = catOf(view)
     const fromCat = catOf(current)
+    const wasBio = current === 'bio'
     setState(view, push)
 
-    if (toCat) {
+    if (view === 'bio') {
+      // Inicio → Biografía: aparece la escena y el módulo dispara el encendido de rayos X + cajas
+      bio.el.hidden = false
+      bio.prepare()
+      gsap.set(bio.el, { opacity: 0 })
+      gsap.to(bio.el, {
+        opacity: 1,
+        duration: XF,
+        onComplete: () => {
+          hero.hidden = true
+          bio.reveal()
+          busy = false
+        },
+      })
+    } else if (wasBio) {
+      // Biografía → Inicio: apagar rayos X (fundido) y volver al hero
+      hero.hidden = false
+      gsap.to(bio.el, {
+        opacity: 0,
+        duration: XF * 1.6,
+        ease: 'power2.in',
+        onComplete: () => {
+          bio.el.hidden = true
+          bio.prepare()
+          gsap.set(bio.el, { clearProps: 'opacity' })
+          dispatchEvent(new Event('cp:refit-signs'))
+          busy = false
+        },
+      })
+    } else if (toCat) {
       // Proyectos → Categoría: zoom-in al monitor, ENDEREZANDO la pantalla (t 0→1), crossfade
       // al billboard, encendido. Al llegar arriba la pantalla ya es frontal → el cambio de
       // perspectiva a la galería deja de ser brusco.
@@ -255,7 +292,7 @@ export function initRouter({ lang, base, category }) {
     if (!view) {
       const p = location.pathname
       const cat = CATS.find((c) => p.includes(`/${SEG[lang]}/${c}`))
-      view = cat ? 'cat:' + cat : p.includes(`/${SEG[lang]}`) ? 'projects' : 'home'
+      view = cat ? 'cat:' + cat : p.includes(`/${SEG[lang]}`) ? 'projects' : p.includes(`/${BIO[lang]}`) ? 'bio' : 'home'
     }
     go(view, false)
   })

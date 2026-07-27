@@ -623,6 +623,192 @@ body.route-category .crt {
   display: none;
 }
 
+/* ── P3.C: Biografía (modo rayos X, capa OS fósforo) ── */
+.bio {
+  position: fixed;
+  inset: 0;
+  z-index: 1; /* como el hero; el CRT (z2) la trata como "pantalla" (ART_DIR §5) */
+  background: #000206;
+}
+.bio[hidden] {
+  display: none;
+}
+.bio__scene {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100vw, calc(100vh * 2400 / 1465));
+  aspect-ratio: 2400 / 1465;
+  container-type: inline-size; /* cqw: las cajas/tipografía escalan con la escena */
+}
+/* el esqueleto rayos-X va en ::before para poder "encenderlo" (flicker) sin afectar las cajas */
+.bio__scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--bio) center / cover no-repeat;
+  opacity: 0;
+}
+.bio__scene.is-on::before {
+  animation: bioXrayOn 1.3s steps(1, end) forwards;
+}
+/* encendido de tubo fluorescente: flicker duro e irregular (ADENDUM §4, WCAG: sin strobe pleno) */
+@keyframes bioXrayOn {
+  0% { opacity: 0; }
+  8% { opacity: 0.7; }
+  11% { opacity: 0.05; }
+  19% { opacity: 0.9; }
+  23% { opacity: 0.15; }
+  32% { opacity: 1; }
+  37% { opacity: 0.45; }
+  46% { opacity: 1; }
+  100% { opacity: 1; }
+}
+.bio__wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.bio__wire {
+  stroke: var(--phosphor);
+  stroke-width: 0.18;
+  opacity: 0;
+  filter: drop-shadow(0 0 2px var(--phosphor-glow));
+}
+.bio__node {
+  fill: var(--phosphor);
+  opacity: 0;
+  filter: drop-shadow(0 0 3px var(--phosphor-glow));
+}
+/* cajas capa-OS: marco fósforo, fondo oscuro translúcido */
+.bio__box {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 1.4cqw 1.6cqw;
+  border: 1.5px solid var(--phosphor-dim);
+  border-radius: 10px;
+  background: rgba(1, 12, 5, 0.6);
+  box-shadow:
+    0 0 14px var(--phosphor-glow),
+    inset 0 0 18px rgba(51, 255, 102, 0.06);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  color: var(--phosphor);
+}
+.bio__box--about { left: 3.5%; top: 29%; width: 28%; }
+.bio__box--tools { left: 68.5%; top: 8%; width: 28%; }
+.bio__box--skills { left: 68.5%; top: 55%; width: 28%; }
+.bio__title {
+  font-family: var(--font-display);
+  font-variation-settings: 'ROND' 0, 'wght' 700;
+  font-size: 2.3cqw;
+  line-height: 1.05;
+  margin-bottom: 0.6em;
+  text-shadow: 0 0 10px var(--phosphor-glow);
+}
+.bio__text {
+  font-family: var(--font-body);
+  font-size: 1.2cqw;
+  line-height: 1.5;
+  color: #cdfdd8; /* fósforo claro, AA sobre el fondo oscuro */
+}
+.bio__box-title {
+  font-family: var(--font-display);
+  font-variation-settings: 'ROND' 0, 'wght' 700;
+  font-size: 1.7cqw;
+  line-height: 1;
+  margin-bottom: 0.8em;
+  text-shadow: 0 0 8px var(--phosphor-glow);
+}
+/* herramientas: grilla de ícono + nombre */
+.bio__tools {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1cqw 0.6cqw;
+  list-style: none;
+}
+.bio__tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35em;
+  text-align: center;
+}
+.bio__tool-ico {
+  width: 3.4cqw;
+  height: 3.4cqw;
+  min-width: 30px;
+  min-height: 30px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px rgba(51, 255, 102, 0.25));
+}
+.bio__tool-name {
+  font-family: var(--font-pixel);
+  font-variation-settings: 'wght' 500, 'ELGR' 2;
+  font-size: 0.92cqw;
+  line-height: 1;
+  color: var(--phosphor);
+}
+/* habilidades: lista con viñeta fósforo */
+.bio__skills {
+  list-style: none;
+  display: grid;
+  gap: 0.55em;
+}
+.bio__skills li {
+  position: relative;
+  padding-left: 1.1em;
+  font-family: var(--font-body);
+  font-size: 1.12cqw;
+  line-height: 1.25;
+  color: #cdfdd8;
+}
+.bio__skills li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--phosphor);
+  text-shadow: 0 0 6px var(--phosphor-glow);
+}
+/* cursor de tipeo mientras se escribe */
+.is-typing::after {
+  content: '▋';
+  margin-left: 0.05em;
+  color: var(--phosphor);
+  animation: blink 1s steps(1, end) infinite;
+}
+/* botón Volver (esquina superior izquierda reservada), sobre el CRT */
+.bio__back {
+  position: fixed;
+  top: 1.1rem;
+  left: 1.1rem;
+  z-index: 5;
+  font-family: var(--font-pixel);
+  font-variation-settings: 'wght' 500, 'ELGR' 2;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--phosphor);
+  background: rgba(1, 12, 5, 0.55);
+  border: 1.5px solid var(--phosphor-dim);
+  border-radius: 8px;
+  padding: 0.28em 0.7em;
+  cursor: pointer;
+  text-shadow: 0 0 8px var(--phosphor-glow);
+  transition:
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.bio__back:hover,
+.bio__back:focus-visible {
+  background: var(--phosphor);
+  color: var(--void);
+  box-shadow: 0 0 16px var(--phosphor-glow);
+  outline: none;
+}
+
 /* ── "Cambio de canal" (glitch de TV): enmascara el salto de perspectiva galería↔sala ── */
 .tv-glitch {
   position: fixed;

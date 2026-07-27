@@ -13,6 +13,7 @@ import roomBgUrl from '../assets/upscale/proyectos_desktop_2400w.webp'
 import alleyUrl from '../assets/upscale/pantalla_callejon_1536w.webp'
 import catBgUrl from '../assets/upscale/categoria_desktop_2534w.webp'
 import lucesUrl from '../assets/efecto-galeria/Categoria_Desktop_Luces.png'
+import bioUrl from '../assets/upscale/bio_desktop_2400w.webp' // esqueleto rayos-X (Biografía)
 import { ticker } from './core/ticker.js'
 import { quality } from './core/quality.js'
 import { pointer } from './core/pointer.js'
@@ -22,6 +23,7 @@ import { initPreloader } from './gl/preloader.js'
 import { initSigns } from './ui/signs.js'
 import { initScreens } from './ui/screens.js'
 import { initCategory } from './ui/category.js'
+import { initBio } from './ui/bio.js'
 import { initCharlie } from './ui/charlie.js'
 import { initRouter } from './core/router.js'
 import { initLenis } from './core/lenis.js'
@@ -47,6 +49,7 @@ if (lang) {
   document.documentElement.style.setProperty('--home-shot', `url(${lang === 'en' ? homeShotEnUrl : homeShotEsUrl})`)
   document.documentElement.style.setProperty('--cat-bg', `url(${catBgUrl})`)
   document.documentElement.style.setProperty('--luces', `url(${lucesUrl})`)
+  document.documentElement.style.setProperty('--bio', `url(${bioUrl})`)
   initHero(heroBgUrl, heroCharUrl) // hero multi-capa en las home /es/ /en/
   initSigns() // iguala el ancho de las sílabas de los letreros
   initCharlie() // glitch/swap por carácter del lockup al hover (P2.B)
@@ -58,11 +61,12 @@ if (lang) {
   const calCatMode = params.has('calcat')
   initScreens() // proyecta el contenido de cada pantalla sobre el plano en perspectiva del monitor
   const category = initCategory({ lang }) // P3.B: página de categoría (billboard + galería)
-  initRouter({ lang, base: '/portfolio/', category }) // Inicio ↔ Proyectos ↔ Categoría (client-side)
+  const bio = initBio({ lang }) // P3.C: Biografía (modo rayos X)
+  initRouter({ lang, base: '/portfolio/', category, bio }) // Inicio ↔ Proyectos ↔ Categoría ↔ Biografía
   // precalienta en idle los assets compartidos de la galería (billboard + luces) y la media de
   // los proyectos → la 1.ª apertura de categoría no arranca en negro (el preloader solo cubre el hero)
   const warmGallery = () => {
-    ;[catBgUrl, lucesUrl].forEach((u) => {
+    ;[catBgUrl, lucesUrl, bioUrl].forEach((u) => {
       const im = new Image()
       im.src = u
     })

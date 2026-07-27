@@ -18,7 +18,7 @@
       <nav class="neon-nav" aria-label="Navegación">
         <a class="sign violeta" style="--ry: 14deg; left: 5.9%; top: 15.7%; width: 11.2%; height: 43.6%" href="#" aria-current="page" aria-label="Inicio"><span class="label"><i>IN</i><i>IC</i><i>IO</i></span></a>
         <a class="sign magenta" data-route="projects" style="--ry: 8deg; left: 26.6%; top: 3.8%; width: 11.1%; height: 32%" href="proyectos/" aria-label="Proyectos"><span class="label"><i>PRO</i><i>YEC</i><i>TOS</i></span></a>
-        <a class="sign violeta" style="--ry: -8deg; left: 58.8%; top: 3%; width: 13.4%; height: 29.3%" href="#" aria-label="Biografía"><span class="label"><i>BIO</i><i>GRA</i><i>FÍA</i></span></a>
+        <a class="sign violeta" data-route="bio" style="--ry: -8deg; left: 58.8%; top: 3%; width: 13.4%; height: 29.3%" href="biografia/" aria-label="Biografía"><span class="label"><i>BIO</i><i>GRA</i><i>FÍA</i></span></a>
         <a class="sign magenta" style="--ry: -14deg; left: 78.7%; top: 17.9%; width: 13.4%; height: 41.4%" href="#" aria-label="Contacto"><span class="label"><i>CON</i><i>TAC</i><i>TO</i></span></a>
       </nav>
       <h1 class="brand">
@@ -50,6 +50,24 @@
         <button class="cat__back cat__reveal" data-route="projects" aria-label="Volver a Proyectos">‹ Proyectos</button>
         <span class="cat__name"></span>
       </div>
+    </section>
+    <section class="bio" hidden aria-label="Biografía">
+      <div class="bio__scene">
+        <svg class="bio__wires" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <article class="bio__box bio__box--about" data-anchor="about">
+          <h2 class="bio__title"></h2>
+          <p class="bio__text"></p>
+        </article>
+        <aside class="bio__box bio__box--tools" data-anchor="tools">
+          <h3 class="bio__box-title"></h3>
+          <ul class="bio__tools"></ul>
+        </aside>
+        <aside class="bio__box bio__box--skills" data-anchor="skills">
+          <h3 class="bio__box-title"></h3>
+          <ul class="bio__skills"></ul>
+        </aside>
+      </div>
+      <button class="bio__back" data-route="home" aria-label="Volver a Inicio">‹ Inicio</button>
     </section>
     <nav class="lang lang--corner" aria-label="Idioma">
       <a href="../es/" data-lang="es" aria-current="true">ESP</a>
