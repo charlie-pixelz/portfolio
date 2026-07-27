@@ -85,9 +85,21 @@
         <span class="contacto__name">Contacto</span>
       </div>
     </section>
-    <nav class="lang lang--corner" aria-label="Idioma">
-      <a href="../es/" data-lang="es" aria-current="true">ESP</a>
-      <a href="../en/" data-lang="en">ENG</a>
+    <nav class="pipboy" aria-label="Menú">
+      <button class="pipboy__toggle" type="button" aria-expanded="false" aria-controls="pipboy-panel" aria-label="Abrir menú"></button>
+      <div class="pipboy__panel os-frame" id="pipboy-panel" role="menu" aria-hidden="true">
+        <p class="pipboy__title">MENÚ</p>
+        <ul class="pipboy__nav">
+          <li role="none"><a class="pipboy__item" role="menuitem" data-route="home" href="/portfolio/es/">Inicio</a></li>
+          <li role="none"><a class="pipboy__item" role="menuitem" data-route="projects" href="/portfolio/es/proyectos/">Proyectos</a></li>
+          <li role="none"><a class="pipboy__item" role="menuitem" data-route="bio" href="/portfolio/es/biografia/">Biografía</a></li>
+          <li role="none"><a class="pipboy__item" role="menuitem" data-route="contacto" href="/portfolio/es/contacto/">Contacto</a></li>
+        </ul>
+        <div class="pipboy__lang" aria-label="Idioma">
+          <a href="/portfolio/es/" data-lang="es" aria-current="true">ESP</a>
+          <a href="/portfolio/en/" data-lang="en">ENG</a>
+        </div>
+      </div>
     </nav>
     <div class="crt" aria-hidden="true"></div>
   </body>

@@ -25,6 +25,7 @@ import { initScreens } from './ui/screens.js'
 import { initCategory } from './ui/category.js'
 import { initBio } from './ui/bio.js'
 import { initContacto } from './ui/contacto.js'
+import { initMenu } from './ui/menu.js'
 import { initCharlie } from './ui/charlie.js'
 import { initRouter } from './core/router.js'
 import { initLenis } from './core/lenis.js'
@@ -65,6 +66,7 @@ if (lang) {
   const bio = initBio({ lang }) // P3.C: Biografía (modo rayos X)
   const contacto = initContacto({ lang }) // P3.D: Contacto (azotea)
   initRouter({ lang, base: '/portfolio/', category, bio, contacto }) // Inicio ↔ Proyectos ↔ Categoría ↔ Biografía ↔ Contacto
+  initMenu() // menú Pip-Boy global (botón esq. sup. der. → panel de navegación + idioma)
   // precalienta en idle los assets compartidos de la galería (billboard + luces) y la media de
   // los proyectos → la 1.ª apertura de categoría no arranca en negro (el preloader solo cubre el hero)
   const warmGallery = () => {
@@ -87,7 +89,7 @@ if (lang) {
     const nav = document.querySelector('.hero .neon-nav')
     nav?.querySelectorAll('.sign').forEach((s) => s.removeAttribute('aria-current'))
     nav?.querySelector('[data-route="projects"]')?.setAttribute('aria-current', 'page')
-    document.querySelector('.lang--corner')?.style.setProperty('display', 'none')
+    document.querySelector('.pipboy')?.style.setProperty('display', 'none')
     document.querySelector('.crt')?.style.setProperty('display', 'none')
   }
 } else {
