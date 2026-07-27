@@ -409,11 +409,12 @@ body.route-room .crt {
 /* lienzo del letrero: las obras viven aquí dentro (contain, nunca desbordan) */
 .cat__canvas {
   position: absolute;
-  /* marco del lienzo calibrado por Charlie (?calcat, navegador real) */
-  left: 23.8%;
+  /* cara del letrero detectada con precisión sobre categoria_desktop (borde interno del marco):
+     el lienzo calza exacto con la zona gris → las obras no se salen ni dejan ver el borde */
+  left: 23.5%;
   top: 20.1%;
-  width: 52.6%;
-  height: 49.4%;
+  width: 53%;
+  height: 49.3%;
   overflow: hidden;
   /* stacking context propio: contiene los z-index de media/relleno y deja que la luz de los
      focos (.cat__luces, screen) caiga SOBRE las obras en vez de quedar debajo de ellas */

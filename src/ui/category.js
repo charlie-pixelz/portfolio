@@ -55,8 +55,13 @@ export function initCategory({ lang }) {
   }
   muteBtn.addEventListener('click', (e) => {
     e.preventDefault()
-    setMuted(!currentMedia?.muted)
-    if (!currentMedia?.muted) currentMedia?.play?.().catch(() => {})
+    const wasMuted = currentMedia?.muted
+    setMuted(!wasMuted)
+    if (wasMuted && currentMedia) {
+      // al activar el sonido, reinicia la pieza desde el principio
+      currentMedia.currentTime = 0
+      currentMedia.play?.().catch(() => {})
+    }
   })
 
   let items = []
