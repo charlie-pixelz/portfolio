@@ -14,13 +14,13 @@ const TOOLS = [
   ['Illustrator', 'icon_Illustrator.png'],
   ['Photoshop', 'icon_Photoshop.png'],
   ['After Effects', 'icon_AfterEffects.png'],
-  ['Premiere', 'icon_Premiere.png'],
+  ['Premiere Pro', 'icon_Premiere.png'],
   ['Figma', 'icon_Figma.png'],
-  ['Adobe XD', 'icon_AdobeXd.png'],
+  ['Adobe Xd', 'icon_AdobeXd.png'],
   ['Dreamweaver', 'icon_Dreamweaver.png'],
   ['Claude', 'icon_Claude.png'],
   ['Higgsfield', 'icon_Higgsfield.png'],
-  ['Kling', 'icon_Kling.png'],
+  ['Kling AI', 'icon_Kling.png'],
   ['Magnific', 'icon_Magnific.png'],
 ]
 
@@ -69,8 +69,9 @@ export function initBio({ lang }) {
   const skillsUl = el.querySelector('.bio__skills')
   const boxes = [...el.querySelectorAll('.bio__box')]
 
-  // puntos del esqueleto (en % de la escena) desde donde "sale" cada caja + su cable
-  const ANCHORS = { about: [35, 57], tools: [65, 44], skills: [59, 82] }
+  // zonas del esqueleto (en % de la escena) a las que apunta cada cable (ref. maqueta):
+  // ¿Quién es? → cuello · Herramientas → cabeza · Habilidades → hombro derecho (del personaje)
+  const ANCHORS = { about: [50, 41], tools: [50, 26], skills: [40, 54] }
 
   // texto estático (títulos de caja + nombres de herramientas no cambian por idioma)
   toolsTitleEl.textContent = c.toolsTitle
@@ -81,34 +82,43 @@ export function initBio({ lang }) {
   ).join('')
   skillsUl.innerHTML = c.skills.map((s) => `<li>${s}</li>`).join('')
 
-  // dibuja los cables conectores (SVG, coords en % vía viewBox 0..100)
+  // dibuja los cables conectores como líneas ORTOGONALES delgadas (sin círculo en el extremo),
+  // que apuntan a zonas concretas del esqueleto. SVG con viewBox 0..100 (x e y independientes).
   const drawWires = () => {
     wires.innerHTML = ''
+    const sr = scene.getBoundingClientRect()
     boxes.forEach((box) => {
       const key = box.dataset.anchor
       const a = ANCHORS[key]
       if (!a) return
       const br = box.getBoundingClientRect()
-      const sr = scene.getBoundingClientRect()
-      // punto de la caja más cercano al esqueleto (borde interior, centro vertical)
-      const bx = key === 'about' ? ((br.right - sr.left) / sr.width) * 100 : ((br.left - sr.left) / sr.width) * 100
-      const by = ((br.top + br.height / 2 - sr.top) / sr.height) * 100
-      const ns = 'http://www.w3.org/2000/svg'
-      const line = document.createElementNS(ns, 'line')
-      line.setAttribute('x1', a[0]); line.setAttribute('y1', a[1])
-      line.setAttribute('x2', bx); line.setAttribute('y2', by)
+      const boxTop = ((br.top - sr.top) / sr.height) * 100
+      const boxBottom = ((br.bottom - sr.top) / sr.height) * 100
+      const leftX = ((br.left - sr.left) / sr.width) * 100
+      const rightX = ((br.right - sr.left) / sr.width) * 100
+      const exitLeft = key !== 'about' // about mira al esqueleto por su derecha; el resto por la izquierda
+      let pts
+      if (a[1] < boxTop) {
+        // objetivo por encima de la caja (Habilidades → hombro): sale por ARRIBA, sube y va al objetivo
+        const ex = exitLeft ? leftX + (rightX - leftX) * 0.16 : rightX - (rightX - leftX) * 0.16
+        pts = `${ex.toFixed(2)},${boxTop.toFixed(2)} ${ex.toFixed(2)},${a[1]} ${a[0]},${a[1]}`
+      } else {
+        // objetivo a la altura de la caja: sale por el LATERAL, va horizontal y baja/sube al objetivo
+        const ex = exitLeft ? leftX : rightX
+        const ey = Math.min(Math.max(a[1], boxTop + 5), boxBottom - 5)
+        pts = `${ex.toFixed(2)},${ey.toFixed(2)} ${a[0]},${ey.toFixed(2)} ${a[0]},${a[1]}`
+      }
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
+      line.setAttribute('points', pts)
+      line.setAttribute('fill', 'none')
       line.setAttribute('class', 'bio__wire')
       line.dataset.for = key
-      const dot = document.createElementNS(ns, 'circle')
-      dot.setAttribute('cx', a[0]); dot.setAttribute('cy', a[1]); dot.setAttribute('r', 0.6)
-      dot.setAttribute('class', 'bio__node')
-      dot.dataset.for = key
-      wires.append(line, dot)
+      wires.append(line)
     })
   }
 
-  // efecto "escritura de teclado": escribe text en el , con cursor mientras dura
-  const typeInto = (node, text, dur) => {
+  // efecto "escritura de teclado". keepCursor → la barra de input sigue parpadeando al terminar.
+  const typeInto = (node, text, dur, keepCursor = false) => {
     node.textContent = ''
     node.classList.add('is-typing')
     const o = { n: 0 }
@@ -119,7 +129,7 @@ export function initBio({ lang }) {
       onUpdate: () => (node.textContent = text.slice(0, Math.round(o.n))),
       onComplete: () => {
         node.textContent = text
-        node.classList.remove('is-typing')
+        if (!keepCursor) node.classList.remove('is-typing')
       },
     })
   }
@@ -128,6 +138,8 @@ export function initBio({ lang }) {
   const prepare = () => {
     titleEl.textContent = ''
     textEl.textContent = ''
+    titleEl.classList.remove('is-typing')
+    textEl.classList.remove('is-typing')
     gsap.set(boxes, { opacity: 0 })
     gsap.set(el.querySelectorAll('.bio__tool'), { opacity: 0 })
     gsap.set(el.querySelectorAll('.bio__skills li'), { opacity: 0 })
@@ -138,42 +150,54 @@ export function initBio({ lang }) {
 
   // secuencia completa de encendido + cajas + tipeo
   const reveal = () => {
+    // rellena el texto para medir la altura REAL de las cajas (la de About crece con el párrafo)
+    // y dibujar los cables al punto correcto → luego se vacía para el tipeo.
+    titleEl.textContent = c.title
+    textEl.textContent = c.about
     drawWires()
+    const wireEls = [...wires.querySelectorAll('.bio__wire')]
     if (quality.reducedMotion) {
-      titleEl.textContent = c.title
-      textEl.textContent = c.about
       gsap.set(boxes, { opacity: 1, x: 0, y: 0, scale: 1 })
       gsap.set(['.bio__tool', '.bio__skills li'], { opacity: 1 })
-      if (wires) gsap.set([...wires.children], { opacity: 1 })
+      wireEls.forEach((w) => (w.style.strokeDasharray = 'none'))
+      gsap.set(wireEls, { opacity: 1 })
       return
     }
+    titleEl.textContent = ''
+    textEl.textContent = ''
     // encendido de la máquina de rayos X (flicker CSS)
-    scene?.classList.remove('is-on')
+    scene?.classList.remove('is-on', 'is-off')
     void scene?.offsetWidth
     scene?.classList.add('is-on')
 
-    const tl = gsap.timeline({ delay: 0.9 }) // arranca al asentarse el flicker
+    // prepara el "trazo" de cada cable: dasharray = longitud → se dibuja animando el offset a 0
+    wireEls.forEach((w) => {
+      const len = w.getTotalLength ? w.getTotalLength() : 60
+      w.style.strokeDasharray = len
+      w.style.strokeDashoffset = len
+      w.style.opacity = 1
+    })
+
+    const tl = gsap.timeline({ delay: 0.7 }) // arranca al asentarse el flicker (antes 0.9)
     boxes.forEach((box) => {
       const a = ANCHORS[box.dataset.anchor] || [50, 50]
       const sr = scene.getBoundingClientRect()
       const br = box.getBoundingClientRect()
-      // desplazamiento inicial: desde el punto del esqueleto hacia la posición de reposo
+      // desplazamiento inicial: desde la zona del esqueleto hacia la posición de reposo
       const fromX = ((a[0] / 100) * sr.width + sr.left) - (br.left + br.width / 2)
       const fromY = ((a[1] / 100) * sr.height + sr.top) - (br.top + br.height / 2)
       const wire = wires.querySelector(`.bio__wire[data-for="${box.dataset.anchor}"]`)
-      const dot = wires.querySelector(`.bio__node[data-for="${box.dataset.anchor}"]`)
       tl.fromTo(
         box,
-        { opacity: 0, x: fromX * 0.7, y: fromY * 0.7, scale: 0.5 },
+        { opacity: 0, x: fromX * 0.6, y: fromY * 0.6, scale: 0.5 },
         { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.4)' },
         '<0.12',
       )
-      if (dot) tl.to(dot, { opacity: 1, duration: 0.15 }, '<')
-      if (wire) tl.to(wire, { opacity: 1, duration: 0.3 }, '<0.05')
+      if (wire) tl.to(wire, { strokeDashoffset: 0, duration: 0.45, ease: 'none' }, '<0.05') // se dibuja
     })
-    // tipeo del título + párrafo (caja about) — ritmo pausado, se ve la barra de input
+    // tipeo del título + párrafo (caja about) — pausado; el párrafo conserva la barra parpadeando
     tl.add(() => typeInto(titleEl, c.title, 1.2), '>-0.1')
-    tl.add(() => typeInto(textEl, c.about, 3.8), '>0.2')
+    tl.add(() => typeInto(textEl, c.about, 3.8, true), '>0.2')
     // herramientas: pop de íconos escalonado, luego su nombre
     tl.to('.bio__tool', { opacity: 1, scale: 1, duration: 0.32, ease: 'back.out(2)', stagger: 0.06, startAt: { scale: 0.3 } }, '<0.1')
     // habilidades: entran en cascada

@@ -85,15 +85,17 @@ export function initRouter({ lang, base, category, bio, contacto }) {
       home.forEach((n) => (n.style.filter = f))
       contacto.el.style.filter = f
     }
-    gsap.to(b, { v: 6, duration: DUR / 2, yoyo: true, repeat: 1, ease: 'power1.inOut', onUpdate: applyBlur })
-    gsap.fromTo(home, { yPercent: entering ? 0 : 100 }, { yPercent: entering ? 100 : 0, duration: DUR, ease: 'power2.in' })
+    // blur de movimiento marcado que pulsa a mitad del barrido (sensación de "pasar rápido")
+    gsap.to(b, { v: 14, duration: DUR / 2, yoyo: true, repeat: 1, ease: 'power2.inOut', onUpdate: applyBlur })
+    // ease con arranque suave y remate rápido → "latigazo" de cámara (misma duración, se siente más veloz)
+    gsap.fromTo(home, { yPercent: entering ? 0 : 100 }, { yPercent: entering ? 100 : 0, duration: DUR, ease: 'power3.in' })
     gsap.fromTo(
       contacto.el,
       { yPercent: entering ? -100 : 0 },
       {
         yPercent: entering ? 0 : -100,
         duration: DUR,
-        ease: 'power2.in',
+        ease: 'power3.in',
         onComplete: () => {
           home.forEach((n) => {
             n.style.filter = ''
@@ -202,8 +204,8 @@ export function initRouter({ lang, base, category, bio, contacto }) {
       gsap.set(bio.el, { opacity: 0 })
       gsap.to(bio.el, {
         opacity: 1,
-        duration: 0.35,
-        delay: 0.3, // deja que el hero se asiente al centro antes del fundido
+        duration: 0.22, // fundido corto: menos pantalla negra al inicio
+        delay: 0.15, // solo lo justo para que el hero empiece a recentrarse
         ease: 'power2.out',
         onComplete: () => {
           hero.hidden = true
@@ -213,13 +215,13 @@ export function initRouter({ lang, base, category, bio, contacto }) {
       })
     } else if (wasBio) {
       // Biografía → Inicio: misma transición que al entrar, en reversa — apagar rayos X (flicker
-      // + fundido) y devolver el parallax del hero.
+      // de duración simétrica al encendido) y devolver el parallax del hero.
       hero.hidden = false
       dispatchEvent(new Event('cp:hero-resume'))
       bio.leave?.()
       gsap.to(bio.el, {
         opacity: 0,
-        duration: 0.42,
+        duration: 0.9, // simétrico al "in" (antes 0.42, muy rápido)
         ease: 'power2.in',
         onComplete: () => {
           bio.el.hidden = true

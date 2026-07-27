@@ -73,6 +73,7 @@ if (lang) {
       im.src = u
     })
     category?.warm?.()
+    contacto?.warm?.() // precarga el video de Contacto → el 1.er barrido no se frena
   }
   if ('requestIdleCallback' in window) requestIdleCallback(warmGallery, { timeout: 2500 })
   else setTimeout(warmGallery, 1800)

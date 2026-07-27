@@ -10,8 +10,8 @@ import mp4Url from '../../assets/efecto-loop/contacto_loop_1080_h264.mp4'
 import posterUrl from '../../assets/efecto-loop/contacto_poster.webp'
 
 const CONTENT = {
-  es: { tagline: '¿Necesitas crear algo impresionante?' },
-  en: { tagline: 'Need to create something amazing?' },
+  es: { tagline: '¿Creamos algo impresionante?' }, // cabe en una línea
+  en: { tagline: 'Shall we create something amazing?' }, // va en 2 líneas (caja más alta)
 }
 // links reales (los abre el usuario con su clic; wa.me/linkedin en pestaña nueva)
 const LINKS = [
@@ -29,6 +29,7 @@ export function initContacto({ lang }) {
   const linksUl = el.querySelector('.contacto__links')
   const crumb = el.querySelector('.contacto__crumb')
   const panel = el.querySelector('.contacto__panel')
+  const glitchEl = el.querySelector('.contacto__glitch')
 
   // fuentes del video (preload none: solo baja al entrar). poster estático mientras tanto.
   video.poster = posterUrl
@@ -50,25 +51,44 @@ export function initContacto({ lang }) {
     gsap.set(el.querySelectorAll('.contacto__link'), { opacity: 0 })
   }
 
-  // glitch breve al reiniciar el loop del video (loop no perfecto → camuflamos la costura).
-  // 'timeupdate' no da el punto exacto, pero basta con dispararlo al acercarse al final.
+  // "cambio de canal" al reiniciar el loop (la costura no es suave): cortes horizontales +
+  // aberración cromática (video.is-glitch) + estática/banda de barrido (overlay .contacto__glitch).
+  // No es strobe de pantalla completa a alto contraste — pulso corto (~0.32s), WCAG 2.3.1.
   let glitched = false
+  const fireGlitch = () => {
+    video.classList.remove('is-glitch')
+    glitchEl?.classList.remove('is-on')
+    void video.offsetWidth // reinicia ambas animaciones
+    video.classList.add('is-glitch')
+    glitchEl?.classList.add('is-on')
+    setTimeout(() => {
+      video.classList.remove('is-glitch')
+      glitchEl?.classList.remove('is-on')
+    }, 340)
+  }
   video.addEventListener('timeupdate', () => {
     if (quality.reducedMotion || !video.duration) return
     const remain = video.duration - video.currentTime
     if (remain > 0.5) glitched = false
-    if (remain < 0.16 && !glitched) {
+    if (remain < 0.18 && !glitched) {
       glitched = true
-      video.classList.remove('is-glitch')
-      void video.offsetWidth // reinicia la animación
-      video.classList.add('is-glitch')
-      setTimeout(() => video.classList.remove('is-glitch'), 280)
+      fireGlitch()
     }
   })
 
   // arranca el video (durante el barrido). muted → autoplay permitido. reduced-motion = poster fijo.
   const enter = () => {
     if (!quality.reducedMotion) video.play?.().catch(() => {})
+  }
+
+  // precalienta el video (idle): baja los datos por adelantado → el 1.er barrido no se frena
+  // al hacer play (el "freno" era el decode del video en la primera reproducción).
+  const warm = () => {
+    if (quality.reducedMotion) return
+    video.preload = 'auto'
+    try {
+      video.load()
+    } catch {}
   }
 
   // reveal del panel + letrero (tras el barrido a la azotea)
@@ -89,5 +109,5 @@ export function initContacto({ lang }) {
     video.pause?.()
   }
 
-  return { el, prepare, enter, reveal, leave }
+  return { el, prepare, enter, reveal, leave, warm }
 }
