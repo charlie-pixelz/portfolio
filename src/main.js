@@ -59,6 +59,17 @@ if (lang) {
   initScreens() // proyecta el contenido de cada pantalla sobre el plano en perspectiva del monitor
   const category = initCategory({ lang }) // P3.B: página de categoría (billboard + galería)
   initRouter({ lang, base: '/portfolio/', category }) // Inicio ↔ Proyectos ↔ Categoría (client-side)
+  // precalienta en idle los assets compartidos de la galería (billboard + luces) y la media de
+  // los proyectos → la 1.ª apertura de categoría no arranca en negro (el preloader solo cubre el hero)
+  const warmGallery = () => {
+    ;[catBgUrl, lucesUrl].forEach((u) => {
+      const im = new Image()
+      im.src = u
+    })
+    category?.warm?.()
+  }
+  if ('requestIdleCallback' in window) requestIdleCallback(warmGallery, { timeout: 2500 })
+  else setTimeout(warmGallery, 1800)
   // modos de calibración (dev): /es/?cal → pantallas de la sala · /es/?calcat → lienzo de la galería
   if (calMode) {
     import('./ui/calibrate.js').then((m) => m.initCalibrate())

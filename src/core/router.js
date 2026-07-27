@@ -54,6 +54,17 @@ export function initRouter({ lang, base, category }) {
     glitchTimer = setTimeout(() => glitchEl.classList.remove('is-on'), 340)
   }
 
+  // Al terminar un zoom, la pantalla que llenó el viewport queda "bajo el cursor" y el navegador
+  // no re-evalúa :hover sin movimiento del mouse → se queda encendida. Apagamos pointer-events en
+  // las pantallas (quedan apagadas) y solo los restauramos con el PRIMER movimiento real del mouse;
+  // ahí el :hover ya refleja la posición verdadera. (En touch no existe :hover pegado → no aplica.)
+  const resetHover = () => {
+    if (quality.isTouch) return
+    document.body.classList.add('cp-hover-reset')
+    const clear = () => document.body.classList.remove('cp-hover-reset')
+    window.addEventListener('pointermove', clear, { once: true })
+  }
+
   let current = 'home'
   let busy = false
 
@@ -168,6 +179,7 @@ export function initRouter({ lang, base, category }) {
         ease: 'power3.inOut',
         onComplete: () => {
           busy = false
+          resetHover()
         },
       })
     } else if (view === 'projects') {
@@ -191,6 +203,7 @@ export function initRouter({ lang, base, category }) {
         ease: 'power3.inOut',
         onComplete: () => {
           busy = false
+          resetHover()
         },
       })
     } else {

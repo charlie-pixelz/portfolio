@@ -246,6 +246,21 @@ body {
 .screen[data-cat] {
   cursor: pointer;
 }
+/* al terminar un zoom, la pantalla que llenó el viewport queda con el :hover "pegado" (el
+   navegador no lo re-evalúa sin mover el mouse). No se puede soltar ese :hover por CSS, así que
+   mientras dura el reset ANULAMOS el estilo de hover (se ven apagadas); el router quita la clase
+   al primer movimiento real, y ahí el :hover ya refleja la posición verdadera. */
+body.cp-hover-reset .screen--central:hover,
+body.cp-hover-reset .screen--central:focus-visible {
+  filter: brightness(0.78) contrast(1.04) saturate(1.05);
+}
+body.cp-hover-reset .screen[data-cat]:hover,
+body.cp-hover-reset .screen[data-cat]:focus-visible {
+  filter: brightness(0.82) saturate(1.05) contrast(1.05);
+}
+body.cp-hover-reset .screen[data-cat]:hover .screen__label {
+  animation: none;
+}
 /* central: proyecta el Inicio (imagen limpia del hero); clic = volver con zoom-in.
    Sin homografía (el monitor central es casi frontal) para que el empalme del zoom quede limpio. */
 .screen--central {

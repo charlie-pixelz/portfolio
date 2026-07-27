@@ -174,5 +174,24 @@ export function initCategory({ lang }) {
     canvas.querySelectorAll('video').forEach((v) => v.pause())
   }
 
-  return { el, prepare, lightOn, reset, catTitle: (cat) => CAT_TITLE[cat]?.[lang] || '' }
+  // precalienta en segundo plano TODA la media de la galería (imágenes con Image; videos con
+  // <link rel=prefetch> de baja prioridad) para que la 1.ª apertura de categoría no arranque en negro.
+  let warmed = false
+  const warm = () => {
+    if (warmed) return
+    warmed = true
+    Object.entries(mediaUrls).forEach(([path, url]) => {
+      if (/\.(jpg|png)$/i.test(path)) {
+        const img = new Image()
+        img.src = url
+      } else {
+        const link = document.createElement('link')
+        link.rel = 'prefetch'
+        link.href = url
+        document.head.appendChild(link)
+      }
+    })
+  }
+
+  return { el, prepare, lightOn, reset, warm, catTitle: (cat) => CAT_TITLE[cat]?.[lang] || '' }
 }
