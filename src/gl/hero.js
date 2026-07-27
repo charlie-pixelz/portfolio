@@ -163,10 +163,21 @@ export function initHero(bgUrl, charUrl) {
     { passive: true },
   )
 
+  // El router "asienta" el hero al salir a Biografía (recentra el personaje, sin parallax del
+  // mouse) y lo reactiva al volver. Lerp hacia el objetivo para que la vuelta al centro no salte.
+  let settled = false
+  const hm = { x: 0, y: 0 }
+  addEventListener('cp:hero-settle', () => (settled = true))
+  addEventListener('cp:hero-resume', () => (settled = false))
+
   ticker.add((t, dt) => {
     const time = t * 0.001
     program.uniforms.uTime.value = time
-    program.uniforms.uMouse.value = [pointer.pos.x, pointer.pos.y]
+    const tx = settled ? 0 : pointer.pos.x
+    const ty = settled ? 0 : pointer.pos.y
+    hm.x += (tx - hm.x) * 0.12
+    hm.y += (ty - hm.y) * 0.12
+    program.uniforms.uMouse.value = [hm.x, hm.y]
     if (entering) {
       const g = Math.max(0, program.uniforms.uGlitch.value - dt / ENTER)
       program.uniforms.uGlitch.value = g
@@ -175,8 +186,8 @@ export function initHero(bgUrl, charUrl) {
     // los letreros siguen la intensidad del PERSONAJE (kChar), no la del fondo → se mueven menos
     if (nav && kChar > 0) {
       if (!heroW) measure() // layout puede no estar listo en el init
-      const lx = pointer.pos.x + Math.sin(time * 0.25) * 0.18
-      const ly = pointer.pos.y + Math.cos(time * 0.2) * 0.18
+      const lx = hm.x + Math.sin(time * 0.25) * 0.18
+      const ly = hm.y + Math.cos(time * 0.2) * 0.18
       nav.style.transform = `translate(${(-lx * kChar * heroW).toFixed(2)}px, ${(-ly * kChar * heroH).toFixed(2)}px)`
     }
   })

@@ -133,7 +133,7 @@ export function initBio({ lang }) {
     gsap.set(el.querySelectorAll('.bio__skills li'), { opacity: 0 })
     const w = wires ? [...wires.children] : []
     if (w.length) gsap.set(w, { opacity: 0 })
-    scene?.classList.remove('is-on')
+    scene?.classList.remove('is-on', 'is-off')
   }
 
   // secuencia completa de encendido + cajas + tipeo
@@ -171,13 +171,23 @@ export function initBio({ lang }) {
       if (dot) tl.to(dot, { opacity: 1, duration: 0.15 }, '<')
       if (wire) tl.to(wire, { opacity: 1, duration: 0.3 }, '<0.05')
     })
-    // tipeo del título + párrafo (caja about)
-    tl.add(() => typeInto(titleEl, c.title, 0.7), '>-0.1')
-    tl.add(() => typeInto(textEl, c.about, 2.0), '>0.15')
+    // tipeo del título + párrafo (caja about) — ritmo pausado, se ve la barra de input
+    tl.add(() => typeInto(titleEl, c.title, 1.2), '>-0.1')
+    tl.add(() => typeInto(textEl, c.about, 3.8), '>0.2')
     // herramientas: pop de íconos escalonado, luego su nombre
     tl.to('.bio__tool', { opacity: 1, scale: 1, duration: 0.32, ease: 'back.out(2)', stagger: 0.06, startAt: { scale: 0.3 } }, '<0.1')
     // habilidades: entran en cascada
     tl.to('.bio__skills li', { opacity: 1, x: 0, duration: 0.3, stagger: 0.09, startAt: { x: -12 } }, '<0.2')
+  }
+
+  // apagado de la máquina (al salir): flicker descendente en CSS. El router hace el fundido.
+  const leave = () => {
+    scene?.classList.remove('is-on')
+    if (!quality.reducedMotion) {
+      scene?.classList.remove('is-off')
+      void scene?.offsetWidth
+      scene?.classList.add('is-off')
+    }
   }
 
   // redibuja los cables al redimensionar (las cajas se mueven con la escena)
@@ -187,5 +197,5 @@ export function initBio({ lang }) {
     rt = setTimeout(() => { if (!el.hidden) drawWires() }, 150)
   }, { passive: true })
 
-  return { el, prepare, reveal }
+  return { el, prepare, reveal, leave }
 }

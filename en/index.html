@@ -40,7 +40,7 @@
         <div class="cat__luces" aria-hidden="true"></div>
         <button class="cat__arrow cat__arrow--prev cat__reveal" aria-label="Previous work"></button>
         <button class="cat__arrow cat__arrow--next cat__reveal" aria-label="Next work"></button>
-        <div class="cat__info cat__reveal">
+        <div class="cat__info os-frame cat__reveal">
           <div class="cat__meta"><h2 class="cat__title"></h2><span class="cat__counter"></span></div>
           <p class="cat__desc"></p>
           <ul class="cat__tags"></ul>
@@ -54,29 +54,35 @@
     <section class="bio" hidden aria-label="Biography">
       <div class="bio__scene">
         <svg class="bio__wires" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
-        <article class="bio__box bio__box--about" data-anchor="about">
+        <article class="bio__box os-frame bio__box--about" data-anchor="about">
           <h2 class="bio__title"></h2>
           <p class="bio__text"></p>
         </article>
-        <aside class="bio__box bio__box--tools" data-anchor="tools">
+        <aside class="bio__box os-frame bio__box--tools" data-anchor="tools">
           <h3 class="bio__box-title"></h3>
           <ul class="bio__tools"></ul>
         </aside>
-        <aside class="bio__box bio__box--skills" data-anchor="skills">
+        <aside class="bio__box os-frame bio__box--skills" data-anchor="skills">
           <h3 class="bio__box-title"></h3>
           <ul class="bio__skills"></ul>
         </aside>
       </div>
-      <button class="bio__back" data-route="home" aria-label="Back to Home">‹ Home</button>
+      <div class="bio__crumb">
+        <button class="bio__back" data-route="home" aria-label="Back to Home">‹ Home</button>
+        <span class="bio__name">Biography</span>
+      </div>
     </section>
     <section class="contacto" hidden aria-label="Contact">
       <video class="contacto__video" muted loop playsinline preload="none" aria-hidden="true"></video>
-      <div class="contacto__panel">
-        <h2 class="contacto__title"></h2>
-        <p class="contacto__tagline"></p>
+      <div class="contacto__crt" aria-hidden="true"></div>
+      <div class="contacto__panel os-frame">
+        <h2 class="contacto__tagline"></h2>
         <ul class="contacto__links"></ul>
       </div>
-      <a class="contacto__inicio" data-route="home" href="../" aria-label="Back to Home"></a>
+      <div class="contacto__crumb">
+        <button class="contacto__back" data-route="home" aria-label="Back to Home">‹ Home</button>
+        <span class="contacto__name">Contact</span>
+      </div>
     </section>
     <nav class="lang lang--corner" aria-label="Language">
       <a href="../es/" data-lang="es">ESP</a>

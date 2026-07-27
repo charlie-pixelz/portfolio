@@ -492,17 +492,11 @@ body.route-room .crt {
   top: 71.5%;
   width: 56%;
   box-sizing: border-box;
-  padding: 0.7em 1.1em 0.8em;
-  color: rgba(232, 238, 242, 0.92);
-  /* recuadro verde con relleno negro 20% para mejorar la lectura (maqueta) */
-  border: 1.6px solid var(--phosphor-dim);
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.2);
-  box-shadow:
-    0 0 12px var(--phosphor-glow),
-    inset 0 0 16px rgba(51, 255, 102, 0.06);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
+  padding: 1em 1.4em 1.1em;
+  color: var(--phosphor);
+  /* recuadro pixelado (.os-frame): relleno oscuro para legibilidad del texto fósforo sobre el
+     billboard (que puede ser brillante) */
+  --os-fill: rgba(0, 7, 4, 0.97);
 }
 .cat__meta {
   display: flex;
@@ -549,7 +543,9 @@ body.route-room .crt {
   background: rgba(1, 12, 5, 0.35);
 }
 /* breadcrumb + volver (esquina superior izquierda, la reservada para navegación) */
-.cat__crumb {
+.cat__crumb,
+.bio__crumb,
+.contacto__crumb {
   position: fixed;
   top: 1.1rem;
   left: 1.1rem;
@@ -558,7 +554,9 @@ body.route-room .crt {
   align-items: center;
   gap: 0.8rem;
 }
-.cat__back {
+.cat__back,
+.bio__back,
+.contacto__back {
   font-family: var(--font-pixel);
   font-variation-settings: 'wght' 500, 'ELGR' 2; /* sólido, sin huecos (ver .cat__title) */
   font-size: 1.5rem; /* a la altura del título de cada obra */
@@ -575,13 +573,19 @@ body.route-room .crt {
     box-shadow 0.2s ease;
 }
 .cat__back:hover,
-.cat__back:focus-visible {
+.cat__back:focus-visible,
+.bio__back:hover,
+.bio__back:focus-visible,
+.contacto__back:hover,
+.contacto__back:focus-visible {
   background: var(--phosphor);
   color: var(--void);
   box-shadow: 0 0 16px var(--phosphor-glow);
   outline: none;
 }
-.cat__name {
+.cat__name,
+.bio__name,
+.contacto__name {
   font-family: var(--font-pixel);
   font-variation-settings: 'wght' 500, 'ELGR' 2; /* sólido, sin huecos (ver .cat__title) */
   font-size: 1.55rem;
@@ -664,6 +668,17 @@ body.route-category .crt {
   46% { opacity: 1; }
   100% { opacity: 1; }
 }
+/* apagado de la máquina (al salir de Biografía): flicker descendente hasta negro */
+.bio__scene.is-off::before {
+  animation: bioXrayOff 0.42s steps(1, end) forwards;
+}
+@keyframes bioXrayOff {
+  0% { opacity: 1; }
+  25% { opacity: 0.35; }
+  42% { opacity: 0.8; }
+  60% { opacity: 0.08; }
+  100% { opacity: 0; }
+}
 .bio__wires {
   position: absolute;
   inset: 0;
@@ -687,41 +702,28 @@ body.route-category .crt {
 .bio__box {
   position: absolute;
   box-sizing: border-box;
-  padding: 1.4cqw 1.6cqw;
-  border: 1.5px solid var(--phosphor-dim);
-  border-radius: 10px;
-  background: rgba(1, 12, 5, 0.6);
-  box-shadow:
-    0 0 14px var(--phosphor-glow),
-    inset 0 0 18px rgba(51, 255, 102, 0.06);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
+  padding: 1.8cqw 2cqw;
+  --os-fill: rgba(2, 13, 7, 0.97); /* relleno del .os-frame (casi opaco: sin sangrado del aro) */
   color: var(--phosphor);
 }
 .bio__box--about { left: 3.5%; top: 29%; width: 28%; }
 .bio__box--tools { left: 68.5%; top: 8%; width: 28%; }
 .bio__box--skills { left: 68.5%; top: 55%; width: 28%; }
-.bio__title {
+.bio__title,
+.bio__box-title {
   font-family: var(--font-display);
   font-variation-settings: 'ROND' 0, 'wght' 700;
-  font-size: 2.3cqw;
+  font-size: 1.75cqw; /* mismo tamaño en las 3 cajas */
   line-height: 1.05;
-  margin-bottom: 0.6em;
-  text-shadow: 0 0 10px var(--phosphor-glow);
+  white-space: nowrap; /* cada título en una sola línea */
+  margin-bottom: 0.75em;
+  text-shadow: 0 0 9px var(--phosphor-glow);
 }
 .bio__text {
   font-family: var(--font-body);
   font-size: 1.2cqw;
   line-height: 1.5;
-  color: #cdfdd8; /* fósforo claro, AA sobre el fondo oscuro */
-}
-.bio__box-title {
-  font-family: var(--font-display);
-  font-variation-settings: 'ROND' 0, 'wght' 700;
-  font-size: 1.7cqw;
-  line-height: 1;
-  margin-bottom: 0.8em;
-  text-shadow: 0 0 8px var(--phosphor-glow);
+  color: var(--phosphor); /* todo el texto en fósforo; sin glow en cuerpo para lectura cómoda */
 }
 /* herramientas: grilla de ícono + nombre */
 .bio__tools {
@@ -764,7 +766,7 @@ body.route-category .crt {
   font-family: var(--font-body);
   font-size: 1.12cqw;
   line-height: 1.25;
-  color: #cdfdd8;
+  color: var(--phosphor);
 }
 .bio__skills li::before {
   content: '▸';
@@ -774,39 +776,49 @@ body.route-category .crt {
   text-shadow: 0 0 6px var(--phosphor-glow);
 }
 /* cursor de tipeo mientras se escribe */
+/* cursor de tipeo = rectángulo/barra de input sólido que parpadea al final del texto */
 .is-typing::after {
-  content: '▋';
-  margin-left: 0.05em;
-  color: var(--phosphor);
-  animation: blink 1s steps(1, end) infinite;
-}
-/* botón Volver (esquina superior izquierda reservada), sobre el CRT */
-.bio__back {
-  position: fixed;
-  top: 1.1rem;
-  left: 1.1rem;
-  z-index: 5;
-  font-family: var(--font-pixel);
-  font-variation-settings: 'wght' 500, 'ELGR' 2;
-  font-size: 1.5rem;
-  line-height: 1;
-  color: var(--phosphor);
-  background: rgba(1, 12, 5, 0.55);
-  border: 1.5px solid var(--phosphor-dim);
-  border-radius: 8px;
-  padding: 0.28em 0.7em;
-  cursor: pointer;
-  text-shadow: 0 0 8px var(--phosphor-glow);
-  transition:
-    background 0.2s ease,
-    box-shadow 0.2s ease;
-}
-.bio__back:hover,
-.bio__back:focus-visible {
+  content: '';
+  display: inline-block;
+  width: 0.6em;
+  height: 1.05em;
+  margin-left: 0.08em;
+  transform: translateY(0.16em);
   background: var(--phosphor);
-  color: var(--void);
-  box-shadow: 0 0 16px var(--phosphor-glow);
-  outline: none;
+  box-shadow: 0 0 8px var(--phosphor-glow);
+  animation: blink 0.9s steps(1, end) infinite;
+}
+/* marco "pixelado" compartido de las cajas capa-OS (Biografía, Contacto, categoría): borde
+   fósforo con esquinas ESCALONADAS. clip-path define la silueta escalonada; ::after es el
+   relleno oscuro inset → el borde queda como un aro fósforo que sigue los escalones. Estética
+   lo-fi simulada en CSS (no horneada), grosor de píxel constante en cualquier caja (CLAUDE §3). */
+.os-frame {
+  --os-clip: polygon(
+    10px 0, calc(100% - 10px) 0, calc(100% - 10px) 5px, calc(100% - 5px) 5px, calc(100% - 5px) 10px, 100% 10px,
+    100% calc(100% - 10px), calc(100% - 5px) calc(100% - 10px), calc(100% - 5px) calc(100% - 5px), calc(100% - 10px) calc(100% - 5px), calc(100% - 10px) 100%,
+    10px 100%, 10px calc(100% - 5px), 5px calc(100% - 5px), 5px calc(100% - 10px), 0 calc(100% - 10px),
+    0 10px, 5px 10px, 5px 5px, 10px 5px
+  );
+  isolation: isolate; /* stacking context propio para el relleno ::after */
+  clip-path: var(--os-clip);
+  background: var(--phosphor); /* solo se ve en el aro del borde */
+  filter: drop-shadow(0 0 9px var(--phosphor-glow));
+}
+.os-frame::after {
+  content: '';
+  position: absolute;
+  inset: 2.5px; /* grosor del aro fósforo */
+  z-index: 0;
+  pointer-events: none;
+  clip-path: var(--os-clip);
+  background: var(--os-fill, rgba(1, 12, 5, 0.72));
+  box-shadow: inset 0 0 18px rgba(51, 255, 102, 0.06);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.os-frame > * {
+  position: relative;
+  z-index: 1; /* contenido por encima del relleno */
 }
 
 /* ── P3.D: Contacto (azotea) — video loop + panel capa-OS + letrero "Inicio" horizontal ── */
@@ -831,109 +843,119 @@ body.route-category .crt {
 .contacto__panel {
   position: absolute;
   left: 6%;
-  top: 27%;
-  width: min(38%, 30rem);
+  top: 26%;
+  z-index: 4; /* sobre el CRT reforzado del video */
+  width: min(40%, 32rem);
   box-sizing: border-box;
-  padding: 1.4rem 1.6rem 1.6rem;
-  border: 1.5px solid var(--phosphor-dim);
-  border-radius: 12px;
-  background: rgba(1, 12, 5, 0.62);
-  box-shadow:
-    0 0 16px var(--phosphor-glow),
-    inset 0 0 20px rgba(51, 255, 102, 0.06);
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
+  padding: 1.8rem 2rem 1.9rem;
+  --os-fill: rgba(2, 13, 7, 0.95); /* leve transparencia: se intuye la ciudad detrás */
   color: var(--phosphor);
 }
-.contacto__title {
+/* la tagline ES el título de la caja (el nombre "Contacto" ya vive en el breadcrumb) */
+.contacto__tagline {
+  margin: 0 0 0.9em;
   font-family: var(--font-display);
   font-variation-settings: 'ROND' 0, 'wght' 700;
-  font-size: clamp(1.6rem, 3.2vw, 2.6rem);
-  line-height: 1;
+  font-size: clamp(1.3rem, 2.6vw, 2rem);
+  line-height: 1.1;
+  color: var(--phosphor);
   text-shadow: 0 0 10px var(--phosphor-glow);
 }
-.contacto__tagline {
-  margin: 0.45em 0 1.1em;
-  font-family: var(--font-body);
-  font-size: clamp(0.95rem, 1.5vw, 1.2rem);
-  color: #cdfdd8;
-}
+/* links como filas de "terminal": sin caja por ítem, solo separadores finos + hover con glow */
 .contacto__links {
   list-style: none;
   display: grid;
-  gap: 0.7rem;
+  margin-top: 0.3em;
+}
+.contacto__links li + li {
+  border-top: 1px solid rgba(51, 255, 102, 0.22);
 }
 .contacto__link {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 0.12em;
-  padding: 0.55em 0.85em;
-  border: 1px solid var(--phosphor-dim);
-  border-radius: 8px;
+  align-items: baseline;
+  gap: 0.7em;
+  padding: 0.6em 0.2em 0.6em 1.1em;
   text-decoration: none;
-  background: rgba(51, 255, 102, 0.04);
   transition:
-    background 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+    padding-left 0.18s ease,
+    background 0.18s ease;
+}
+.contacto__link::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  opacity: 0;
+  transform: translateX(-4px);
+  color: var(--phosphor);
+  text-shadow: 0 0 6px var(--phosphor-glow);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 .contacto__link:hover,
 .contacto__link:focus-visible {
-  background: rgba(51, 255, 102, 0.14);
-  box-shadow: 0 0 14px var(--phosphor-glow);
-  transform: translateX(4px);
   outline: none;
+  padding-left: 1.5em;
+  background: linear-gradient(90deg, rgba(51, 255, 102, 0.12), rgba(51, 255, 102, 0));
+}
+.contacto__link:hover::before,
+.contacto__link:focus-visible::before {
+  opacity: 1;
+  transform: translateX(0);
+}
+.contacto__link:hover .contacto__link-label,
+.contacto__link:focus-visible .contacto__link-label {
+  text-shadow: 0 0 12px var(--phosphor-glow);
 }
 .contacto__link-label {
+  flex: none;
+  min-width: 6.5em;
   font-family: var(--font-pixel);
   font-variation-settings: 'wght' 600, 'ELGR' 2;
   font-size: clamp(0.85rem, 1.4vw, 1.05rem);
   color: var(--phosphor);
   text-shadow: 0 0 8px var(--phosphor-glow);
+  transition: text-shadow 0.18s ease;
 }
 .contacto__link-value {
   font-family: var(--font-body);
   font-size: clamp(0.8rem, 1.2vw, 1rem);
-  color: #cdfdd8;
+  color: var(--phosphor);
   word-break: break-word;
 }
-/* letrero "Inicio" horizontal: apagado (gris) → enciende violeta al hover (como el del Home) */
-.contacto__inicio {
+/* CRT reforzado SOLO en Contacto: scanlines densas + viñeta sobre el video → camufla el
+   pixelado de compresión sin subir el peso del asset (lo-fi simulado en CSS, CLAUDE §3). */
+.contacto__crt {
   position: absolute;
-  left: 6%;
-  bottom: 9%;
-  z-index: 3;
-  font-family: var(--font-display);
-  font-variation-settings: 'ROND' 0, 'wght' 900;
-  font-size: clamp(1rem, 2.2vw, 1.7rem);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  text-decoration: none;
-  padding: 0.5em 1.5em;
-  color: var(--texto-off);
-  border: 2.5px solid var(--tube-off);
-  border-radius: 10px;
-  background: rgba(8, 3, 24, 0.4);
-  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.5);
-  cursor: pointer;
-  transition:
-    color 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease,
-    text-shadow 0.25s ease;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 1px, rgba(0, 0, 0, 0) 1px 3px),
+    radial-gradient(125% 125% at 50% 50%, rgba(0, 0, 0, 0) 52%, rgba(0, 0, 0, 0.5) 100%);
+  mix-blend-mode: multiply;
+  opacity: 0.92;
 }
-.contacto__inicio:hover,
-.contacto__inicio:focus-visible {
-  color: #fff;
-  border-color: #fff;
-  box-shadow:
-    0 0 6px rgba(255, 255, 255, 0.4),
-    0 0 14px var(--sign-violeta),
-    0 0 38px var(--sign-violeta-halo);
-  text-shadow:
-    0 0 8px var(--sign-violeta),
-    0 0 22px var(--sign-violeta);
-  outline: none;
+/* glitch breve al reiniciar el loop del video: camufla la costura de la vuelta. No es strobe de
+   pantalla completa — jitter cromático localizado y corto (WCAG 2.3.1). */
+.contacto__video.is-glitch {
+  animation: contactoLoopGlitch 0.26s steps(2, end) 1;
+}
+@keyframes contactoLoopGlitch {
+  0% { filter: none; transform: translateY(0); }
+  30% {
+    filter: drop-shadow(3px 0 0 rgba(242, 2, 205, 0.55)) drop-shadow(-3px 0 0 rgba(75, 223, 244, 0.55));
+    transform: translateY(-1.1%);
+  }
+  60% {
+    filter: drop-shadow(-2px 0 0 rgba(242, 2, 205, 0.45)) drop-shadow(2px 0 0 rgba(75, 223, 244, 0.45));
+    transform: translateY(0.7%);
+  }
+  100% { filter: none; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contacto__video.is-glitch { animation: none; }
 }
 
 /* ── "Cambio de canal" (glitch de TV): enmascara el salto de perspectiva galería↔sala ── */

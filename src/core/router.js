@@ -72,6 +72,42 @@ export function initRouter({ lang, base, category, bio, contacto }) {
     window.addEventListener('pointermove', clear, { once: true })
   }
 
+  // Barrido a la azotea (Contacto): Home = hero DOM + lienzo WebGL persistente (#gl). Ambos se
+  // trasladan JUNTOS con Contacto (pegados) + un blur de movimiento uniforme que sube y baja.
+  // Uniforme y no direccional a propósito: un blur direccional sobre canvas WebGL + video es
+  // frágil/caro; el uniforme que pulsa a mitad del barrido lee igual como "velocidad".
+  const sweep = (entering, onDone) => {
+    const gl = document.getElementById('gl')
+    const home = [hero, gl].filter(Boolean)
+    const b = { v: 0 }
+    const applyBlur = () => {
+      const f = `blur(${b.v.toFixed(2)}px)`
+      home.forEach((n) => (n.style.filter = f))
+      contacto.el.style.filter = f
+    }
+    gsap.to(b, { v: 6, duration: DUR / 2, yoyo: true, repeat: 1, ease: 'power1.inOut', onUpdate: applyBlur })
+    gsap.fromTo(home, { yPercent: entering ? 0 : 100 }, { yPercent: entering ? 100 : 0, duration: DUR, ease: 'power2.in' })
+    gsap.fromTo(
+      contacto.el,
+      { yPercent: entering ? -100 : 0 },
+      {
+        yPercent: entering ? 0 : -100,
+        duration: DUR,
+        ease: 'power2.in',
+        onComplete: () => {
+          home.forEach((n) => {
+            n.style.filter = ''
+            gsap.set(n, { clearProps: 'transform' })
+          })
+          contacto.el.style.filter = ''
+          gsap.set(contacto.el, { clearProps: 'transform' })
+          if (onDone) onDone()
+          busy = false
+        },
+      },
+    )
+  }
+
   let current = 'home'
   let busy = false
 
@@ -139,48 +175,36 @@ export function initRouter({ lang, base, category, bio, contacto }) {
     setState(view, push)
 
     if (view === 'contacto') {
-      // Inicio → Contacto: BARRIDO a la azotea — la escena entra desde arriba (la "cámara sube")
+      // Inicio → Contacto: BARRIDO a la azotea. Home (hero DOM + lienzo WebGL #gl) y Contacto
+      // bajan JUNTOS y "pegados" (Contacto arriba) → la cámara parece mirar hacia arriba. Un blur
+      // de movimiento sube y baja a mitad del barrido para dar sensación de velocidad.
       contacto.el.hidden = false
       contacto.prepare()
       contacto.enter() // arranca el video durante el barrido
-      gsap.fromTo(
-        contacto.el,
-        { yPercent: -100 },
-        {
-          yPercent: 0,
-          duration: DUR,
-          ease: 'power2.inOut',
-          onComplete: () => {
-            hero.hidden = true
-            gsap.set(contacto.el, { clearProps: 'transform' })
-            contacto.reveal()
-            busy = false
-          },
-        },
-      )
+      sweep(true, () => {
+        hero.hidden = true
+        contacto.reveal()
+      })
     } else if (wasContacto) {
-      // Contacto → Inicio: barrido inverso (la "cámara baja"), la azotea sale por arriba
+      // Contacto → Inicio: barrido inverso — Home sube desde abajo y Contacto sale por arriba
       hero.hidden = false
-      gsap.to(contacto.el, {
-        yPercent: -100,
-        duration: DUR,
-        ease: 'power2.inOut',
-        onComplete: () => {
-          contacto.el.hidden = true
-          contacto.leave()
-          gsap.set(contacto.el, { clearProps: 'transform' })
-          dispatchEvent(new Event('cp:refit-signs'))
-          busy = false
-        },
+      sweep(false, () => {
+        contacto.el.hidden = true
+        contacto.leave()
+        dispatchEvent(new Event('cp:refit-signs'))
       })
     } else if (view === 'bio') {
-      // Inicio → Biografía: aparece la escena y el módulo dispara el encendido de rayos X + cajas
+      // Inicio → Biografía: primero recentramos el personaje del hero (quitamos el parallax del
+      // mouse) y recién ahí fundimos a la escena → no se descuadra al encender los rayos X.
+      dispatchEvent(new Event('cp:hero-settle'))
       bio.el.hidden = false
       bio.prepare()
       gsap.set(bio.el, { opacity: 0 })
       gsap.to(bio.el, {
         opacity: 1,
-        duration: XF,
+        duration: 0.35,
+        delay: 0.3, // deja que el hero se asiente al centro antes del fundido
+        ease: 'power2.out',
         onComplete: () => {
           hero.hidden = true
           bio.reveal()
@@ -188,11 +212,14 @@ export function initRouter({ lang, base, category, bio, contacto }) {
         },
       })
     } else if (wasBio) {
-      // Biografía → Inicio: apagar rayos X (fundido) y volver al hero
+      // Biografía → Inicio: misma transición que al entrar, en reversa — apagar rayos X (flicker
+      // + fundido) y devolver el parallax del hero.
       hero.hidden = false
+      dispatchEvent(new Event('cp:hero-resume'))
+      bio.leave?.()
       gsap.to(bio.el, {
         opacity: 0,
-        duration: XF * 1.6,
+        duration: 0.42,
         ease: 'power2.in',
         onComplete: () => {
           bio.el.hidden = true
