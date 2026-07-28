@@ -1,8 +1,14 @@
-// P3 — Mini-router client-side dentro de cada idioma (Inicio ↔ Proyectos ↔ Categoría).
-// History API (URLs limpias), back/forward, document.title. Transiciones = ZOOM anidado:
-//   Inicio → Proyectos = zoom-OUT (descubre la sala).      Proyectos → Inicio = zoom-IN a la central.
-//   Proyectos → Categoría = zoom-IN al monitor + billboard. Categoría → Proyectos = zoom-OUT.
-// reduced-motion → corte directo (a11y).
+// P3 — Mini-router client-side dentro de cada idioma (Inicio ↔ Proyectos ↔ Categoría ↔ Biografía ↔ Contacto).
+// History API (URLs limpias), back/forward, document.title. reduced-motion → corte directo (a11y).
+//
+// Máquina de transición: solo 4 pares tienen animación DEDICADA (las "bonitas"):
+//   Inicio ↔ Proyectos (zoom sala) · Proyectos ↔ Categoría (zoom monitor) ·
+//   Inicio ↔ Biografía (rayos X) · Inicio ↔ Contacto (barrido azotea).
+// El menú Pip-Boy permite saltar entre CUALQUIER vista (p.ej. Biografía → Contacto directo).
+// Para esos saltos NO hay animación directa: se resuelven en 2 pasos — "salir a Inicio" desde
+// la vista actual, y LUEGO "entrar" a la vista destino desde Inicio. Esto es intencional (evita
+// el bug histórico de que una vista especial quedara sin cerrar al saltar a otra) — ver
+// exitToHome()/enterFromHome() más abajo.
 
 import { gsap } from 'gsap'
 import { quality } from './quality.js'
@@ -72,42 +78,43 @@ export function initRouter({ lang, base, category, bio, contacto }) {
     window.addEventListener('pointermove', clear, { once: true })
   }
 
-  // Barrido a la azotea (Contacto): Home = hero DOM + lienzo WebGL persistente (#gl). Ambos se
-  // trasladan JUNTOS con Contacto (pegados) + un blur de movimiento uniforme que sube y baja.
-  // Uniforme y no direccional a propósito: un blur direccional sobre canvas WebGL + video es
-  // frágil/caro; el uniforme que pulsa a mitad del barrido lee igual como "velocidad".
+  // Barrido a la azotea (Contacto): NO son dos capas "pegadas" deslizando juntas — cada vista
+  // anima de forma INDEPENDIENTE (la que sale sube y se pierde en el desenfoque; tras un hueco,
+  // la que entra aparece resolviendo su propio desenfoque). Eso simula el "tilt" de cámara hacia
+  // arriba con motion blur por velocidad, y deja el espacio intermedio que pidió Charlie — sin
+  // que ambas vistas queden visualmente unidas.
   const sweep = (entering, onDone) => {
     const gl = document.getElementById('gl')
     const home = [hero, gl].filter(Boolean)
-    const b = { v: 0 }
-    const applyBlur = () => {
-      const f = `blur(${b.v.toFixed(2)}px)`
-      home.forEach((n) => (n.style.filter = f))
-      contacto.el.style.filter = f
-    }
-    // blur de movimiento marcado que pulsa a mitad del barrido (sensación de "pasar rápido")
-    gsap.to(b, { v: 14, duration: DUR / 2, yoyo: true, repeat: 1, ease: 'power2.inOut', onUpdate: applyBlur })
-    // ease con arranque suave y remate rápido → "latigazo" de cámara (misma duración, se siente más veloz)
-    gsap.fromTo(home, { yPercent: entering ? 0 : 100 }, { yPercent: entering ? 100 : 0, duration: DUR, ease: 'power3.in' })
-    gsap.fromTo(
-      contacto.el,
-      { yPercent: entering ? -100 : 0 },
-      {
-        yPercent: entering ? 0 : -100,
-        duration: DUR,
-        ease: 'power3.in',
-        onComplete: () => {
-          home.forEach((n) => {
-            n.style.filter = ''
-            gsap.set(n, { clearProps: 'transform' })
-          })
-          contacto.el.style.filter = ''
-          gsap.set(contacto.el, { clearProps: 'transform' })
-          if (onDone) onDone()
-          busy = false
-        },
-      },
-    )
+    const outEl = entering ? home : [contacto.el]
+    const inEl = entering ? [contacto.el] : home
+    const HALF = DUR / 2
+    const setBlur = (els, px) => els.forEach((n) => (n.style.filter = px > 0.05 ? `blur(${px.toFixed(1)}px)` : ''))
+
+    if (entering) contacto.el.hidden = false
+    gsap.set(outEl, { yPercent: 0, scale: 1, opacity: 1 })
+    gsap.set(inEl, { yPercent: entering ? 16 : -16, scale: 1.05, opacity: 0 })
+    setBlur(inEl, 20)
+
+    // sale: sube y se pierde en el desenfoque de movimiento (no se desliza hacia la otra vista)
+    const ob = { v: 0 }
+    gsap
+      .timeline()
+      .to(outEl, { yPercent: -28, scale: 1.08, opacity: 0, duration: HALF, ease: 'power2.in' })
+      .to(ob, { v: 22, duration: HALF, ease: 'power2.in', onUpdate: () => setBlur(outEl, ob.v) }, '<')
+
+    // entra: tras el hueco, resuelve su propio desenfoque y se asienta
+    const ib = { v: 20 }
+    gsap
+      .timeline({ delay: HALF })
+      .to(inEl, { yPercent: 0, scale: 1, opacity: 1, duration: HALF, ease: 'power2.out' })
+      .to(ib, { v: 0, duration: HALF, ease: 'power2.out', onUpdate: () => setBlur(inEl, ib.v) }, '<')
+      .call(() => {
+        setBlur(outEl, 0)
+        setBlur(inEl, 0)
+        gsap.set([...outEl, ...inEl], { clearProps: 'transform,opacity' })
+        if (onDone) onDone()
+      })
   }
 
   let current = 'home'
@@ -126,7 +133,7 @@ export function initRouter({ lang, base, category, bio, contacto }) {
     return { scale, x: vw / 2 - fr.x - scale * lx, y: vh / 2 - fr.y - scale * ly }
   }
 
-  const catOf = (view) => (view.startsWith('cat:') ? view.slice(4) : null)
+  const catOf = (view) => (view && view.startsWith('cat:') ? view.slice(4) : null)
 
   const setState = (view, push) => {
     const c = catOf(view)
@@ -165,188 +172,234 @@ export function initRouter({ lang, base, category, bio, contacto }) {
     if (view === 'home') dispatchEvent(new Event('cp:refit-signs'))
   }
 
+  // ── Bloques de transición dedicados: cada uno asume su punto de partida EXACTO (documentado
+  // en el comentario) y llama a done() al terminar. Nunca tocan `busy` directamente — eso lo
+  // maneja go() al final de la cadena, para que también funcione cuando se encadenan (p.ej.
+  // Categoría → Proyectos → Inicio para llegar a Biografía desde una categoría).
+
+  // Parte: room visible, hero oculto. Llega a: hero visible, room oculto.
+  const projectsToHome = (done) => {
+    hero.hidden = false
+    const z = zoomTo(central, 'contain')
+    gsap.to(frame, {
+      x: z.x,
+      y: z.y,
+      scale: z.scale,
+      duration: DUR,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        tvGlitch() // enmascara el empalme captura-central → hero real
+        gsap.to(room, {
+          opacity: 0,
+          duration: XF,
+          onComplete: () => {
+            room.hidden = true
+            gsap.set(room, { clearProps: 'opacity' })
+            gsap.set(frame, { clearProps: 'transform' })
+            dispatchEvent(new Event('cp:refit-signs'))
+            done()
+          },
+        })
+      },
+    })
+  }
+
+  // Parte: hero visible, room oculto. Llega a: room visible, hero oculto.
+  const homeToProjects = (done) => {
+    tvGlitch()
+    room.hidden = false
+    dispatchEvent(new Event('cp:refit-screens'))
+    gsap.set(frame, { x: 0, y: 0, scale: 1 })
+    const z = zoomTo(central, 'contain')
+    gsap.set(frame, { x: z.x, y: z.y, scale: z.scale })
+    gsap.set(room, { opacity: 0 })
+    gsap.to(room, { opacity: 1, duration: XF, onComplete: () => (hero.hidden = true) })
+    gsap.to(frame, {
+      x: 0,
+      y: 0,
+      scale: 1,
+      duration: DUR,
+      delay: XF,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        resetHover()
+        done()
+      },
+    })
+  }
+
+  // Parte: room visible (monitor de `catKey` en su lugar), categoría oculta. Llega a: categoría
+  // visible (billboard), room oculto.
+  const projectsToCat = (catKey, done) => {
+    category.prepare(catKey)
+    gsap.set(frame, { x: 0, y: 0, scale: 1 })
+    flattenScreen(catKey, 0)
+    const flat = { t: 0 }
+    gsap.to(flat, { t: 1, duration: DUR, ease: 'power3.inOut', onUpdate: () => flattenScreen(catKey, flat.t) })
+    const z = zoomTo(catScreens[catKey], 'cover')
+    gsap.to(frame, {
+      x: z.x,
+      y: z.y,
+      scale: z.scale,
+      duration: DUR,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        category.el.hidden = false
+        gsap.set(category.el, { opacity: 0 })
+        gsap.to(category.el, {
+          opacity: 1,
+          duration: XF,
+          onComplete: () => {
+            room.hidden = true
+            gsap.set(frame, { clearProps: 'transform' })
+            gsap.set(category.el, { clearProps: 'opacity' })
+            category.lightOn()
+            done()
+          },
+        })
+      },
+    })
+  }
+
+  // Parte: categoría visible (`catKey`), room oculto. Llega a: room visible, categoría oculta.
+  const catToProjects = (catKey, done) => {
+    tvGlitch()
+    room.hidden = false
+    dispatchEvent(new Event('cp:refit-screens'))
+    flattenScreen(catKey, 1) // parte frontal (calza con el encuadre de la galería)
+    gsap.set(frame, { x: 0, y: 0, scale: 1 })
+    const z = zoomTo(catScreens[catKey], 'cover')
+    gsap.set(frame, { x: z.x, y: z.y, scale: z.scale })
+    gsap.set(room, { opacity: 0 })
+    gsap.to(room, {
+      opacity: 1,
+      duration: XF,
+      onComplete: () => {
+        category.el.hidden = true
+        category.reset()
+      },
+    })
+    const flat = { t: 1 }
+    gsap.to(flat, { t: 0, duration: DUR, delay: XF, ease: 'power3.inOut', onUpdate: () => flattenScreen(catKey, flat.t) })
+    gsap.to(frame, {
+      x: 0,
+      y: 0,
+      scale: 1,
+      duration: DUR,
+      delay: XF,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        resetHover()
+        done()
+      },
+    })
+  }
+
+  // Parte: hero visible. Llega a: bio visible (rayos X encendido, cajas reveladas), hero oculto.
+  const homeToBio = (done) => {
+    // recentra el personaje del hero (sin parallax del mouse) antes de fundir a la escena
+    dispatchEvent(new Event('cp:hero-settle'))
+    bio.el.hidden = false
+    bio.prepare()
+    gsap.set(bio.el, { opacity: 0 })
+    gsap.to(bio.el, {
+      opacity: 1,
+      duration: 0.22, // fundido corto: menos pantalla negra al inicio
+      delay: 0.15, // solo lo justo para que el hero empiece a recentrarse
+      ease: 'power2.out',
+      onComplete: () => {
+        hero.hidden = true
+        bio.reveal()
+        done()
+      },
+    })
+  }
+
+  // Parte: bio visible. Llega a: hero visible, bio oculto.
+  const bioToHome = (done) => {
+    hero.hidden = false
+    dispatchEvent(new Event('cp:hero-resume'))
+    bio.leave?.(() => {
+      bio.el.hidden = true
+      bio.prepare()
+      dispatchEvent(new Event('cp:refit-signs'))
+      done()
+    })
+  }
+
+  // Parte: hero visible. Llega a: contacto visible (panel revelado), hero oculto.
+  const homeToContacto = (done) => {
+    contacto.prepare()
+    contacto.enter() // arranca el video durante el barrido
+    sweep(true, () => {
+      hero.hidden = true
+      contacto.reveal()
+      done()
+    })
+  }
+
+  // Parte: contacto visible. Llega a: hero visible, contacto oculto.
+  const contactoToHome = (done) => {
+    hero.hidden = false
+    sweep(false, () => {
+      contacto.el.hidden = true
+      contacto.leave()
+      dispatchEvent(new Event('cp:refit-signs'))
+      done()
+    })
+  }
+
+  // pares con animación DEDICADA (ver cabecera del archivo)
+  const direct = (from, view) => {
+    if (from === 'home' && view === 'projects') return homeToProjects
+    if (from === 'projects' && view === 'home') return projectsToHome
+    if (from === 'home' && view === 'bio') return homeToBio
+    if (from === 'bio' && view === 'home') return bioToHome
+    if (from === 'home' && view === 'contacto') return homeToContacto
+    if (from === 'contacto' && view === 'home') return contactoToHome
+    const toCat = catOf(view)
+    const fromCat = catOf(from)
+    if (from === 'projects' && toCat) return (done) => projectsToCat(toCat, done)
+    if (fromCat && view === 'projects') return (done) => catToProjects(fromCat, done)
+    return null
+  }
+
+  // cualquier otro salto (p.ej. Biografía → Contacto, Categoría → Biografía, Proyectos →
+  // Biografía) se resuelve en 2 pasos: cerrar la vista actual volviendo a Inicio, y LUEGO abrir
+  // la vista destino desde Inicio — el mismo patrón que ya usa cada par directo.
+  const exitToHome = (from, done) => {
+    if (from === 'home') return done()
+    if (from === 'projects') return projectsToHome(done)
+    if (from === 'bio') return bioToHome(done)
+    if (from === 'contacto') return contactoToHome(done)
+    const cat = catOf(from)
+    if (cat) return catToProjects(cat, () => projectsToHome(done))
+    done()
+  }
+  const enterFromHome = (view, done) => {
+    if (view === 'home') return done()
+    if (view === 'projects') return homeToProjects(done)
+    if (view === 'bio') return homeToBio(done)
+    if (view === 'contacto') return homeToContacto(done)
+    const cat = catOf(view)
+    if (cat) return homeToProjects(() => projectsToCat(cat, done))
+    done()
+  }
+
   const go = (view, push) => {
     if (view === current || busy) return
     if (reduced) return applyInstant(view, push)
 
     busy = true
-    const toCat = catOf(view)
-    const fromCat = catOf(current)
-    const wasBio = current === 'bio'
-    const wasContacto = current === 'contacto'
+    const from = current
     setState(view, push)
 
-    if (view === 'contacto') {
-      // Inicio → Contacto: BARRIDO a la azotea. Home (hero DOM + lienzo WebGL #gl) y Contacto
-      // bajan JUNTOS y "pegados" (Contacto arriba) → la cámara parece mirar hacia arriba. Un blur
-      // de movimiento sube y baja a mitad del barrido para dar sensación de velocidad.
-      contacto.el.hidden = false
-      contacto.prepare()
-      contacto.enter() // arranca el video durante el barrido
-      sweep(true, () => {
-        hero.hidden = true
-        contacto.reveal()
-      })
-    } else if (wasContacto) {
-      // Contacto → Inicio: barrido inverso — Home sube desde abajo y Contacto sale por arriba
-      hero.hidden = false
-      sweep(false, () => {
-        contacto.el.hidden = true
-        contacto.leave()
-        dispatchEvent(new Event('cp:refit-signs'))
-      })
-    } else if (view === 'bio') {
-      // Inicio → Biografía: primero recentramos el personaje del hero (quitamos el parallax del
-      // mouse) y recién ahí fundimos a la escena → no se descuadra al encender los rayos X.
-      dispatchEvent(new Event('cp:hero-settle'))
-      bio.el.hidden = false
-      bio.prepare()
-      gsap.set(bio.el, { opacity: 0 })
-      gsap.to(bio.el, {
-        opacity: 1,
-        duration: 0.22, // fundido corto: menos pantalla negra al inicio
-        delay: 0.15, // solo lo justo para que el hero empiece a recentrarse
-        ease: 'power2.out',
-        onComplete: () => {
-          hero.hidden = true
-          bio.reveal()
-          busy = false
-        },
-      })
-    } else if (wasBio) {
-      // Biografía → Inicio: misma transición que al entrar, en reversa — apagar rayos X (flicker
-      // de duración simétrica al encendido) y devolver el parallax del hero.
-      hero.hidden = false
-      dispatchEvent(new Event('cp:hero-resume'))
-      bio.leave?.()
-      gsap.to(bio.el, {
-        opacity: 0,
-        duration: 0.9, // simétrico al "in" (antes 0.42, muy rápido)
-        ease: 'power2.in',
-        onComplete: () => {
-          bio.el.hidden = true
-          bio.prepare()
-          gsap.set(bio.el, { clearProps: 'opacity' })
-          dispatchEvent(new Event('cp:refit-signs'))
-          busy = false
-        },
-      })
-    } else if (toCat) {
-      // Proyectos → Categoría: zoom-in al monitor, ENDEREZANDO la pantalla (t 0→1), crossfade
-      // al billboard, encendido. Al llegar arriba la pantalla ya es frontal → el cambio de
-      // perspectiva a la galería deja de ser brusco.
-      category.prepare(toCat)
-      gsap.set(frame, { x: 0, y: 0, scale: 1 })
-      flattenScreen(toCat, 0)
-      const flat = { t: 0 }
-      gsap.to(flat, { t: 1, duration: DUR, ease: 'power3.inOut', onUpdate: () => flattenScreen(toCat, flat.t) })
-      const z = zoomTo(catScreens[toCat], 'cover')
-      gsap.to(frame, {
-        x: z.x,
-        y: z.y,
-        scale: z.scale,
-        duration: DUR,
-        ease: 'power3.inOut',
-        onComplete: () => {
-          category.el.hidden = false
-          gsap.set(category.el, { opacity: 0 })
-          gsap.to(category.el, {
-            opacity: 1,
-            duration: XF,
-            onComplete: () => {
-              room.hidden = true
-              gsap.set(frame, { clearProps: 'transform' })
-              gsap.set(category.el, { clearProps: 'opacity' })
-              category.lightOn()
-              busy = false
-            },
-          })
-        },
-      })
-    } else if (fromCat && view === 'projects') {
-      // Categoría → Proyectos: glitch de "cambio de canal" (enmascara el salto de perspectiva),
-      // crossfade billboard → sala con el monitor FRONTAL, y zoom-out doblando la pantalla de
-      // vuelta a la perspectiva de la sala (t 1→0).
-      tvGlitch()
-      room.hidden = false
-      dispatchEvent(new Event('cp:refit-screens'))
-      flattenScreen(fromCat, 1) // parte frontal (calza con el encuadre de la galería)
-      gsap.set(frame, { x: 0, y: 0, scale: 1 })
-      const z = zoomTo(catScreens[fromCat], 'cover')
-      gsap.set(frame, { x: z.x, y: z.y, scale: z.scale })
-      gsap.set(room, { opacity: 0 })
-      gsap.to(room, {
-        opacity: 1,
-        duration: XF,
-        onComplete: () => {
-          category.el.hidden = true
-          category.reset()
-        },
-      })
-      const flat = { t: 1 }
-      gsap.to(flat, { t: 0, duration: DUR, delay: XF, ease: 'power3.inOut', onUpdate: () => flattenScreen(fromCat, flat.t) })
-      gsap.to(frame, {
-        x: 0,
-        y: 0,
-        scale: 1,
-        duration: DUR,
-        delay: XF,
-        ease: 'power3.inOut',
-        onComplete: () => {
-          busy = false
-          resetHover()
-        },
-      })
-    } else if (view === 'projects') {
-      // Inicio → Proyectos: zoom-OUT. Glitch de "cambio de canal" en el empalme: la central es
-      // una captura y el hero real usa tamaños en rem → el lockup/letreros calzan casi, no exacto;
-      // el glitch enmascara ese salto y hace la transición entre pantallas más inmersiva.
-      tvGlitch()
-      room.hidden = false
-      dispatchEvent(new Event('cp:refit-screens'))
-      gsap.set(frame, { x: 0, y: 0, scale: 1 })
-      const z = zoomTo(central, 'contain')
-      gsap.set(frame, { x: z.x, y: z.y, scale: z.scale })
-      gsap.set(room, { opacity: 0 })
-      gsap.to(room, { opacity: 1, duration: XF, onComplete: () => (hero.hidden = true) })
-      gsap.to(frame, {
-        x: 0,
-        y: 0,
-        scale: 1,
-        duration: DUR,
-        delay: XF,
-        ease: 'power3.inOut',
-        onComplete: () => {
-          busy = false
-          resetHover()
-        },
-      })
-    } else {
-      // Proyectos → Inicio: zoom-IN a la central
-      hero.hidden = false
-      const z = zoomTo(central, 'contain')
-      gsap.to(frame, {
-        x: z.x,
-        y: z.y,
-        scale: z.scale,
-        duration: DUR,
-        ease: 'power3.inOut',
-        onComplete: () => {
-          tvGlitch() // enmascara el empalme captura-central → hero real (ver Inicio→Proyectos)
-          gsap.to(room, {
-            opacity: 0,
-            duration: XF,
-            onComplete: () => {
-              room.hidden = true
-              gsap.set(room, { clearProps: 'opacity' })
-              gsap.set(frame, { clearProps: 'transform' })
-              dispatchEvent(new Event('cp:refit-signs'))
-              busy = false
-            },
-          })
-        },
-      })
+    const finish = () => {
+      busy = false
     }
+    const fn = direct(from, view)
+    if (fn) fn(finish)
+    else exitToHome(from, () => enterFromHome(view, finish))
   }
 
   // letreros/botones con ruta explícita (Proyectos, Volver, central=Inicio)

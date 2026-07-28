@@ -97,16 +97,18 @@ export function initBio({ lang }) {
       const leftX = ((br.left - sr.left) / sr.width) * 100
       const rightX = ((br.right - sr.left) / sr.width) * 100
       const exitLeft = key !== 'about' // about mira al esqueleto por su derecha; el resto por la izquierda
+      // el trazo empieza en el ANCLA (esqueleto) y termina en la caja — se "dibuja" naciendo del
+      // centro y llegando a la caja, no al revés (pedido de Charlie 28/7)
       let pts
       if (a[1] < boxTop) {
-        // objetivo por encima de la caja (Habilidades → hombro): sale por ARRIBA, sube y va al objetivo
+        // objetivo por encima de la caja (Habilidades → hombro): sube desde el hombro y entra por ARRIBA
         const ex = exitLeft ? leftX + (rightX - leftX) * 0.16 : rightX - (rightX - leftX) * 0.16
-        pts = `${ex.toFixed(2)},${boxTop.toFixed(2)} ${ex.toFixed(2)},${a[1]} ${a[0]},${a[1]}`
+        pts = `${a[0]},${a[1]} ${ex.toFixed(2)},${a[1]} ${ex.toFixed(2)},${boxTop.toFixed(2)}`
       } else {
-        // objetivo a la altura de la caja: sale por el LATERAL, va horizontal y baja/sube al objetivo
+        // objetivo a la altura de la caja: baja/sube desde el ancla y entra por el LATERAL
         const ex = exitLeft ? leftX : rightX
         const ey = Math.min(Math.max(a[1], boxTop + 5), boxBottom - 5)
-        pts = `${ex.toFixed(2)},${ey.toFixed(2)} ${a[0]},${ey.toFixed(2)} ${a[0]},${a[1]}`
+        pts = `${a[0]},${a[1]} ${a[0]},${ey.toFixed(2)} ${ex.toFixed(2)},${ey.toFixed(2)}`
       }
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
       line.setAttribute('points', pts)
@@ -170,30 +172,24 @@ export function initBio({ lang }) {
     void scene?.offsetWidth
     scene?.classList.add('is-on')
 
-    // prepara el "trazo" de cada cable: dasharray = longitud → se dibuja animando el offset a 0
+    // prepara el "trazo" de cada cable: dasharray = longitud → se dibuja animando el offset a 0.
+    // el punto de partida del path es el ANCLA (drawWires ya lo deja así) → el trazo nace del
+    // esqueleto y avanza hacia la caja.
     wireEls.forEach((w) => {
       const len = w.getTotalLength ? w.getTotalLength() : 60
       w.style.strokeDasharray = len
       w.style.strokeDashoffset = len
       w.style.opacity = 1
     })
+    gsap.set(boxes, { opacity: 0, scale: 0.4, x: 0, y: 0 })
 
+    // orden pedido: el cable SE DIBUJA primero (nace del centro, llega a la caja) y RECIÉN AHÍ
+    // aparece la caja en su extremo — no simultáneo ni al revés.
     const tl = gsap.timeline({ delay: 0.7 }) // arranca al asentarse el flicker (antes 0.9)
-    boxes.forEach((box) => {
-      const a = ANCHORS[box.dataset.anchor] || [50, 50]
-      const sr = scene.getBoundingClientRect()
-      const br = box.getBoundingClientRect()
-      // desplazamiento inicial: desde la zona del esqueleto hacia la posición de reposo
-      const fromX = ((a[0] / 100) * sr.width + sr.left) - (br.left + br.width / 2)
-      const fromY = ((a[1] / 100) * sr.height + sr.top) - (br.top + br.height / 2)
+    boxes.forEach((box, i) => {
       const wire = wires.querySelector(`.bio__wire[data-for="${box.dataset.anchor}"]`)
-      tl.fromTo(
-        box,
-        { opacity: 0, x: fromX * 0.6, y: fromY * 0.6, scale: 0.5 },
-        { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.4)' },
-        '<0.12',
-      )
-      if (wire) tl.to(wire, { strokeDashoffset: 0, duration: 0.45, ease: 'none' }, '<0.05') // se dibuja
+      if (wire) tl.to(wire, { strokeDashoffset: 0, duration: 0.4, ease: 'power1.in' }, i === 0 ? undefined : '-=0.1')
+      tl.to(box, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(1.6)' })
     })
     // tipeo del título + párrafo (caja about) — pausado; el párrafo conserva la barra parpadeando
     tl.add(() => typeInto(titleEl, c.title, 1.2), '>-0.1')
@@ -204,14 +200,27 @@ export function initBio({ lang }) {
     tl.to('.bio__skills li', { opacity: 1, x: 0, duration: 0.3, stagger: 0.09, startAt: { x: -12 } }, '<0.2')
   }
 
-  // apagado de la máquina (al salir): flicker descendente en CSS. El router hace el fundido.
-  const leave = () => {
-    scene?.classList.remove('is-on')
-    if (!quality.reducedMotion) {
-      scene?.classList.remove('is-off')
-      void scene?.offsetWidth
-      scene?.classList.add('is-off')
+  // apagado: primero se van las cajas/cables (rápido), y RECIÉN AHÍ parpadea el esqueleto SOLO
+  // (antes se desvanecía todo junto con bio.el y el parpadeo casi no se veía). onDone se llama
+  // cuando el flicker de apagado (CSS, ~0.95s) termina — el router oculta bio.el ahí.
+  const leave = (onDone) => {
+    if (quality.reducedMotion) {
+      scene?.classList.remove('is-on', 'is-off')
+      onDone?.()
+      return
     }
+    const wireEls = [...wires.querySelectorAll('.bio__wire')]
+    gsap.to([...boxes, ...wireEls], {
+      opacity: 0,
+      duration: 0.22,
+      ease: 'power2.in',
+      onComplete: () => {
+        scene?.classList.remove('is-on')
+        void scene?.offsetWidth
+        scene?.classList.add('is-off')
+        setTimeout(() => onDone?.(), 950) // dura lo mismo que la animación bioXrayOff (CSS)
+      },
+    })
   }
 
   // redibuja los cables al redimensionar (las cajas se mueven con la escena)
