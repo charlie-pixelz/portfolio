@@ -211,33 +211,45 @@ export function initBio({ lang }) {
     })
     gsap.set(boxes, { opacity: 0, scale: 0.4, x: 0, y: 0 })
 
-    // los 3 cables se dibujan casi en paralelo (leve escalonado, no secuencial completo) y CADA
-    // caja revela su propio contenido apenas SU cable llega — antes la caja de la izquierda
-    // (About) quedaba vacía esperando que las otras 2 terminaran su ciclo completo. Ritmo ~20%
-    // más rápido en general (pedido de Charlie 28/7).
+    // las 3 cajas aparecen UNA DESPUÉS DE OTRA (cable + caja + contenido completo) — no en
+    // paralelo. Charlie aclaró (29/7) que "se centran como grupo" era solo sobre los márgenes
+    // exteriores (arriba de Herramientas == abajo de Habilidades), no sobre el orden de aparición.
     const WIRE_DUR = 0.32
     const POP_DUR = 0.24
-    const tl = gsap.timeline({ delay: 0.56 }) // arranca al asentarse el flicker (antes 0.7)
-    boxes.forEach((box, i) => {
+    const GAP = 0.25 // pausa entre el fin de una caja y el inicio de la siguiente
+    const TITLE_DUR = 0.96
+    const TITLE_TO_TEXT_GAP = 0.14
+    const TEXT_DUR = 3.04
+    const TOOLS_STAGGER = 0.048
+    const TOOLS_DUR = 0.256
+    const SKILLS_STAGGER = 0.072
+    const SKILLS_DUR = 0.24
+
+    const tl = gsap.timeline({ delay: 0.56 }) // arranca al asentarse el flicker
+    let t = 0
+    boxes.forEach((box) => {
       const key = box.dataset.anchor
       const wire = wires.querySelector(`.bio__wire[data-for="${key}"]`)
-      const start = i * 0.06 // leve escalonado visual, no espera secuencial
-      if (wire) tl.to(wire, { strokeDashoffset: 0, duration: WIRE_DUR, ease: 'power1.in' }, start)
-      tl.to(box, { opacity: 1, scale: 1, duration: POP_DUR, ease: 'back.out(1.6)' }, start + WIRE_DUR)
-      const contentStart = start + WIRE_DUR + POP_DUR
+      if (wire) tl.to(wire, { strokeDashoffset: 0, duration: WIRE_DUR, ease: 'power1.in' }, t)
+      tl.to(box, { opacity: 1, scale: 1, duration: POP_DUR, ease: 'back.out(1.6)' }, t + WIRE_DUR)
+      t += WIRE_DUR + POP_DUR
       if (key === 'about') {
-        // tipeo del título + párrafo — arranca apenas aparece SU caja, no al final de todas
-        tl.add(() => typeInto(titleEl, c.title, 0.96), contentStart)
-        tl.add(() => typeInto(textEl, c.about, 3.04, true), contentStart + 1.1)
+        tl.add(() => typeInto(titleEl, c.title, TITLE_DUR), t)
+        t += TITLE_DUR + TITLE_TO_TEXT_GAP
+        tl.add(() => typeInto(textEl, c.about, TEXT_DUR, true), t)
+        t += TEXT_DUR
       } else if (key === 'tools') {
         tl.to(
           '.bio__tool',
-          { opacity: 1, scale: 1, duration: 0.256, ease: 'back.out(2)', stagger: 0.048, startAt: { scale: 0.3 } },
-          contentStart,
+          { opacity: 1, scale: 1, duration: TOOLS_DUR, ease: 'back.out(2)', stagger: TOOLS_STAGGER, startAt: { scale: 0.3 } },
+          t,
         )
+        t += (TOOLS.length - 1) * TOOLS_STAGGER + TOOLS_DUR
       } else if (key === 'skills') {
-        tl.to('.bio__skills li', { opacity: 1, x: 0, duration: 0.24, stagger: 0.072, startAt: { x: -12 } }, contentStart)
+        tl.to('.bio__skills li', { opacity: 1, x: 0, duration: SKILLS_DUR, stagger: SKILLS_STAGGER, startAt: { x: -12 } }, t)
+        t += (c.skills.length - 1) * SKILLS_STAGGER + SKILLS_DUR
       }
+      t += GAP
     })
   }
 
