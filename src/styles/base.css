@@ -714,6 +714,11 @@ body.route-category .crt {
   --os-fill: rgba(2, 13, 7, 0.97); /* relleno del .os-frame (casi opaco: sin sangrado del aro) */
   color: var(--phosphor);
 }
+/* About: caja sola (no depende de gutters compartidos con otra caja) → padding IGUAL en los 4
+   lados, como pidió Charlie (29/7). El valor 1.9cqw es el mismo en top/right/bottom/left. */
+.bio__box--about {
+  padding: 1.9cqw;
+}
 /* composición 5ª ronda (28/7) — columnas laterales que se CENTRAN solas verticalmente: así el
    margen de arriba y el de abajo son iguales por construcción (lo pidió Charlie para el grupo
    Herramientas+Habilidades) y siguen siéndolo aunque cambie el tamaño del texto. Coordenadas del
@@ -762,6 +767,7 @@ body.route-category .crt {
   font-family: var(--font-body);
   font-size: 1.05cqw; /* agrandado (28/7); .bio__skills li usa el MISMO valor */
   line-height: 1.5;
+  text-align: left; /* explícito (29/7) — el título va centrado, el párrafo no */
   color: var(--phosphor); /* todo el texto en fósforo; sin glow en cuerpo para lectura cómoda */
 }
 /* herramientas: 2 columnas, ícono + nombre en FILA. Íconos/texto más grandes (28/7) para llenar
@@ -820,10 +826,13 @@ body.route-category .crt {
   color: var(--phosphor);
   text-shadow: 0 0 6px var(--phosphor-glow);
 }
-/* cursor de tipeo mientras se escribe */
 /* cursor de tipeo = rectángulo/barra de input sólido que parpadea; con keepCursor queda
-   parpadeando al final del texto (dentro de la caja) aun terminada la escritura */
-.is-typing::after {
+   parpadeando al final del texto (dentro de la caja) aun terminada la escritura. `is-typed`
+   reserva el MISMO espacio pero invisible (en vez de quitar el ::after) — quitarlo directamente
+   encogía la línea (el cursor mide 1.15em, más que el line-height del título) y descentraba el
+   texto (menos ancho) → salto perceptible hacia arriba-derecha al terminar de tipear (28/7). */
+.is-typing::after,
+.is-typed::after {
   content: '';
   display: inline-block;
   width: 0.75em;
@@ -832,7 +841,12 @@ body.route-category .crt {
   transform: translateY(0.2em);
   background: var(--phosphor);
   box-shadow: 0 0 10px var(--phosphor-glow);
+}
+.is-typing::after {
   animation: blink 1s steps(1, end) infinite;
+}
+.is-typed::after {
+  visibility: hidden;
 }
 /* marco "pixelado" compartido de las cajas capa-OS (Biografía, Contacto, categoría): borde
    fósforo con esquinas ESCALONADAS. clip-path define la silueta escalonada; ::after es el

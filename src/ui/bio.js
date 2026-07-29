@@ -120,9 +120,12 @@ export function initBio({ lang }) {
         // se centra en toda la columna) entrar siempre por arriba obligaba a un rodeo larguísimo
         // (p.ej. el cuello, y=66, subiendo hasta el techo de la caja en y=19).
         const ex = exitLeft ? leftX : rightX
-        const boxCenter = (boxTop + boxBottom) / 2
-        const dir = a[1] < boxCenter ? 1 : -1
-        const ey = Math.min(Math.max(a[1] + dir * 8, boxTop + 5), boxBottom - 5)
+        // dirección del codo FIJA por caja (no derivada de comparar con el centro de la caja):
+        // Herramientas/Habilidades se centran como grupo flex → su posición en px varía un poco
+        // entre ES/EN según el largo del contenido, y comparar contra su centro podía cruzar el
+        // umbral y voltear el codo de un idioma a otro (bug real: "Tools" salía al revés en EN).
+        const DIR = { about: -1, tools: -1, skills: 1 }
+        const ey = Math.min(Math.max(a[1] + DIR[key] * 8, boxTop + 5), boxBottom - 5)
         pts = `${a[0]},${a[1]} ${a[0]},${ey.toFixed(2)} ${ex.toFixed(2)},${ey.toFixed(2)}`
       }
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
@@ -146,7 +149,11 @@ export function initBio({ lang }) {
       onUpdate: () => (node.textContent = text.slice(0, Math.round(o.n))),
       onComplete: () => {
         node.textContent = text
-        if (!keepCursor) node.classList.remove('is-typing')
+        if (!keepCursor) {
+          // 'is-typed' reserva el mismo espacio del cursor (invisible) → sin salto de layout
+          node.classList.remove('is-typing')
+          node.classList.add('is-typed')
+        }
       },
     })
   }
@@ -155,8 +162,8 @@ export function initBio({ lang }) {
   const prepare = () => {
     titleEl.textContent = ''
     textEl.textContent = ''
-    titleEl.classList.remove('is-typing')
-    textEl.classList.remove('is-typing')
+    titleEl.classList.remove('is-typing', 'is-typed')
+    textEl.classList.remove('is-typing', 'is-typed')
     gsap.set(boxes, { opacity: 0 })
     gsap.set(el.querySelectorAll('.bio__tool'), { opacity: 0 })
     gsap.set(el.querySelectorAll('.bio__skills li'), { opacity: 0 })
