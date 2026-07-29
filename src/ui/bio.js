@@ -183,21 +183,34 @@ export function initBio({ lang }) {
     })
     gsap.set(boxes, { opacity: 0, scale: 0.4, x: 0, y: 0 })
 
-    // orden pedido: el cable SE DIBUJA primero (nace del centro, llega a la caja) y RECIÉN AHÍ
-    // aparece la caja en su extremo — no simultáneo ni al revés.
-    const tl = gsap.timeline({ delay: 0.7 }) // arranca al asentarse el flicker (antes 0.9)
+    // los 3 cables se dibujan casi en paralelo (leve escalonado, no secuencial completo) y CADA
+    // caja revela su propio contenido apenas SU cable llega — antes la caja de la izquierda
+    // (About) quedaba vacía esperando que las otras 2 terminaran su ciclo completo. Ritmo ~20%
+    // más rápido en general (pedido de Charlie 28/7).
+    const WIRE_DUR = 0.32
+    const POP_DUR = 0.24
+    const tl = gsap.timeline({ delay: 0.56 }) // arranca al asentarse el flicker (antes 0.7)
     boxes.forEach((box, i) => {
-      const wire = wires.querySelector(`.bio__wire[data-for="${box.dataset.anchor}"]`)
-      if (wire) tl.to(wire, { strokeDashoffset: 0, duration: 0.4, ease: 'power1.in' }, i === 0 ? undefined : '-=0.1')
-      tl.to(box, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(1.6)' })
+      const key = box.dataset.anchor
+      const wire = wires.querySelector(`.bio__wire[data-for="${key}"]`)
+      const start = i * 0.06 // leve escalonado visual, no espera secuencial
+      if (wire) tl.to(wire, { strokeDashoffset: 0, duration: WIRE_DUR, ease: 'power1.in' }, start)
+      tl.to(box, { opacity: 1, scale: 1, duration: POP_DUR, ease: 'back.out(1.6)' }, start + WIRE_DUR)
+      const contentStart = start + WIRE_DUR + POP_DUR
+      if (key === 'about') {
+        // tipeo del título + párrafo — arranca apenas aparece SU caja, no al final de todas
+        tl.add(() => typeInto(titleEl, c.title, 0.96), contentStart)
+        tl.add(() => typeInto(textEl, c.about, 3.04, true), contentStart + 1.1)
+      } else if (key === 'tools') {
+        tl.to(
+          '.bio__tool',
+          { opacity: 1, scale: 1, duration: 0.256, ease: 'back.out(2)', stagger: 0.048, startAt: { scale: 0.3 } },
+          contentStart,
+        )
+      } else if (key === 'skills') {
+        tl.to('.bio__skills li', { opacity: 1, x: 0, duration: 0.24, stagger: 0.072, startAt: { x: -12 } }, contentStart)
+      }
     })
-    // tipeo del título + párrafo (caja about) — pausado; el párrafo conserva la barra parpadeando
-    tl.add(() => typeInto(titleEl, c.title, 1.2), '>-0.1')
-    tl.add(() => typeInto(textEl, c.about, 3.8, true), '>0.2')
-    // herramientas: pop de íconos escalonado, luego su nombre
-    tl.to('.bio__tool', { opacity: 1, scale: 1, duration: 0.32, ease: 'back.out(2)', stagger: 0.06, startAt: { scale: 0.3 } }, '<0.1')
-    // habilidades: entran en cascada
-    tl.to('.bio__skills li', { opacity: 1, x: 0, duration: 0.3, stagger: 0.09, startAt: { x: -12 } }, '<0.2')
   }
 
   // apagado: primero se van las cajas/cables (rápido), y RECIÉN AHÍ parpadea el esqueleto SOLO

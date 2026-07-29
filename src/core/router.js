@@ -79,31 +79,31 @@ export function initRouter({ lang, base, category, bio, contacto }) {
   }
 
   // Barrido a la azotea (Contacto): NO son dos capas "pegadas" deslizando juntas — cada vista
-  // anima de forma INDEPENDIENTE (la que sale sube y se pierde en el desenfoque; tras un hueco,
-  // la que entra aparece resolviendo su propio desenfoque). Eso simula el "tilt" de cámara hacia
-  // arriba con motion blur por velocidad, y deja el espacio intermedio que pidió Charlie — sin
-  // que ambas vistas queden visualmente unidas.
+  // anima de forma INDEPENDIENTE, con un hueco de desenfoque entremedio. Pero AMBAS se mueven en
+  // la MISMA dirección: hacia ABAJO al entrar a Contacto, hacia ARRIBA al salir (pedido de
+  // Charlie 28/7) — simula el "tilt" de cámara hacia arriba con motion blur por velocidad.
   const sweep = (entering, onDone) => {
     const gl = document.getElementById('gl')
     const home = [hero, gl].filter(Boolean)
     const outEl = entering ? home : [contacto.el]
     const inEl = entering ? [contacto.el] : home
     const HALF = DUR / 2
+    const dir = entering ? 1 : -1 // +1 = hacia abajo (entrar) · -1 = hacia arriba (salir)
     const setBlur = (els, px) => els.forEach((n) => (n.style.filter = px > 0.05 ? `blur(${px.toFixed(1)}px)` : ''))
 
     if (entering) contacto.el.hidden = false
     gsap.set(outEl, { yPercent: 0, scale: 1, opacity: 1 })
-    gsap.set(inEl, { yPercent: entering ? 16 : -16, scale: 1.05, opacity: 0 })
+    gsap.set(inEl, { yPercent: -dir * 16, scale: 1.05, opacity: 0 })
     setBlur(inEl, 20)
 
-    // sale: sube y se pierde en el desenfoque de movimiento (no se desliza hacia la otra vista)
+    // sale: sigue en la dirección `dir` y se pierde en el desenfoque de movimiento
     const ob = { v: 0 }
     gsap
       .timeline()
-      .to(outEl, { yPercent: -28, scale: 1.08, opacity: 0, duration: HALF, ease: 'power2.in' })
+      .to(outEl, { yPercent: dir * 28, scale: 1.08, opacity: 0, duration: HALF, ease: 'power2.in' })
       .to(ob, { v: 22, duration: HALF, ease: 'power2.in', onUpdate: () => setBlur(outEl, ob.v) }, '<')
 
-    // entra: tras el hueco, resuelve su propio desenfoque y se asienta
+    // entra: tras el hueco, sigue llegando en la MISMA dirección `dir` y resuelve su desenfoque
     const ib = { v: 20 }
     gsap
       .timeline({ delay: HALF })
