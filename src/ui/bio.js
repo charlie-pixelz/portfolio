@@ -68,6 +68,7 @@ export function initBio({ lang }) {
   const toolsUl = el.querySelector('.bio__tools')
   const skillsUl = el.querySelector('.bio__skills')
   const boxes = [...el.querySelectorAll('.bio__box')]
+  const aboutBox = el.querySelector('.bio__box--about')
 
   // zonas del esqueleto (en % de la escena) a las que apunta cada cable (ref. maqueta):
   // ¿Quién es? → cuello · Herramientas → cabeza · Habilidades → hombro derecho (del personaje)
@@ -100,14 +101,20 @@ export function initBio({ lang }) {
       // el trazo empieza en el ANCLA (esqueleto) y termina en la caja — se "dibuja" naciendo del
       // centro y llegando a la caja, no al revés (pedido de Charlie 28/7)
       let pts
-      if (a[1] < boxTop) {
-        // objetivo por encima de la caja (Habilidades → hombro): sube desde el hombro y entra por ARRIBA
+      if (a[1] < boxTop - 8) {
+        // objetivo CLARAMENTE por encima de la caja: sube y entra por ARRIBA. Umbral (-8) a
+        // propósito: si el ancla está solo un poco por encima del borde (como Habilidades, casi
+        // a la misma altura), el codo de este camino queda de 1% y no se nota — mejor que caiga
+        // al codo lateral de abajo, que siempre fuerza un tramo vertical visible.
         const ex = exitLeft ? leftX + (rightX - leftX) * 0.16 : rightX - (rightX - leftX) * 0.16
         pts = `${a[0]},${a[1]} ${ex.toFixed(2)},${a[1]} ${ex.toFixed(2)},${boxTop.toFixed(2)}`
       } else {
-        // objetivo a la altura de la caja: baja/sube desde el ancla y entra por el LATERAL
+        // objetivo a la altura de la caja: entra por el LATERAL con un codo de 90° SIEMPRE visible
+        // (antes, si el ancla ya caía dentro del rango vertical de la caja, el codo colapsaba y el
+        // cable quedaba recto — Charlie pidió que el corte angular se vea en todos los cables).
+        // El codo se ubica cerca del borde superior de la caja (altura fija, no la del ancla).
         const ex = exitLeft ? leftX : rightX
-        const ey = Math.min(Math.max(a[1], boxTop + 5), boxBottom - 5)
+        const ey = Math.min(boxTop + 10, boxBottom - 5)
         pts = `${a[0]},${a[1]} ${a[0]},${ey.toFixed(2)} ${ex.toFixed(2)},${ey.toFixed(2)}`
       }
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
@@ -147,6 +154,7 @@ export function initBio({ lang }) {
     gsap.set(el.querySelectorAll('.bio__skills li'), { opacity: 0 })
     const w = wires ? [...wires.children] : []
     if (w.length) gsap.set(w, { opacity: 0 })
+    if (aboutBox) aboutBox.style.minHeight = ''
     scene?.classList.remove('is-on', 'is-off')
   }
 
@@ -157,6 +165,11 @@ export function initBio({ lang }) {
     titleEl.textContent = c.title
     textEl.textContent = c.about
     drawWires()
+    // fija la altura FINAL de la caja About (con el párrafo completo) como mínimo antes de vaciar
+    // el texto para el tipeo — si no, la caja "colapsa" a casi nada (solo el título vacío) durante
+    // el pop y luego crece de golpe a medida que se tipea, dando el efecto de "aparece arriba,
+    // lejos de donde empieza la caja real" que reportó Charlie.
+    if (aboutBox) aboutBox.style.minHeight = aboutBox.getBoundingClientRect().height + 'px'
     const wireEls = [...wires.querySelectorAll('.bio__wire')]
     if (quality.reducedMotion) {
       gsap.set(boxes, { opacity: 1, x: 0, y: 0, scale: 1 })

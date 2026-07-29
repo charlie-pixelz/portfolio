@@ -710,11 +710,12 @@ body.route-category .crt {
   --os-fill: rgba(2, 13, 7, 0.97); /* relleno del .os-frame (casi opaco: sin sangrado del aro) */
   color: var(--phosphor);
 }
-/* composición ref. maqueta 2ª ronda (28/7): las cajas NO se agrandan — se angostan y el
-   CONTENIDO (íconos/texto) crece para llenar mejor cada una. Margen exterior simétrico 3%. */
-.bio__box--about { left: 3%; top: 9%; width: 29%; }
-.bio__box--tools { left: 68%; top: 3%; width: 29%; }
-.bio__box--skills { left: 68%; top: 55%; width: 29%; }
+/* composición 3ª ronda (28/7): cajas más angostas y más pegadas a los bordes exteriores → más
+   espacio libre al centro (para los cables angulares y para que se vea más la radiografía).
+   Margen exterior simétrico 3% en ambos lados. */
+.bio__box--about { left: 3%; top: 9%; width: 25%; }
+.bio__box--tools { left: 70%; top: 3%; width: 27%; }
+.bio__box--skills { left: 70%; top: 55%; width: 27%; }
 .bio__title,
 .bio__box-title {
   font-family: var(--font-display);
@@ -727,8 +728,8 @@ body.route-category .crt {
 }
 .bio__text {
   font-family: var(--font-body);
-  font-size: 1.4cqw;
-  line-height: 1.55;
+  font-size: 1.12cqw; /* reducido (28/7): antes 1.4cqw se sentía muy grande vs. las otras cajas */
+  line-height: 1.5;
   color: var(--phosphor); /* todo el texto en fósforo; sin glow en cuerpo para lectura cómoda */
 }
 /* herramientas: 2 columnas, ícono + nombre en FILA. Íconos/texto más grandes (28/7) para llenar
@@ -758,7 +759,7 @@ body.route-category .crt {
 .bio__tool-name {
   font-family: var(--font-pixel);
   font-variation-settings: 'wght' 500, 'ELGR' 2;
-  font-size: 1.65cqw; /* misma altura tipográfica en los 11 nombres (un solo valor, sin variar) */
+  font-size: 1.5cqw; /* misma altura tipográfica en los 11 nombres (un solo valor, sin variar) */
   line-height: 1.05;
   color: var(--phosphor);
 }
@@ -772,7 +773,7 @@ body.route-category .crt {
   position: relative;
   padding-left: 1.1em;
   font-family: var(--font-body);
-  font-size: 1.5cqw;
+  font-size: 1.2cqw; /* reducido en la misma proporción que .bio__text (mismo Space Grotesk) */
   line-height: 1.3;
   color: var(--phosphor);
 }
