@@ -43,6 +43,16 @@ Codifican el **proceso y los anti-patrones** de trabajo. Léelas y súmalas al r
 
 **Cadena natural:** `arranque → plan → opinion (sobre el plan) → construir → fixer (al fallar) → seguridad (antes de entregar)`.
 
+### 1.1 Modo de trabajo — presupuesto de tokens (ratificado 28/7)
+
+Charlie opera con cupo de tokens **limitado y con reset semanal**. Esto condiciona cuánto se avanza por sesión — es restricción real, no solo preferencia. Aplica a **cualquier modelo** que trabaje en este repo (no es un ajuste "porque el modelo es más capaz").
+
+**Reparto de la verificación — no es menos rigor, es quién aporta la evidencia:**
+- **Charlie es el QA visual primario.** Revisa cada cambio en su navegador real antes de dar el OK — eso satisface a `fable-fixer` ("nunca cantar victoria sin evidencia"): su revisión ES evidencia, no hace falta duplicarla con capturas automatizadas.
+- **Verificación automatizada (Playwright, capturas, click-through)** se reserva para lo que Charlie NO puede detectar mirando una vez: cambios en `router.js` (rutas/transiciones), config de build, o mecánica que toca >1 archivo/página donde un fallo silencioso sería costoso.
+- **Para todo lo demás** (color, espaciado, copy, timing/easing, un solo archivo): basta `npm run build` limpio (rápido, siempre se corre) + que Charlie lo vea en su sesión. No se abre Playwright para eso.
+- **Feedback en lotes grandes:** Charlie entrega feedback acumulado por sesión (excepción: detalles sueltos que lleguen por goteo). Responder con **un lote de cambios completos**, no ida-y-vuelta por ítem individual.
+- **Respuestas cortas:** sin narrar opciones que no se van a tomar, sin resumen largo al cierre salvo que se pida.
 ---
 
 ## 2. Compuertas de CRÍTICA — estado vivo
