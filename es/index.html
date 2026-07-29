@@ -59,18 +59,22 @@
            la radiografía (2400/1465) y queda apaisada con ~10% de espacio muerto a cada lado. Si
            las cajas vivieran dentro, jamás podrían usar ese margen (por eso "no se movían"). Aquí
            se posicionan respecto al viewport y sí llegan a los bordes. -->
-      <article class="bio__box os-frame bio__box--about" data-anchor="about">
-        <h2 class="bio__title"></h2>
-        <p class="bio__text"></p>
-      </article>
-      <aside class="bio__box os-frame bio__box--tools" data-anchor="tools">
-        <h3 class="bio__box-title"></h3>
-        <ul class="bio__tools"></ul>
-      </aside>
-      <aside class="bio__box os-frame bio__box--skills" data-anchor="skills">
-        <h3 class="bio__box-title"></h3>
-        <ul class="bio__skills"></ul>
-      </aside>
+      <div class="bio__side bio__side--left">
+        <article class="bio__box os-frame bio__box--about" data-anchor="about">
+          <h2 class="bio__title"></h2>
+          <p class="bio__text"></p>
+        </article>
+      </div>
+      <div class="bio__side bio__side--right">
+        <aside class="bio__box os-frame bio__box--tools" data-anchor="tools">
+          <h3 class="bio__box-title"></h3>
+          <ul class="bio__tools"></ul>
+        </aside>
+        <aside class="bio__box os-frame bio__box--skills" data-anchor="skills">
+          <h3 class="bio__box-title"></h3>
+          <ul class="bio__skills"></ul>
+        </aside>
+      </div>
       <div class="bio__crumb">
         <button class="bio__back" data-route="home" aria-label="Volver a Inicio">‹ Inicio</button>
         <span class="bio__name">Biografía</span>
