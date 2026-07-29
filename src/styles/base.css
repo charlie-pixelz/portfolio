@@ -733,7 +733,7 @@ body.route-category .crt {
 }
 .bio__side--left {
   left: 6%;
-  width: 24%;
+  width: 27%; /* ensanchada a la derecha (28/7) */
 }
 .bio__side--right {
   right: 6%;
@@ -749,6 +749,14 @@ body.route-category .crt {
   white-space: nowrap; /* cada título en una sola línea */
   margin-bottom: 0.55em;
   text-shadow: 0 0 9px var(--phosphor-glow);
+}
+/* la caja h2/h3 es block (ocupa TODO el ancho de contenido) pero el texto queda alineado a la
+   izquierda dentro de esa caja — con nowrap, el margen derecho "sobrante" varía según el largo
+   real del título (distinto en ES/EN), dando márgenes visualmente desiguales aunque el elemento
+   en sí esté centrado. Centrar el TEXTO (no solo el elemento) lo vuelve simétrico siempre,
+   sin importar el idioma ni el ancho de la caja (Charlie 28/7). */
+.bio__title {
+  text-align: center;
 }
 .bio__text {
   font-family: var(--font-body);

@@ -70,9 +70,13 @@ export function initBio({ lang }) {
   const boxes = [...el.querySelectorAll('.bio__box')]
   const aboutBox = el.querySelector('.bio__box--about')
 
-  // zonas del esqueleto (en % de la escena) a las que apunta cada cable (ref. maqueta):
-  // ¿Quién es? → cuello · Herramientas → cabeza · Habilidades → hombro derecho (del personaje)
-  const ANCHORS = { about: [50, 41], tools: [50, 26], skills: [40, 54] }
+  // zonas del esqueleto (en % de la escena) a las que apunta cada cable. Medidas por análisis de
+  // píxeles de bio_desktop_2400w.webp (no a ojo): el cuello real está en y≈65-67% (antes 41%,
+  // que caía en plena cara); la cabeza en y≈30-35% (antes 26%, que caía por ENCIMA del cráneo,
+  // en el fondo); el hombro derecho del personaje en y≈73-75%, x≈32-40% (antes y=54%, altura de
+  // mitad de cuello, muy por encima del hombro real). Esto era la causa de que los cables
+  // "no se mostraran bien" — apuntaban a partes equivocadas del cuerpo.
+  const ANCHORS = { about: [49, 66], tools: [50, 32], skills: [37, 74] }
 
   // texto estático (títulos de caja + nombres de herramientas no cambian por idioma)
   toolsTitleEl.textContent = c.toolsTitle
@@ -110,11 +114,15 @@ export function initBio({ lang }) {
         pts = `${a[0]},${a[1]} ${ex.toFixed(2)},${a[1]} ${ex.toFixed(2)},${boxTop.toFixed(2)}`
       } else {
         // objetivo a la altura de la caja: entra por el LATERAL con un codo de 90° SIEMPRE visible
-        // (antes, si el ancla ya caía dentro del rango vertical de la caja, el codo colapsaba y el
-        // cable quedaba recto — Charlie pidió que el corte angular se vea en todos los cables).
-        // El codo se ubica cerca del borde superior de la caja (altura fija, no la del ancla).
+        // (si el ancla ya cae dentro del rango vertical de la caja, un codo "a secas" colapsa y el
+        // cable queda recto). El codo se desplaza un tramo CORTO Y FIJO (8pt) desde el ancla, hacia
+        // el centro vertical de la caja — no hacia su borde superior: con cajas altas (About ahora
+        // se centra en toda la columna) entrar siempre por arriba obligaba a un rodeo larguísimo
+        // (p.ej. el cuello, y=66, subiendo hasta el techo de la caja en y=19).
         const ex = exitLeft ? leftX : rightX
-        const ey = Math.min(boxTop + 10, boxBottom - 5)
+        const boxCenter = (boxTop + boxBottom) / 2
+        const dir = a[1] < boxCenter ? 1 : -1
+        const ey = Math.min(Math.max(a[1] + dir * 8, boxTop + 5), boxBottom - 5)
         pts = `${a[0]},${a[1]} ${a[0]},${ey.toFixed(2)} ${ex.toFixed(2)},${ey.toFixed(2)}`
       }
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
