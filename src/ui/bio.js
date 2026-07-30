@@ -55,7 +55,7 @@ const CONTENT = {
   },
 }
 
-export function initBio({ lang }) {
+export function initBio({ lang, isMobile = false }) {
   const el = document.querySelector('.bio')
   if (!el) return null
   const c = CONTENT[lang] || CONTENT.es
@@ -69,6 +69,7 @@ export function initBio({ lang }) {
   const skillsUl = el.querySelector('.bio__skills')
   const boxes = [...el.querySelectorAll('.bio__box')]
   const aboutBox = el.querySelector('.bio__box--about')
+  const rings = [...el.querySelectorAll('.bio__ring')]
 
   // zonas del esqueleto (en % de la escena) a las que apunta cada cable. Medidas por análisis de
   // píxeles de bio_desktop_2400w.webp (no a ojo): el cuello real está en y≈65-67% (antes 41%,
@@ -76,7 +77,11 @@ export function initBio({ lang }) {
   // en el fondo); el hombro derecho del personaje en y≈73-75%, x≈32-40% (antes y=54%, altura de
   // mitad de cuello, muy por encima del hombro real). Esto era la causa de que los cables
   // "no se mostraran bien" — apuntaban a partes equivocadas del cuerpo.
-  const ANCHORS = { about: [49, 66], tools: [50, 32], skills: [37, 74] }
+  const ANCHORS_DESKTOP = { about: [49, 66], tools: [50, 32], skills: [37, 74] }
+  // mobile: medidas sobre bio_mobile_desktop_4602w.webp (mismo método, composición distinta —
+  // ver también los aros en el HTML, que usan las MISMAS coordenadas)
+  const ANCHORS_MOBILE = { tools: [48, 40], about: [48, 64], skills: [86, 77] }
+  const ANCHORS = isMobile ? ANCHORS_MOBILE : ANCHORS_DESKTOP
 
   // texto estático (títulos de caja + nombres de herramientas no cambian por idioma)
   toolsTitleEl.textContent = c.toolsTitle
@@ -89,6 +94,33 @@ export function initBio({ lang }) {
 
   // dibuja los cables conectores como líneas ORTOGONALES delgadas (sin círculo en el extremo),
   // que apuntan a zonas concretas del esqueleto. SVG con viewBox 0..100 (x e y independientes).
+  // mobile: geometría MUCHO más simple (una caja arriba a todo ancho para about/skills, un panel
+  // a la derecha para tools) — sube derecho desde el ancla y entra por ABAJO (o por la izquierda
+  // en el panel lateral), sin la lógica de codo/lado de desktop (pensada para columnas L/R fijas).
+  const drawWireMobile = (key) => {
+    const a = ANCHORS[key]
+    const box = el.querySelector(`.bio__box--${key}`)
+    const wire = wires.querySelector(`.bio__wire[data-for="${key}"]`)
+    if (!a || !box || !wire) return
+    const sr = scene.getBoundingClientRect()
+    const br = box.getBoundingClientRect()
+    const boxTop = ((br.top - sr.top) / sr.height) * 100
+    const boxBottom = ((br.bottom - sr.top) / sr.height) * 100
+    const boxLeft = ((br.left - sr.left) / sr.width) * 100
+    const boxRight = ((br.right - sr.left) / sr.width) * 100
+    let pts
+    if (key === 'tools') {
+      // panel a la derecha: entra por su borde izquierdo, a la altura del ancla
+      const ey = Math.min(Math.max(a[1], boxTop + 4), boxBottom - 4)
+      pts = `${a[0]},${a[1]} ${(boxLeft - 6).toFixed(2)},${a[1]} ${(boxLeft - 6).toFixed(2)},${ey.toFixed(2)} ${boxLeft.toFixed(2)},${ey.toFixed(2)}`
+    } else {
+      // caja arriba (about/skills): sube recto y entra por abajo, centrada
+      const cx = (boxLeft + boxRight) / 2
+      pts = `${a[0]},${a[1]} ${a[0]},${boxBottom.toFixed(2)} ${cx.toFixed(2)},${boxBottom.toFixed(2)}`
+    }
+    wire.setAttribute('points', pts)
+  }
+
   const drawWires = () => {
     wires.innerHTML = ''
     const sr = scene.getBoundingClientRect()
@@ -96,6 +128,17 @@ export function initBio({ lang }) {
       const key = box.dataset.anchor
       const a = ANCHORS[key]
       if (!a) return
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
+      line.setAttribute('fill', 'none')
+      line.setAttribute('class', 'bio__wire')
+      line.dataset.for = key
+      wires.append(line) // primero en el DOM (vacío) — drawWireMobile() lo necesita para medir
+
+      if (isMobile) {
+        drawWireMobile(key)
+        return
+      }
+
       const br = box.getBoundingClientRect()
       const boxTop = ((br.top - sr.top) / sr.height) * 100
       const boxBottom = ((br.bottom - sr.top) / sr.height) * 100
@@ -128,12 +171,7 @@ export function initBio({ lang }) {
         const ey = Math.min(Math.max(a[1] + DIR[key] * 8, boxTop + 5), boxBottom - 5)
         pts = `${a[0]},${a[1]} ${a[0]},${ey.toFixed(2)} ${ex.toFixed(2)},${ey.toFixed(2)}`
       }
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
       line.setAttribute('points', pts)
-      line.setAttribute('fill', 'none')
-      line.setAttribute('class', 'bio__wire')
-      line.dataset.for = key
-      wires.append(line)
     })
   }
 
@@ -171,10 +209,93 @@ export function initBio({ lang }) {
     if (w.length) gsap.set(w, { opacity: 0 })
     if (aboutBox) aboutBox.style.minHeight = ''
     scene?.classList.remove('is-on', 'is-off')
+    activeKey = null
+    rings.forEach((r) => {
+      r.classList.remove('is-active')
+      r.setAttribute('aria-pressed', 'false')
+    })
   }
 
-  // secuencia completa de encendido + cajas + tipeo
+  // ── MOBILE: una caja visible a la vez, activada por los aros (no por timeline automático) ──
+  let activeKey = null
+
+  const setRingActive = (key) => {
+    rings.forEach((r) => {
+      const on = r.dataset.anchor === key
+      r.classList.toggle('is-active', on)
+      r.setAttribute('aria-pressed', String(on))
+    })
+  }
+
+  const childrenFor = (key) =>
+    key === 'tools' ? el.querySelectorAll('.bio__tool') : key === 'skills' ? el.querySelectorAll('.bio__skills li') : []
+
+  const showBoxMobile = (key, instant = false) => {
+    const box = el.querySelector(`.bio__box--${key}`)
+    if (!box) return
+    gsap.set(childrenFor(key), { opacity: 1, x: 0 }) // aparecen JUNTO con la caja (sin stagger)
+    const wire = wires.querySelector(`.bio__wire[data-for="${key}"]`)
+    if (instant || quality.reducedMotion) {
+      gsap.set(box, { opacity: 1, scale: 1 })
+      if (wire) {
+        wire.style.strokeDasharray = 'none'
+        gsap.set(wire, { opacity: 1 })
+      }
+      return
+    }
+    gsap.set(box, { opacity: 0, scale: 0.4 })
+    if (wire) {
+      const len = wire.getTotalLength ? wire.getTotalLength() : 60
+      wire.style.strokeDasharray = len
+      wire.style.strokeDashoffset = len
+      wire.style.opacity = 1
+      gsap
+        .timeline()
+        .to(wire, { strokeDashoffset: 0, duration: 0.32, ease: 'power1.in' })
+        .to(box, { opacity: 1, scale: 1, duration: 0.24, ease: 'back.out(1.6)' })
+    } else {
+      gsap.to(box, { opacity: 1, scale: 1, duration: 0.24, ease: 'back.out(1.6)' })
+    }
+  }
+
+  const hideBoxMobile = (key) => {
+    const box = el.querySelector(`.bio__box--${key}`)
+    const wire = wires.querySelector(`.bio__wire[data-for="${key}"]`)
+    const targets = [box, wire].filter(Boolean)
+    if (targets.length) gsap.to(targets, { opacity: 0, duration: 0.16, ease: 'power2.in' })
+  }
+
+  // caja activa por defecto = About ("¿Quién es Charlie?"), pedido explícito de Charlie (30/7)
+  const activateAnchor = (key, instant = false) => {
+    if (key === activeKey) return
+    if (activeKey) hideBoxMobile(activeKey)
+    activeKey = key
+    setRingActive(key)
+    showBoxMobile(key, instant)
+  }
+  rings.forEach((ring) => ring.addEventListener('click', () => activateAnchor(ring.dataset.anchor)))
+
+  const revealMobile = () => {
+    // contenido completo desde el inicio: la interacción se repite en cada tap, tipear de nuevo
+    // cada vez se sentiría lento — el patrón "línea → caja" (pedido de Charlie) ya aporta el ritmo.
+    titleEl.textContent = c.title
+    textEl.textContent = c.about
+    drawWires()
+    gsap.set(boxes, { opacity: 0, scale: 1, x: 0, y: 0 })
+    scene?.classList.remove('is-on', 'is-off')
+    if (quality.reducedMotion) {
+      scene?.classList.add('is-on')
+      activateAnchor('about', true)
+      return
+    }
+    void scene?.offsetWidth
+    scene?.classList.add('is-on')
+    gsap.delayedCall(0.56, () => activateAnchor('about')) // arranca al asentarse el flicker
+  }
+
+  // secuencia completa de encendido + cajas + tipeo (DESKTOP)
   const reveal = () => {
+    if (isMobile) return revealMobile()
     // rellena el texto para medir la altura REAL de las cajas (la de About crece con el párrafo)
     // y dibujar los cables al punto correcto → luego se vacía para el tipeo.
     titleEl.textContent = c.title

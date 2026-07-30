@@ -8,6 +8,9 @@ import { quality } from '../core/quality.js'
 import webmUrl from '../../assets/efecto-loop/contacto_loop_1080.webm'
 import mp4Url from '../../assets/efecto-loop/contacto_loop_1080_h264.mp4'
 import posterUrl from '../../assets/efecto-loop/contacto_poster.webp'
+// Mobile (30/7): mismo video (recortado vía CSS object-position, no un render aparte) — solo el
+// poster tiene una versión propia, ya encuadrada 2/3 ciudad + 1/3 personaje (pedido de Charlie).
+import posterMobileUrl from '../../assets/efecto-loop/contacto_poster_mobile.webp'
 
 const CONTENT = {
   es: { tagline: '¿Creamos algo impresionante?' }, // cabe en una línea
@@ -20,7 +23,7 @@ const LINKS = [
   { label: 'LinkedIn', value: '/in/charlie-pixelz', href: 'https://www.linkedin.com/in/charlie-pixelz', ext: true },
 ]
 
-export function initContacto({ lang }) {
+export function initContacto({ lang, isMobile = false }) {
   const el = document.querySelector('.contacto')
   if (!el) return null
   const c = CONTENT[lang] || CONTENT.es
@@ -32,7 +35,7 @@ export function initContacto({ lang }) {
   const glitchEl = el.querySelector('.contacto__glitch')
 
   // fuentes del video (preload none: solo baja al entrar). poster estático mientras tanto.
-  video.poster = posterUrl
+  video.poster = isMobile ? posterMobileUrl : posterUrl
   video.innerHTML = `<source src="${webmUrl}" type="video/webm"><source src="${mp4Url}" type="video/mp4">`
 
   // contenido (la tagline hace de título de la caja; el nombre "Contacto" va en el breadcrumb)
@@ -91,18 +94,20 @@ export function initContacto({ lang }) {
     } catch {}
   }
 
-  // reveal del panel + letrero (tras el barrido a la azotea)
+  // reveal del panel + letrero (tras el barrido a la azotea). Mobile (30/7): la caja aparece
+  // unos segundos DESPUÉS de llegar (pedido de Charlie) — solo la caja/links, el breadcrumb de
+  // navegación se mantiene disponible de inmediato en ambos casos.
   const reveal = () => {
     if (quality.reducedMotion) {
       gsap.set(revealTargets, { opacity: 1, y: 0 })
       gsap.set(el.querySelectorAll('.contacto__link'), { opacity: 1 })
       return
     }
+    gsap.fromTo(crumb, { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' })
     gsap
-      .timeline()
+      .timeline({ delay: isMobile ? 1.8 : 0 })
       .fromTo(panel, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' })
       .to(el.querySelectorAll('.contacto__link'), { opacity: 1, x: 0, duration: 0.35, stagger: 0.1, startAt: { x: -14 } }, '-=0.2')
-      .fromTo(crumb, { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' }, '-=0.35')
   }
 
   const leave = () => {

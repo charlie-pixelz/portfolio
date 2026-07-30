@@ -45,7 +45,6 @@
       </div>
     </section>
     <section class="projects-menu" hidden aria-label="Projects">
-      <h2 class="projects-menu__title">Projects</h2>
       <nav class="projects-menu__cats" aria-label="Categories">
         <button class="projects-menu__cat os-frame" type="button" data-cat="ilustracion"><span></span></button>
         <button class="projects-menu__cat os-frame" type="button" data-cat="motion"><span></span></button>
@@ -77,6 +76,12 @@
     <section class="bio" hidden aria-label="Biography">
       <div class="bio__scene">
         <svg class="bio__wires" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <!-- Mobile: green rings over the skeleton — tapping one activates that box (one at a time). -->
+        <div class="bio__rings">
+          <button class="bio__ring" type="button" data-anchor="tools" style="left: 48%; top: 40%" aria-label="Tools"></button>
+          <button class="bio__ring" type="button" data-anchor="about" style="left: 48%; top: 64%" aria-label="Who is Charlie?"></button>
+          <button class="bio__ring" type="button" data-anchor="skills" style="left: 86%; top: 77%" aria-label="Skills"></button>
+        </div>
       </div>
       <!-- Las cajas van FUERA de .bio__scene a propósito: la escena está bloqueada al aspecto de
            la radiografía (2400/1465) y queda apaisada con ~10% de espacio muerto a cada lado. Si

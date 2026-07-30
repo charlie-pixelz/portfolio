@@ -6,11 +6,6 @@
 // dentro de la pantalla central (central-home.js) también.
 export function fitSigns(frames) {
   if (!frames.length) return
-  // móvil (<721px): layout distinto (grilla 2×2) → tamaño natural
-  if (!matchMedia('(min-width: 721px)').matches) {
-    frames.forEach((f) => f.querySelectorAll('.label i').forEach((el) => (el.style.fontSize = '')))
-    return
-  }
   // si están ocultos (clientWidth=0) NO medir: daría tamaños enormes que quedan pegados
   if (!frames[0].clientWidth) return
   frames.forEach((frame) => {

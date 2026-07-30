@@ -6,11 +6,12 @@ import './styles/base.css'
 import heroBgUrl from '../assets/upscale/hero_bg_2400w.webp'
 import heroCharUrl from '../assets/upscale/hero_character_2400w.webp'
 import heroCleanUrl from '../assets/upscale/hero_desktop_clean_2400w.webp'
-// Mobile: composición vertical 9:16 distinta (primer plano del personaje) — no una capa bg+char
-// separada, así que en mobile el hero NO usa el shader de profundidad, es un fondo CSS plano.
-// El encuadre tampoco deja espacio para los 4 letreros diegéticos (ver imagen) → en mobile el
-// Pip-Boy es la navegación principal desde Inicio (decisión de diseño, no un recorte de alcance).
-import heroMobileUrl from '../assets/upscale/hero_mobile_1080x1920.webp'
+// Mobile (30/7, reemplaza la composición de primer plano anterior): composición ancha de
+// callejón con espacio real para los 4 letreros — mismo tratamiento que desktop (shader de
+// profundidad multi-capa bg+personaje). Los letreros vuelven a ser la nav principal en mobile
+// (confirmado por Charlie), el Pip-Boy vuelve a ser el menú secundario, igual que en desktop.
+import heroMobileBgUrl from '../assets/upscale/hero_mobile_bg_2400w.webp'
+import heroMobileCharUrl from '../assets/upscale/hero_mobile_character_2400w.webp'
 // captura del Home con "Proyectos"/"Projects" activo (pantalla central, Punto 4) — una por idioma
 import homeShotEsUrl from '../assets/upscale/home_proyectos_1280w.jpg'
 import homeShotEnUrl from '../assets/upscale/home_projects_en_1280w.jpg'
@@ -26,6 +27,9 @@ import menuMobileBgUrl from '../assets/upscale/menu_movil_1080w.webp'
 import catMobileBgUrl from '../assets/upscale/categoria_movil_1080w.webp'
 import lucesMobileUrl from '../assets/efecto-galeria/Categoria_Mobile_Luces.png'
 import bioUrl from '../assets/upscale/bio_desktop_2400w.webp' // esqueleto rayos-X (Biografía)
+// Mobile — Biografía (30/7): misma composición ancha de callejón que el hero móvil, en modo
+// rayos X. Interacción propia (aros pulsantes → una caja visible a la vez), ver bio.js.
+import bioMobileUrl from '../assets/upscale/bio_mobile_desktop_4602w.webp'
 import { ticker } from './core/ticker.js'
 import { quality } from './core/quality.js'
 import { pointer } from './core/pointer.js'
@@ -58,6 +62,30 @@ if (lang) {
 const isMobile = matchMedia('(max-width: 768px)').matches
 document.documentElement.classList.toggle('is-mobile', isMobile)
 
+// Coordenadas propias de los 4 letreros sobre hero_mobile_bg_2400w.webp (composición ancha de
+// callejón, distinta a desktop) — pisan el style inline medido para desktop en el mismo <a>
+// (mismo texto/label, mismo componente .sign). Ángulos --ry en el mismo sentido que desktop:
+// positivo a la izquierda, negativo a la derecha (inclinación hacia el punto de fuga central).
+const MOBILE_SIGNS = {
+  home: { left: '5%', top: '37%', width: '24%', height: '22%', ry: '14deg' },
+  projects: { left: '7%', top: '10%', width: '35%', height: '19%', ry: '8deg' },
+  bio: { left: '59%', top: '7%', width: '35%', height: '20%', ry: '-8deg' },
+  contacto: { left: '73%', top: '35%', width: '24%', height: '24%', ry: '-14deg' },
+}
+const applyMobileSignLayout = () => {
+  const apply = (sel, key) => {
+    const a = document.querySelector(sel)
+    const c = MOBILE_SIGNS[key]
+    if (!a || !c) return
+    Object.assign(a.style, { left: c.left, top: c.top, width: c.width, height: c.height })
+    a.style.setProperty('--ry', c.ry)
+  }
+  apply('.neon-nav .sign:not([data-route])', 'home')
+  apply('.neon-nav .sign[data-route="projects"]', 'projects')
+  apply('.neon-nav .sign[data-route="bio"]', 'bio')
+  apply('.neon-nav .sign[data-route="contacto"]', 'contacto')
+}
+
 // Arquitectura (ANIMATION_SPEC §0)
 document.documentElement.dataset.tier = quality.tier
 stage.init()
@@ -71,13 +99,17 @@ if (lang) {
   document.documentElement.style.setProperty('--luces', `url(${lucesUrl})`)
   document.documentElement.style.setProperty('--bio', `url(${bioUrl})`)
   if (isMobile) {
-    // composición distinta (primer plano, sin capas bg/personaje separadas) → fondo CSS plano,
-    // sin el shader de profundidad (que necesita las dos texturas desktop)
-    document.documentElement.style.setProperty('--hero-mobile', `url(${heroMobileUrl})`)
     document.documentElement.style.setProperty('--room-mobile-bg', `url(${roomMobileUrl})`)
     document.documentElement.style.setProperty('--menu-mobile-bg', `url(${menuMobileBgUrl})`)
     document.documentElement.style.setProperty('--cat-bg-mobile', `url(${catMobileBgUrl})`)
     document.documentElement.style.setProperty('--luces-mobile', `url(${lucesMobileUrl})`)
+    // preview "apagado" de ambas pantallas de la sala de tránsito: la vertical comparte el
+    // callejón (mismo patrón que las pantallas de categoría desktop), la horizontal usa el hero
+    // limpio de desktop (proporción más cercana a la del monitor horizontal, sugerido por Charlie)
+    document.documentElement.style.setProperty('--hero-clean', `url(${heroCleanUrl})`)
+    document.documentElement.style.setProperty('--bio-mobile', `url(${bioMobileUrl})`)
+    initHero(heroMobileBgUrl, heroMobileCharUrl) // mismo shader multi-capa que desktop
+    applyMobileSignLayout()
   } else {
     initHero(heroBgUrl, heroCharUrl) // hero multi-capa (shader de profundidad) en desktop
   }
@@ -91,8 +123,8 @@ if (lang) {
   const calCatMode = params.has('calcat')
   initScreens() // proyecta el contenido de cada pantalla sobre el plano en perspectiva del monitor
   const category = initCategory({ lang }) // P3.B: página de categoría (billboard + galería)
-  const bio = initBio({ lang }) // P3.C: Biografía (modo rayos X)
-  const contacto = initContacto({ lang }) // P3.D: Contacto (azotea)
+  const bio = initBio({ lang, isMobile }) // P3.C: Biografía (modo rayos X)
+  const contacto = initContacto({ lang, isMobile }) // P3.D: Contacto (azotea)
   if (isMobile) {
     // título de cada botón vía category.catTitle() — mismo mapa ES/EN que usa la galería,
     // no se duplica la traducción en el HTML
@@ -108,7 +140,7 @@ if (lang) {
   // los proyectos → la 1.ª apertura de categoría no arranca en negro (el preloader solo cubre el hero)
   const warmGallery = () => {
     const shared = isMobile
-      ? [roomMobileUrl, menuMobileBgUrl, catMobileBgUrl, lucesMobileUrl, bioUrl]
+      ? [roomMobileUrl, menuMobileBgUrl, catMobileBgUrl, lucesMobileUrl, bioMobileUrl]
       : [catBgUrl, lucesUrl, bioUrl]
     shared.forEach((u) => {
       const im = new Image()

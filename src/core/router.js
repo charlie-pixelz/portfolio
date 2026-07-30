@@ -47,6 +47,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
   const roomMobileEl = document.querySelector('.room-mobile')
   const mFrame = roomMobileEl && roomMobileEl.querySelector('.room-mobile__frame')
   const screenVertical = roomMobileEl && roomMobileEl.querySelector('.screen-m--vertical')
+  const screenHorizontal = roomMobileEl && roomMobileEl.querySelector('.screen-m--horizontal')
   const projectsMenuEl = document.querySelector('.projects-menu')
   if (mFrame) gsap.set(mFrame, { transformOrigin: '0 0' })
 
@@ -132,21 +133,48 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
       })
   }
 
+  // filtro SVG de desenfoque de movimiento SOLO horizontal (feGaussianBlur stdDeviation="x 0"):
+  // un blur() de CSS es uniforme (también emborrona en vertical), pero Charlie pidió que el
+  // desenfoque de slideHorizontal sea puramente horizontal — se crea una vez y se anima el
+  // atributo stdDeviation durante el desplazamiento (mismo patrón que tvGlitch: nodo compartido).
+  const hBlur = (() => {
+    let svg = document.querySelector('#cp-hblur-svg')
+    if (!svg) {
+      svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      svg.id = 'cp-hblur-svg'
+      svg.setAttribute('width', '0')
+      svg.setAttribute('height', '0')
+      svg.style.position = 'absolute'
+      svg.innerHTML = '<filter id="cp-hblur" x="-30%" width="160%"><feGaussianBlur stdDeviation="0 0"/></filter>'
+      document.body.appendChild(svg)
+    }
+    return svg.querySelector('feGaussianBlur')
+  })()
+
   // desliza horizontalmente entre .projects-menu y .category (mobile). dir=1 avanzar (menú→
   // categoría, entra desde la derecha) · dir=-1 volver (entra desde la izquierda).
   const slideHorizontal = (outEl, inEl, dir, onDone) => {
     gsap.set(outEl, { xPercent: 0 })
     gsap.set(inEl, { xPercent: dir * 100 })
+    if (!reduced) gsap.set([outEl, inEl], { filter: 'url(#cp-hblur)' })
     gsap.to(outEl, { xPercent: -dir * 100, duration: DUR, ease: 'power3.inOut' })
     gsap.to(inEl, {
       xPercent: 0,
       duration: DUR,
       ease: 'power3.inOut',
       onComplete: () => {
-        gsap.set([outEl, inEl], { clearProps: 'transform' })
+        gsap.set([outEl, inEl], { clearProps: 'transform,filter' })
         onDone()
       },
     })
+    if (!reduced) {
+      const b = { v: 0 }
+      const setBlur = () => hBlur?.setAttribute('stdDeviation', `${b.v.toFixed(1)} 0`)
+      gsap
+        .timeline()
+        .to(b, { v: 9, duration: DUR / 2, ease: 'power2.in', onUpdate: setBlur })
+        .to(b, { v: 0, duration: DUR / 2, ease: 'power2.out', onUpdate: setBlur })
+    }
   }
 
   let current = 'home'
@@ -268,13 +296,21 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
   }
 
   // MOBILE — Parte: hero visible. Llega a: menú de Proyectos visible (4 categorías), hero oculto.
-  // Coreografía (ADENDUM §3): zoom-out → beat de "peek" a la sala (solo 1.ª vez, sessionStorage;
-  // tap la salta) → zoom-in cover a la pantalla vertical → esa pantalla ES el menú.
+  // Coreografía (ADENDUM §3 + ajuste 30/7 de Charlie): ZOOM-OUT real desde el hero (no crossfade)
+  // — la pantalla horizontal (equivalente al "central" de desktop) arranca ya encuadrada a pantalla
+  // completa (misma sensación que estar viendo el hero) y el frame se aleja hasta la sala completa
+  // → beat de "peek" a ambas pantallas (solo 1.ª vez, sessionStorage; tap la salta) → zoom-in cover
+  // a la pantalla vertical → esa pantalla ES el menú. .room-mobile va DESPUÉS de .hero en el DOM
+  // (mismo z-index) → al mostrarla ya tapa el hero por completo, sin necesitar un fundido.
   const homeToProjectsMobile = (done) => {
-    if (!roomMobileEl || !mFrame || !screenVertical || !projectsMenuEl) return done()
-    gsap.set(mFrame, { x: 0, y: 0, scale: 1 })
-    roomMobileEl.hidden = false
-    gsap.set(roomMobileEl, { opacity: 0 })
+    if (!roomMobileEl || !mFrame || !screenVertical || !screenHorizontal || !projectsMenuEl) return done()
+    // roomMobileEl.hidden=false PRIMERO: mientras está oculto (display:none) sus hijos miden
+    // rect 0×0 → zoomTo() daría NaN/Infinity y el tween quedaría roto en silencio (sin onComplete)
+    roomMobileEl.hidden = false // el DOM order la deja tapando el hero al instante
+    const zIn = zoomTo(screenHorizontal, 'cover', mFrame)
+    gsap.set(mFrame, { x: zIn.x, y: zIn.y, scale: zIn.scale }) // arranca ya "cerca" (como el hero)
+    tvGlitch() // enmascara el empalme hero↔pantalla horizontal
+    hero.hidden = true
     const firstTime = !sessionStorage.getItem('cp-projects-mobile-seen')
 
     const zoomInToMenu = () => {
@@ -303,11 +339,14 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
       })
     }
 
-    gsap.to(roomMobileEl, {
-      opacity: 1,
-      duration: XF,
+    // zoom-out: de "cerca" (llenando el viewport) a la sala completa (frame en su escala real)
+    gsap.to(mFrame, {
+      x: 0,
+      y: 0,
+      scale: 1,
+      duration: DUR,
+      ease: 'power3.inOut',
       onComplete: () => {
-        hero.hidden = true
         if (!firstTime) return zoomInToMenu() // visitas repetidas: sin el beat de "peek"
         // 1.ª vez: deja ver la sala completa un momento (tap la salta)
         let timer
@@ -322,16 +361,17 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
     })
   }
 
-  // MOBILE — Parte: menú de Proyectos visible. Llega a: hero visible, menú oculto.
+  // MOBILE — Parte: menú de Proyectos visible. Llega a: hero visible, menú oculto. Espejo exacto
+  // de homeToProjectsMobile: zoom-out del menú a la sala completa, zoom-in a la pantalla
+  // horizontal (llenando el viewport, como el hero) y AHÍ recién se revela el hero real.
   const projectsMobileToHome = (done) => {
-    if (!roomMobileEl || !mFrame || !screenVertical || !projectsMenuEl) return done()
-    hero.hidden = false
+    if (!roomMobileEl || !mFrame || !screenVertical || !screenHorizontal || !projectsMenuEl) return done()
     roomMobileEl.hidden = false
     gsap.set(roomMobileEl, { opacity: 1 })
     // la sala ya zoomeada calza con el encuadre del menú (misma textura) → el fundido del menú
     // revela la sala en la MISMA posición antes de empezar el zoom-out (sin salto visible)
-    const z = zoomTo(screenVertical, 'cover', mFrame)
-    gsap.set(mFrame, { x: z.x, y: z.y, scale: z.scale })
+    const zMenu = zoomTo(screenVertical, 'cover', mFrame)
+    gsap.set(mFrame, { x: zMenu.x, y: zMenu.y, scale: zMenu.scale })
     gsap.to(projectsMenuEl, {
       opacity: 0,
       duration: XF,
@@ -347,11 +387,18 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
       delay: XF,
       ease: 'power3.inOut',
       onComplete: () => {
-        tvGlitch()
-        gsap.to(roomMobileEl, {
-          opacity: 0,
-          duration: XF,
+        // sala completa visible un instante → zoom-in a la pantalla horizontal (mismo destino
+        // visual que el hero) y AHÍ se revela el hero real, tapado por la glitch
+        const zOut = zoomTo(screenHorizontal, 'cover', mFrame)
+        gsap.to(mFrame, {
+          x: zOut.x,
+          y: zOut.y,
+          scale: zOut.scale,
+          duration: DUR,
+          ease: 'power3.inOut',
           onComplete: () => {
+            tvGlitch()
+            hero.hidden = false
             roomMobileEl.hidden = true
             gsap.set(roomMobileEl, { clearProps: 'opacity' })
             gsap.set(mFrame, { clearProps: 'transform' })

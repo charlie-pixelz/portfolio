@@ -1,5 +1,15 @@
 /* Charlie Pixelz — Base del esqueleto (placeholder temático) */
 
+/* transición de vista NATIVA entre documentos (preloader raíz → /es/ o /en/, MPA real): sin esto,
+   el salto de idioma corta en seco al fondo --void mientras cargan los assets del hero, y recién
+   ahí aparece la escena ("brusca", pidió Charlie 30/7) — con esta regla en AMBOS documentos
+   (viejo y nuevo) los navegadores compatibles (Chrome/Edge) cross-fadean automáticamente la
+   captura de la página vieja con la nueva, sin JS. Progressive enhancement: cero costo ni cambio
+   de comportamiento en navegadores sin soporte (Safari/Firefox actuales).  */
+@view-transition {
+  navigation: auto;
+}
+
 *,
 *::before,
 *::after {
@@ -182,22 +192,18 @@ body {
     0 0 12px rgba(75, 223, 244, 0.65),
     0 0 30px rgba(75, 223, 244, 0.4); /* glow cian */
 }
-/* ── Hero MOBILE (≤768px, sincronizado con main.js): composición vertical distinta (primer
-   plano), sin capas bg/personaje separadas → fondo CSS plano, sin el shader de profundidad.
-   El encuadre no deja espacio para los 4 letreros diegéticos (ver hero_mobile_1080x1920.webp) →
-   se ocultan; el Pip-Boy pasa a ser la navegación principal desde Inicio. */
+/* ── Hero MOBILE (≤768px, sincronizado con main.js): composición ancha de callejón (30/7,
+   reemplaza la de primer plano) — mismo shader multi-capa que desktop (#gl pinta la escena,
+   sin background CSS acá). Los 4 letreros vuelven a ser la nav principal (coordenadas propias
+   aplicadas en JS vía applyMobileSignLayout(), pisan el style inline de desktop en el HTML). */
 @media (max-width: 768px) {
   .hero {
     width: 100vw;
     height: 100svh;
     aspect-ratio: auto;
-    background: var(--hero-mobile) center / cover no-repeat;
-  }
-  .hero .neon-nav {
-    display: none;
   }
   .hero .brand {
-    top: 85%; /* a la altura del pecho/cuello, visible en el encuadre vertical */
+    top: 86%; /* a la altura del pecho, bajo el callejón que ocupa el resto del encuadre */
   }
 }
 /* Punto 4: caja réplica del Home dentro de la pantalla central. Mismo aspecto (1.638) que
@@ -693,6 +699,9 @@ body.route-category .crt {
   width: 32.32%;
   height: 35.75%;
   clip-path: polygon(0.77% 0%, 49.81% 1.82%, 99.23% 3.05%, 100% 96.56%, 49.81% 99%, 0% 100%);
+  /* preview "apagado": mismo callejón que las pantallas de categoría (desktop) */
+  background: var(--alley) center / cover no-repeat;
+  filter: brightness(0.7) saturate(1.05);
 }
 .screen-m--horizontal {
   left: 47.56%;
@@ -700,6 +709,10 @@ body.route-category .crt {
   width: 44.03%;
   height: 14.53%;
   clip-path: polygon(0% 0.48%, 49.85% 0.96%, 100% 0%, 98.89% 98%, 49.85% 100%, 0% 98%);
+  /* preview "apagado": hero limpio de desktop (proporción horizontal más cercana a este monitor
+     que el hero móvil, que es un plano vertical) — es también el destino visual del zoom-out */
+  background: var(--hero-clean) center / cover no-repeat;
+  filter: brightness(0.7) saturate(1.05);
 }
 
 /* "menú" de Proyectos móvil: la pantalla vertical, ya en pantalla completa — mismo fondo de
@@ -716,23 +729,13 @@ body.route-category .crt {
 .projects-menu[hidden] {
   display: none;
 }
-.projects-menu__title {
-  position: absolute;
-  top: 9%;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-family: var(--font-display);
-  font-variation-settings: 'ROND' 0, 'wght' 800;
-  font-size: 7.5cqw;
-  color: var(--phosphor);
-  text-shadow: 0 0 12px var(--phosphor-glow);
-}
+/* sin título propio: el breadcrumb (.projects-menu__crumb) ya dice "Proyectos"/"Projects" —
+   pedido de Charlie 30/7, evita la redundancia de la maqueta original */
 .projects-menu__cats {
   position: absolute;
   left: 7%;
   right: 7%;
-  top: 24%;
+  top: 18%;
   bottom: 16%;
   display: flex;
   flex-direction: column;
@@ -780,6 +783,41 @@ body.route-category .crt {
     top: 25.45%;
     width: 56.76%;
     height: 43.51%;
+  }
+  /* Charlie (30/7): la UI quedaba muy chica — los cqw de arriba están pensados para el .cat__stage
+     ANCHO de desktop; en el .cat__stage angosto de mobile (100vw) el mismo % da píxeles mucho
+     menores. Flechas más grandes y más pegadas a los bordes; caja de info ANCHA y DEBAJO del
+     lienzo entero (no superpuesta) — deja ver el borde inferior del lienzo para calibrar. */
+  .cat__arrow {
+    top: 47%;
+    width: 11cqw;
+    height: 11cqw;
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .cat__arrow--prev {
+    left: 5%;
+  }
+  .cat__arrow--next {
+    right: 5%;
+  }
+  .cat__info {
+    left: 5%;
+    top: 72%; /* debajo del borde real del lienzo (25.45% + 43.51% = 68.96%) */
+    width: 90%;
+    padding: 1em 1.2em 1.2em;
+  }
+  .cat__title {
+    font-size: clamp(1.15rem, 5.5cqw, 1.7rem);
+  }
+  .cat__counter {
+    font-size: clamp(0.75rem, 3cqw, 1rem);
+  }
+  .cat__desc {
+    font-size: clamp(0.85rem, 3.2cqw, 1rem);
+  }
+  .cat__tags li {
+    font-size: clamp(0.68rem, 2.6cqw, 0.85rem);
   }
   /* red de seguridad: la sala desktop nunca debe verse en mobile, sea cual sea el estado del
      router (belt-and-suspenders, no depende solo de la lógica JS) */
@@ -1015,6 +1053,115 @@ body.route-category .crt {
 .is-typed::after {
   visibility: hidden;
 }
+
+/* ── Biografía MOBILE (30/7): interacción propia — 3 aros pulsantes sobre el esqueleto
+   (cuello=About por defecto, hombro=Habilidades, cráneo=Herramientas), UNA caja visible a la
+   vez. bio.js decide qué caja mostrar; acá solo el layout/estética. ── */
+@media (max-width: 768px) {
+  .bio__scene {
+    width: 100vw;
+    height: 100svh;
+    aspect-ratio: auto;
+  }
+  .bio__scene::before {
+    background: var(--bio-mobile) center / cover no-repeat;
+  }
+  /* .bio__side solo ordena las cajas en columnas L/R (layout de desktop) — en mobile cada caja
+     se posiciona sola (position:fixed) y sale de ese flujo por completo */
+  .bio__side {
+    display: contents;
+  }
+  .bio__box--about,
+  .bio__box--skills {
+    position: fixed;
+    left: 5%;
+    right: 5%;
+    top: 8%;
+    width: auto;
+    padding: 1.1rem 1.3rem;
+  }
+  .bio__box--tools {
+    position: fixed;
+    right: 0;
+    top: 20%;
+    bottom: 12%;
+    width: 64%;
+    padding: 1.1rem 1.2rem;
+    overflow-y: auto;
+  }
+  .bio__title,
+  .bio__box-title {
+    font-size: 1.5rem;
+  }
+  .bio__text,
+  .bio__skills li {
+    font-size: 1rem;
+  }
+  .bio__tools {
+    grid-template-columns: max-content; /* 1 columna: el panel lateral es angosto */
+  }
+  .bio__tool-name {
+    font-size: 1rem;
+  }
+  .bio__tool-ico {
+    width: 34px;
+    height: 34px;
+  }
+}
+/* aros: SOLO existen visualmente en mobile (desktop no los usa) */
+.bio__rings {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+@media (min-width: 769px) {
+  .bio__rings {
+    display: none;
+  }
+}
+.bio__ring {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  transform: translate(-50%, -50%);
+  padding: 0;
+  border: 2px solid var(--phosphor);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 0 8px var(--phosphor-glow);
+}
+/* pulso constante: un aro "hijo" (::before) crece desde el centro y se desvanece — invita al tap
+   sin depender de hover (no existe en touch). Un solo evento por ciclo, lento (WCAG 2.3.1). */
+.bio__ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--phosphor);
+  border-radius: 50%;
+  animation: bioRingPulse 2.4s ease-out infinite;
+}
+@keyframes bioRingPulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+.bio__ring.is-active {
+  background: var(--phosphor);
+  box-shadow: 0 0 16px var(--phosphor-glow);
+}
+.bio__ring:focus-visible {
+  outline: 2px dashed #fff;
+  outline-offset: 3px;
+}
+
 /* marco "pixelado" compartido de las cajas capa-OS (Biografía, Contacto, categoría): borde
    fósforo con esquinas ESCALONADAS. clip-path define la silueta escalonada; ::after es el
    relleno oscuro inset → el borde queda como un aro fósforo que sigue los escalones. Estética
@@ -1215,6 +1362,34 @@ body.route-category .crt {
   .contacto__glitch.is-on { animation: none; }
 }
 
+/* Contacto MOBILE (30/7): mismos assets de desktop, ajustados a la proporción vertical — el video
+   (16:9) se recorta con object-position sesgado hacia el personaje para lograr el encuadre del
+   poster móvil (2/3 ciudad + 1/3 personaje); el panel pasa de columna izquierda a franja inferior
+   a todo ancho (igual criterio que el resto de las cajas móviles). */
+@media (max-width: 768px) {
+  .contacto__video {
+    object-position: 68% 50%;
+  }
+  .contacto__panel {
+    left: 5%;
+    right: 5%;
+    top: auto;
+    bottom: 9%;
+    width: auto;
+    padding: 1.3rem 1.4rem 1.4rem;
+  }
+  .contacto__tagline {
+    font-size: clamp(1.3rem, 5.5vw, 1.6rem);
+  }
+  .contacto__link-label {
+    min-width: 5.2em;
+    font-size: clamp(0.95rem, 3.6vw, 1.05rem);
+  }
+  .contacto__link-value {
+    font-size: clamp(0.88rem, 3.4vw, 1rem);
+  }
+}
+
 /* ── "Cambio de canal" (glitch de TV): enmascara el salto de perspectiva galería↔sala ── */
 .tv-glitch {
   position: fixed;
@@ -1389,10 +1564,17 @@ body.route-category .crt {
     filter 0.2s ease,
     transform 0.12s ease;
 }
-.pipboy__toggle:hover,
 .pipboy.is-open .pipboy__toggle {
-  background-image: var(--menu-on); /* ícono "encendido" (relleno) al abrir/hover */
+  background-image: var(--menu-on); /* ícono "encendido" (relleno) al abrir */
   filter: drop-shadow(0 0 14px var(--phosphor-glow));
+}
+/* el hover real solo existe con puntero fino: en touch, :hover queda "pegado" tras el tap
+   (no hay mouse que lo despegue al moverse) y el ícono se veía encendido con el panel ya cerrado */
+@media (hover: hover) and (pointer: fine) {
+  .pipboy__toggle:hover {
+    background-image: var(--menu-on);
+    filter: drop-shadow(0 0 14px var(--phosphor-glow));
+  }
 }
 .pipboy__toggle:active {
   transform: scale(0.94);
@@ -1613,6 +1795,37 @@ body.route-contacto .pipboy__item[data-route='contacto'] {
   }
 }
 
+/* Preloader MOBILE: los clamp() de arriba fijan piso pensado en desktop (9.6vw en 375px de ancho
+   son ~36px, por debajo del piso de 2.56rem) → en mobile todo quedaba chico. Charlie pidió una
+   composición más grande (maqueta 30/7): selector de idioma más presente, lockup/tagline finales
+   ocupando más ancho/alto. */
+@media (max-width: 768px) {
+  .lang-prompt {
+    font-size: 1rem;
+  }
+  .lang--cream a {
+    padding: 0.65rem 1.5rem;
+    font-size: 1.05rem;
+  }
+  .preloader__lockup {
+    bottom: 6%;
+    max-width: 96vw;
+  }
+  .pct {
+    font-size: clamp(2.1rem, 9vw, 3.4rem);
+  }
+  .brand--preloader .brand__charlie {
+    font-size: clamp(3.4rem, 16vw, 6.2rem);
+  }
+  .brand--preloader .brand__pixelz {
+    font-size: clamp(1.5rem, 7.4vw, 2.7rem);
+  }
+  .tagline--cream {
+    max-width: 88vw;
+    font-size: clamp(0.95rem, 4.2vw, 1.15rem);
+  }
+}
+
 /* salida del preloader: la UI (%/marca/selector) se desvanece mientras el shader hace el glitch */
 .preloader.is-exiting .lang-select {
   animation: none;
@@ -1694,5 +1907,9 @@ html.lenis body {
   .lang-select:not([hidden]),
   .sign {
     animation: none;
+  }
+  .bio__ring::before {
+    animation: none;
+    display: none;
   }
 }
