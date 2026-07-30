@@ -563,7 +563,8 @@ body.route-room .crt {
 /* breadcrumb + volver (esquina superior izquierda, la reservada para navegación) */
 .cat__crumb,
 .bio__crumb,
-.contacto__crumb {
+.contacto__crumb,
+.projects-menu__crumb {
   position: fixed;
   top: 1.1rem;
   left: 1.1rem;
@@ -574,7 +575,8 @@ body.route-room .crt {
 }
 .cat__back,
 .bio__back,
-.contacto__back {
+.contacto__back,
+.projects-menu__back {
   font-family: var(--font-pixel);
   font-variation-settings: 'wght' 500, 'ELGR' 2; /* sólido, sin huecos (ver .cat__title) */
   font-size: 1.5rem; /* a la altura del título de cada obra */
@@ -595,7 +597,9 @@ body.route-room .crt {
 .bio__back:hover,
 .bio__back:focus-visible,
 .contacto__back:hover,
-.contacto__back:focus-visible {
+.contacto__back:focus-visible,
+.projects-menu__back:hover,
+.projects-menu__back:focus-visible {
   background: var(--phosphor);
   color: var(--void);
   box-shadow: 0 0 16px var(--phosphor-glow);
@@ -603,7 +607,8 @@ body.route-room .crt {
 }
 .cat__name,
 .bio__name,
-.contacto__name {
+.contacto__name,
+.projects-menu__name {
   font-family: var(--font-pixel);
   font-variation-settings: 'wght' 500, 'ELGR' 2; /* sólido, sin huecos (ver .cat__title) */
   font-size: 1.55rem;
@@ -643,6 +648,150 @@ body.route-room .crt {
 /* la categoría no lleva CRT global (el billboard ya trae su textura); obras limpias */
 body.route-category .crt {
   display: none;
+}
+
+/* ── MOBILE — Proyectos/Categoría (ADENDUM §3, "decisión final") ──
+   Sala de 2 pantallas de solo TRÁNSITO (nunca se interactúa con ellas): el zoom-in a la
+   vertical desemboca en .projects-menu, ya en pantalla completa. La horizontal es ambiental. */
+.room-mobile {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: #000107;
+  overflow: hidden; /* el zoom escala el frame por encima del viewport */
+}
+.room-mobile[hidden] {
+  display: none;
+}
+/* fundido oscuro arriba/abajo del VIEWPORT (no del frame) — el frame es width-fit y puede
+   pasarse de alto en teléfonos angostos; el fundido disimula el corte contra el borde */
+.room-mobile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(#000107 0%, transparent 10%, transparent 90%, #000107 100%);
+}
+.room-mobile__frame {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 100vw; /* width-fit SIEMPRE (nunca se reduce por alto, a diferencia del frame desktop) */
+  aspect-ratio: 1080 / 1827; /* proporción real del asset as-built (no 1080/1920 nominal) */
+  background: var(--room-mobile-bg) center / cover no-repeat;
+  transform-origin: 0 0; /* el router zoomea sobre este frame */
+  will-change: transform;
+}
+/* cuadriláteros medidos en proyectos_movil_pantallas.json (validados, desviación máx. 0.46%) */
+.screen-m {
+  position: absolute;
+}
+.screen-m--vertical {
+  left: 11.34%;
+  top: 31.98%;
+  width: 32.32%;
+  height: 35.75%;
+  clip-path: polygon(0.77% 0%, 49.81% 1.82%, 99.23% 3.05%, 100% 96.56%, 49.81% 99%, 0% 100%);
+}
+.screen-m--horizontal {
+  left: 47.56%;
+  top: 42.3%;
+  width: 44.03%;
+  height: 14.53%;
+  clip-path: polygon(0% 0.48%, 49.85% 0.96%, 100% 0%, 98.89% 98%, 49.85% 100%, 0% 98%);
+}
+
+/* "menú" de Proyectos móvil: la pantalla vertical, ya en pantalla completa — mismo fondo de
+   callejón (comparte textura con el estado "apagado" de las pantallas, como en desktop) +
+   título y 4 categorías en HTML/CSS encima (maqueta 19-jul). */
+.projects-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: var(--menu-mobile-bg) center / cover no-repeat #04050a;
+  overflow: hidden;
+  container-type: inline-size; /* cqw: título/botones escalan con el ancho del viewport */
+}
+.projects-menu[hidden] {
+  display: none;
+}
+.projects-menu__title {
+  position: absolute;
+  top: 9%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-variation-settings: 'ROND' 0, 'wght' 800;
+  font-size: 7.5cqw;
+  color: var(--phosphor);
+  text-shadow: 0 0 12px var(--phosphor-glow);
+}
+.projects-menu__cats {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 24%;
+  bottom: 16%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4cqw;
+  list-style: none;
+}
+.projects-menu__cat {
+  padding: 3.2cqw 4cqw;
+  --os-fill: rgba(2, 13, 7, 0.82);
+  font-family: var(--font-pixel);
+  font-variation-settings: 'wght' 600, 'ELGR' 2;
+  font-size: 5cqw;
+  line-height: 1.1;
+  color: var(--phosphor);
+  text-align: left;
+  text-shadow: 0 0 8px var(--phosphor-glow);
+  cursor: pointer;
+}
+/* hover/selección = recuadro invertido "de terminal" (ADENDUM §2) */
+.projects-menu__cat:hover,
+.projects-menu__cat:focus-visible {
+  --os-fill: var(--phosphor);
+  color: var(--void);
+  text-shadow: none;
+  outline: none;
+}
+
+@media (max-width: 768px) {
+  /* fondo + proporción real de categoria_movil_1080w.webp (distinta a la desktop) */
+  .cat__stage {
+    width: 100vw;
+    aspect-ratio: 1080 / 1827;
+  }
+  .cat__stage::before {
+    background: var(--cat-bg-mobile) center / cover no-repeat;
+  }
+  .cat__luces {
+    background: var(--luces-mobile) center / cover no-repeat;
+  }
+  /* cara del letrero medida por análisis de píxeles de categoria_movil_1080w.webp (overlay
+     verificado — no a ojo, ver historial de esta sesión) */
+  .cat__canvas {
+    left: 23.15%;
+    top: 25.45%;
+    width: 56.76%;
+    height: 43.51%;
+  }
+  /* red de seguridad: la sala desktop nunca debe verse en mobile, sea cual sea el estado del
+     router (belt-and-suspenders, no depende solo de la lógica JS) */
+  .room {
+    display: none !important;
+  }
+}
+@media (min-width: 769px) {
+  .room-mobile,
+  .projects-menu {
+    display: none !important;
+  }
 }
 
 /* ── P3.C: Biografía (modo rayos X, capa OS fósforo) ── */

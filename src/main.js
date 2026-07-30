@@ -18,6 +18,13 @@ import roomBgUrl from '../assets/upscale/proyectos_desktop_2400w.webp'
 import alleyUrl from '../assets/upscale/pantalla_callejon_1536w.webp'
 import catBgUrl from '../assets/upscale/categoria_desktop_2534w.webp'
 import lucesUrl from '../assets/efecto-galeria/Categoria_Desktop_Luces.png'
+// Mobile — Proyectos/Categoría (ADENDUM §3, "decisión final"): sala de 2 pantallas (vertical =
+// destino del zoom, horizontal = ambiental) → zoom-in a la vertical → esa pantalla se convierte
+// en la página "menú" (título + 4 categorías) sobre el mismo fondo de callejón compartido.
+import roomMobileUrl from '../assets/upscale/proyectos_movil_1080w.webp'
+import menuMobileBgUrl from '../assets/upscale/menu_movil_1080w.webp'
+import catMobileBgUrl from '../assets/upscale/categoria_movil_1080w.webp'
+import lucesMobileUrl from '../assets/efecto-galeria/Categoria_Mobile_Luces.png'
 import bioUrl from '../assets/upscale/bio_desktop_2400w.webp' // esqueleto rayos-X (Biografía)
 import { ticker } from './core/ticker.js'
 import { quality } from './core/quality.js'
@@ -67,6 +74,10 @@ if (lang) {
     // composición distinta (primer plano, sin capas bg/personaje separadas) → fondo CSS plano,
     // sin el shader de profundidad (que necesita las dos texturas desktop)
     document.documentElement.style.setProperty('--hero-mobile', `url(${heroMobileUrl})`)
+    document.documentElement.style.setProperty('--room-mobile-bg', `url(${roomMobileUrl})`)
+    document.documentElement.style.setProperty('--menu-mobile-bg', `url(${menuMobileBgUrl})`)
+    document.documentElement.style.setProperty('--cat-bg-mobile', `url(${catMobileBgUrl})`)
+    document.documentElement.style.setProperty('--luces-mobile', `url(${lucesMobileUrl})`)
   } else {
     initHero(heroBgUrl, heroCharUrl) // hero multi-capa (shader de profundidad) en desktop
   }
@@ -82,12 +93,24 @@ if (lang) {
   const category = initCategory({ lang }) // P3.B: página de categoría (billboard + galería)
   const bio = initBio({ lang }) // P3.C: Biografía (modo rayos X)
   const contacto = initContacto({ lang }) // P3.D: Contacto (azotea)
-  initRouter({ lang, base: '/portfolio/', category, bio, contacto }) // Inicio ↔ Proyectos ↔ Categoría ↔ Biografía ↔ Contacto
+  if (isMobile) {
+    // título de cada botón vía category.catTitle() — mismo mapa ES/EN que usa la galería,
+    // no se duplica la traducción en el HTML
+    document.querySelectorAll('.projects-menu__cat').forEach((btn) => {
+      // el label va en un <span> (hijo elemento): .os-frame solo sube al frente (z-index) a los
+      // hijos ELEMENTO, un nodo de texto suelto queda debajo del relleno (::after) y no se ve
+      btn.querySelector('span').textContent = category.catTitle(btn.dataset.cat)
+    })
+  }
+  initRouter({ lang, base: '/portfolio/', category, bio, contacto, isMobile }) // Inicio ↔ Proyectos ↔ Categoría ↔ Biografía ↔ Contacto
   initMenu() // menú Pip-Boy global (botón esq. sup. der. → panel de navegación + idioma)
   // precalienta en idle los assets compartidos de la galería (billboard + luces) y la media de
   // los proyectos → la 1.ª apertura de categoría no arranca en negro (el preloader solo cubre el hero)
   const warmGallery = () => {
-    ;[catBgUrl, lucesUrl, bioUrl].forEach((u) => {
+    const shared = isMobile
+      ? [roomMobileUrl, menuMobileBgUrl, catMobileBgUrl, lucesMobileUrl, bioUrl]
+      : [catBgUrl, lucesUrl, bioUrl]
+    shared.forEach((u) => {
       const im = new Image()
       im.src = u
     })

@@ -34,6 +34,29 @@
         <a class="screen screen--central" data-route="home" href="#" aria-label="Back to Home" style="left: 35.59%; top: 37.72%; width: 29.12%; height: 29.16%; clip-path: polygon(0.14% 0.00%, 100.00% 0.45%, 99.11% 98.99%, 0.00% 100.00%)"><span class="screen__plane"></span></a>
       </div>
     </section>
+    <!-- Mobile (ADENDUM §3): sala de 2 pantallas, solo de TRÁNSITO — la vertical es el destino
+         del zoom-in, la horizontal es ambiental (sin contenido, ninguna es clicable). El zoom
+         hacia la vertical desemboca en .projects-menu (misma imagen de fondo, ya en pantalla
+         completa). -->
+    <section class="room-mobile" hidden aria-label="Projects">
+      <div class="room-mobile__frame">
+        <div class="screen-m screen-m--vertical" aria-hidden="true"></div>
+        <div class="screen-m screen-m--horizontal" aria-hidden="true"></div>
+      </div>
+    </section>
+    <section class="projects-menu" hidden aria-label="Projects">
+      <h2 class="projects-menu__title">Projects</h2>
+      <nav class="projects-menu__cats" aria-label="Categories">
+        <button class="projects-menu__cat os-frame" type="button" data-cat="ilustracion"><span></span></button>
+        <button class="projects-menu__cat os-frame" type="button" data-cat="motion"><span></span></button>
+        <button class="projects-menu__cat os-frame" type="button" data-cat="web"><span></span></button>
+        <button class="projects-menu__cat os-frame" type="button" data-cat="ia"><span></span></button>
+      </nav>
+      <div class="projects-menu__crumb">
+        <button class="projects-menu__back" data-route="home" aria-label="Back to Home">‹ Home</button>
+        <span class="projects-menu__name">Projects</span>
+      </div>
+    </section>
     <section class="category" hidden aria-label="Category">
       <div class="cat__stage">
         <div class="cat__canvas"></div>

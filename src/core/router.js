@@ -9,6 +9,13 @@
 // la vista actual, y LUEGO "entrar" a la vista destino desde Inicio. Esto es intencional (evita
 // el bug histórico de que una vista especial quedara sin cerrar al saltar a otra) — ver
 // exitToHome()/enterFromHome() más abajo.
+//
+// MOBILE (ADENDUM §3): Proyectos↔Categoría usan una coreografía y una arquitectura DISTINTAS —
+// una sala de 2 pantallas de solo tránsito → zoom-in a la vertical → esa pantalla se convierte
+// en un menú de 4 categorías (HTML) → elegir categoría desliza horizontalmente a la galería.
+// Los 4 pares "dedicados" (`homeToProjects`, `projectsToHome`, `projectsToCat`, `catToProjects`)
+// son despachadores: mismo nombre/firma que antes, pero por dentro eligen la variante mobile o
+// desktop — así direct()/exitToHome()/enterFromHome() no necesitan saber cuál corre.
 
 import { gsap } from 'gsap'
 import { quality } from './quality.js'
@@ -24,8 +31,9 @@ const TITLE = {
 }
 const DUR = 0.8
 const XF = 0.18
+const PROJECTS_BEAT_MS = 750 // pausa del "peek" a la sala móvil, solo la 1.ª vez por sesión
 
-export function initRouter({ lang, base, category, bio, contacto }) {
+export function initRouter({ lang, base, category, bio, contacto, isMobile = false }) {
   const hero = document.querySelector('.hero')
   const room = document.querySelector('.room')
   const frame = room && room.querySelector('.room__frame')
@@ -34,6 +42,13 @@ export function initRouter({ lang, base, category, bio, contacto }) {
 
   const catScreens = {}
   CATS.forEach((c) => (catScreens[c] = room.querySelector(`.screen[data-cat="${c}"]`)))
+
+  // elementos mobile (siempre existen en el HTML compartido; solo se USAN si isMobile)
+  const roomMobileEl = document.querySelector('.room-mobile')
+  const mFrame = roomMobileEl && roomMobileEl.querySelector('.room-mobile__frame')
+  const screenVertical = roomMobileEl && roomMobileEl.querySelector('.screen-m--vertical')
+  const projectsMenuEl = document.querySelector('.projects-menu')
+  if (mFrame) gsap.set(mFrame, { transformOrigin: '0 0' })
 
   const url = {
     home: `${base}${lang}/`,
@@ -117,13 +132,30 @@ export function initRouter({ lang, base, category, bio, contacto }) {
       })
   }
 
+  // desliza horizontalmente entre .projects-menu y .category (mobile). dir=1 avanzar (menú→
+  // categoría, entra desde la derecha) · dir=-1 volver (entra desde la izquierda).
+  const slideHorizontal = (outEl, inEl, dir, onDone) => {
+    gsap.set(outEl, { xPercent: 0 })
+    gsap.set(inEl, { xPercent: dir * 100 })
+    gsap.to(outEl, { xPercent: -dir * 100, duration: DUR, ease: 'power3.inOut' })
+    gsap.to(inEl, {
+      xPercent: 0,
+      duration: DUR,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        gsap.set([outEl, inEl], { clearProps: 'transform' })
+        onDone()
+      },
+    })
+  }
+
   let current = 'home'
   let busy = false
 
   // transform que lleva un elemento (pantalla) a llenar el viewport. contain=min (encaje
   // exacto, para la central); cover=max (llenar, para monitores de categoría).
-  const zoomTo = (el, mode) => {
-    const fr = frame.getBoundingClientRect()
+  const zoomTo = (el, mode, targetFrame = frame) => {
+    const fr = targetFrame.getBoundingClientRect()
     const cr = el.getBoundingClientRect()
     const vw = window.innerWidth
     const vh = window.innerHeight
@@ -149,9 +181,15 @@ export function initRouter({ lang, base, category, bio, contacto }) {
 
   const applyInstant = (view, push) => {
     const c = catOf(view)
-    room.hidden = view !== 'projects'
     hero.hidden = view !== 'home'
     category.el.hidden = !c
+    if (isMobile) {
+      room.hidden = true // la sala desktop nunca se usa en mobile
+      if (roomMobileEl) roomMobileEl.hidden = true // solo tránsito, nunca el estado de reposo
+      if (projectsMenuEl) projectsMenuEl.hidden = view !== 'projects'
+    } else {
+      room.hidden = view !== 'projects'
+    }
     if (bio) bio.el.hidden = view !== 'bio'
     if (contacto) contacto.el.hidden = view !== 'contacto'
     if (c) {
@@ -168,6 +206,7 @@ export function initRouter({ lang, base, category, bio, contacto }) {
       contacto.reveal()
     }
     gsap.set(frame, { clearProps: 'transform' })
+    if (mFrame) gsap.set(mFrame, { clearProps: 'transform' })
     setState(view, push)
     if (view === 'home') dispatchEvent(new Event('cp:refit-signs'))
   }
@@ -177,8 +216,8 @@ export function initRouter({ lang, base, category, bio, contacto }) {
   // maneja go() al final de la cadena, para que también funcione cuando se encadenan (p.ej.
   // Categoría → Proyectos → Inicio para llegar a Biografía desde una categoría).
 
-  // Parte: room visible, hero oculto. Llega a: hero visible, room oculto.
-  const projectsToHome = (done) => {
+  // Parte: room visible, hero oculto. Llega a: hero visible, room oculto. (DESKTOP)
+  const projectsToHomeDesktop = (done) => {
     hero.hidden = false
     const z = zoomTo(central, 'contain')
     gsap.to(frame, {
@@ -204,8 +243,8 @@ export function initRouter({ lang, base, category, bio, contacto }) {
     })
   }
 
-  // Parte: hero visible, room oculto. Llega a: room visible, hero oculto.
-  const homeToProjects = (done) => {
+  // Parte: hero visible, room oculto. Llega a: room visible, hero oculto. (DESKTOP)
+  const homeToProjectsDesktop = (done) => {
     tvGlitch()
     room.hidden = false
     dispatchEvent(new Event('cp:refit-screens'))
@@ -228,9 +267,104 @@ export function initRouter({ lang, base, category, bio, contacto }) {
     })
   }
 
+  // MOBILE — Parte: hero visible. Llega a: menú de Proyectos visible (4 categorías), hero oculto.
+  // Coreografía (ADENDUM §3): zoom-out → beat de "peek" a la sala (solo 1.ª vez, sessionStorage;
+  // tap la salta) → zoom-in cover a la pantalla vertical → esa pantalla ES el menú.
+  const homeToProjectsMobile = (done) => {
+    if (!roomMobileEl || !mFrame || !screenVertical || !projectsMenuEl) return done()
+    gsap.set(mFrame, { x: 0, y: 0, scale: 1 })
+    roomMobileEl.hidden = false
+    gsap.set(roomMobileEl, { opacity: 0 })
+    const firstTime = !sessionStorage.getItem('cp-projects-mobile-seen')
+
+    const zoomInToMenu = () => {
+      sessionStorage.setItem('cp-projects-mobile-seen', '1')
+      const z = zoomTo(screenVertical, 'cover', mFrame)
+      gsap.to(mFrame, {
+        x: z.x,
+        y: z.y,
+        scale: z.scale,
+        duration: DUR,
+        ease: 'power3.inOut',
+        onComplete: () => {
+          tvGlitch() // enmascara el empalme sala↔menú (misma textura, pero el encuadre cambia)
+          projectsMenuEl.hidden = false
+          gsap.set(projectsMenuEl, { opacity: 0 })
+          gsap.to(projectsMenuEl, {
+            opacity: 1,
+            duration: XF,
+            onComplete: () => {
+              roomMobileEl.hidden = true
+              gsap.set(mFrame, { clearProps: 'transform' })
+              done()
+            },
+          })
+        },
+      })
+    }
+
+    gsap.to(roomMobileEl, {
+      opacity: 1,
+      duration: XF,
+      onComplete: () => {
+        hero.hidden = true
+        if (!firstTime) return zoomInToMenu() // visitas repetidas: sin el beat de "peek"
+        // 1.ª vez: deja ver la sala completa un momento (tap la salta)
+        let timer
+        const advance = () => {
+          clearTimeout(timer)
+          roomMobileEl.removeEventListener('pointerdown', advance)
+          zoomInToMenu()
+        }
+        roomMobileEl.addEventListener('pointerdown', advance, { once: true })
+        timer = setTimeout(advance, PROJECTS_BEAT_MS)
+      },
+    })
+  }
+
+  // MOBILE — Parte: menú de Proyectos visible. Llega a: hero visible, menú oculto.
+  const projectsMobileToHome = (done) => {
+    if (!roomMobileEl || !mFrame || !screenVertical || !projectsMenuEl) return done()
+    hero.hidden = false
+    roomMobileEl.hidden = false
+    gsap.set(roomMobileEl, { opacity: 1 })
+    // la sala ya zoomeada calza con el encuadre del menú (misma textura) → el fundido del menú
+    // revela la sala en la MISMA posición antes de empezar el zoom-out (sin salto visible)
+    const z = zoomTo(screenVertical, 'cover', mFrame)
+    gsap.set(mFrame, { x: z.x, y: z.y, scale: z.scale })
+    gsap.to(projectsMenuEl, {
+      opacity: 0,
+      duration: XF,
+      onComplete: () => {
+        projectsMenuEl.hidden = true
+      },
+    })
+    gsap.to(mFrame, {
+      x: 0,
+      y: 0,
+      scale: 1,
+      duration: DUR,
+      delay: XF,
+      ease: 'power3.inOut',
+      onComplete: () => {
+        tvGlitch()
+        gsap.to(roomMobileEl, {
+          opacity: 0,
+          duration: XF,
+          onComplete: () => {
+            roomMobileEl.hidden = true
+            gsap.set(roomMobileEl, { clearProps: 'opacity' })
+            gsap.set(mFrame, { clearProps: 'transform' })
+            done()
+          },
+        })
+      },
+    })
+  }
+
   // Parte: room visible (monitor de `catKey` en su lugar), categoría oculta. Llega a: categoría
-  // visible (billboard), room oculto.
-  const projectsToCat = (catKey, done) => {
+  // visible (billboard), room oculto. (DESKTOP)
+  const projectsToCatDesktop = (catKey, done) => {
     category.prepare(catKey)
     gsap.set(frame, { x: 0, y: 0, scale: 1 })
     flattenScreen(catKey, 0)
@@ -261,8 +395,8 @@ export function initRouter({ lang, base, category, bio, contacto }) {
     })
   }
 
-  // Parte: categoría visible (`catKey`), room oculto. Llega a: room visible, categoría oculta.
-  const catToProjects = (catKey, done) => {
+  // Parte: categoría visible (`catKey`), room oculto. Llega a: room visible, categoría oculta. (DESKTOP)
+  const catToProjectsDesktop = (catKey, done) => {
     tvGlitch()
     room.hidden = false
     dispatchEvent(new Event('cp:refit-screens'))
@@ -292,6 +426,30 @@ export function initRouter({ lang, base, category, bio, contacto }) {
         resetHover()
         done()
       },
+    })
+  }
+
+  // MOBILE — Parte: menú de Proyectos visible. Llega a: categoría visible (billboard), menú
+  // oculto. "Al elegir categoría, desplazamiento horizontal" (ADENDUM §3) — sin zoom ni homografía.
+  const projectsMenuToCat = (catKey, done) => {
+    if (!projectsMenuEl) return done()
+    category.prepare(catKey)
+    category.el.hidden = false
+    slideHorizontal(projectsMenuEl, category.el, 1, () => {
+      projectsMenuEl.hidden = true
+      category.lightOn()
+      done()
+    })
+  }
+
+  // MOBILE — Parte: categoría visible (`catKey`). Llega a: menú de Proyectos visible, categoría oculta.
+  const catToProjectsMenu = (catKey, done) => {
+    if (!projectsMenuEl) return done()
+    projectsMenuEl.hidden = false
+    slideHorizontal(category.el, projectsMenuEl, -1, () => {
+      category.el.hidden = true
+      category.reset()
+      done()
     })
   }
 
@@ -348,6 +506,13 @@ export function initRouter({ lang, base, category, bio, contacto }) {
       done()
     })
   }
+
+  // despachadores: mismo nombre/firma para desktop y mobile — direct()/exitToHome()/
+  // enterFromHome() no necesitan saber cuál corre por dentro.
+  const homeToProjects = (done) => (isMobile ? homeToProjectsMobile(done) : homeToProjectsDesktop(done))
+  const projectsToHome = (done) => (isMobile ? projectsMobileToHome(done) : projectsToHomeDesktop(done))
+  const projectsToCat = (catKey, done) => (isMobile ? projectsMenuToCat(catKey, done) : projectsToCatDesktop(catKey, done))
+  const catToProjects = (catKey, done) => (isMobile ? catToProjectsMenu(catKey, done) : catToProjectsDesktop(catKey, done))
 
   // pares con animación DEDICADA (ver cabecera del archivo)
   const direct = (from, view) => {
@@ -409,7 +574,7 @@ export function initRouter({ lang, base, category, bio, contacto }) {
       go(node.dataset.route, true)
     }),
   )
-  // monitores de categoría → su página
+  // monitores de categoría → su página (desktop)
   CATS.forEach((c) => {
     const s = catScreens[c]
     if (s) s.addEventListener('click', (e) => {
@@ -417,6 +582,13 @@ export function initRouter({ lang, base, category, bio, contacto }) {
       go('cat:' + c, true)
     })
   })
+  // botones de categoría del menú móvil
+  document.querySelectorAll('.projects-menu__cat[data-cat]').forEach((btn) =>
+    btn.addEventListener('click', (e) => {
+      e.preventDefault()
+      go('cat:' + btn.dataset.cat, true)
+    }),
+  )
 
   window.addEventListener('popstate', (e) => {
     let view = e.state && e.state.view
