@@ -182,6 +182,24 @@ body {
     0 0 12px rgba(75, 223, 244, 0.65),
     0 0 30px rgba(75, 223, 244, 0.4); /* glow cian */
 }
+/* ── Hero MOBILE (≤768px, sincronizado con main.js): composición vertical distinta (primer
+   plano), sin capas bg/personaje separadas → fondo CSS plano, sin el shader de profundidad.
+   El encuadre no deja espacio para los 4 letreros diegéticos (ver hero_mobile_1080x1920.webp) →
+   se ocultan; el Pip-Boy pasa a ser la navegación principal desde Inicio. */
+@media (max-width: 768px) {
+  .hero {
+    width: 100vw;
+    height: 100svh;
+    aspect-ratio: auto;
+    background: var(--hero-mobile) center / cover no-repeat;
+  }
+  .hero .neon-nav {
+    display: none;
+  }
+  .hero .brand {
+    top: 85%; /* a la altura del pecho/cuello, visible en el encuadre vertical */
+  }
+}
 /* Punto 4: caja réplica del Home dentro de la pantalla central. Mismo aspecto (1.638) que
    el hero y que la imagen limpia → los letreros y el lockup caen en las MISMAS posiciones,
    y en el empalme del zoom cruzan con el Home real (Proyectos → Inicio). */

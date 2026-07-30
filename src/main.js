@@ -6,6 +6,11 @@ import './styles/base.css'
 import heroBgUrl from '../assets/upscale/hero_bg_2400w.webp'
 import heroCharUrl from '../assets/upscale/hero_character_2400w.webp'
 import heroCleanUrl from '../assets/upscale/hero_desktop_clean_2400w.webp'
+// Mobile: composición vertical 9:16 distinta (primer plano del personaje) — no una capa bg+char
+// separada, así que en mobile el hero NO usa el shader de profundidad, es un fondo CSS plano.
+// El encuadre tampoco deja espacio para los 4 letreros diegéticos (ver imagen) → en mobile el
+// Pip-Boy es la navegación principal desde Inicio (decisión de diseño, no un recorte de alcance).
+import heroMobileUrl from '../assets/upscale/hero_mobile_1080x1920.webp'
 // captura del Home con "Proyectos"/"Projects" activo (pantalla central, Punto 4) — una por idioma
 import homeShotEsUrl from '../assets/upscale/home_proyectos_1280w.jpg'
 import homeShotEnUrl from '../assets/upscale/home_projects_en_1280w.jpg'
@@ -40,6 +45,12 @@ if (lang) {
   } catch {}
 }
 
+// Layout mobile (distinto de quality.tier: eso es capacidad del dispositivo, esto es ancho de
+// pantalla). Umbral compartido con base.css (@media max-width: 768px) — mantener sincronizado.
+// Decidido una vez al cargar, como quality.tier; un resize que cruce el umbral pide recargar.
+const isMobile = matchMedia('(max-width: 768px)').matches
+document.documentElement.classList.toggle('is-mobile', isMobile)
+
 // Arquitectura (ANIMATION_SPEC §0)
 document.documentElement.dataset.tier = quality.tier
 stage.init()
@@ -52,8 +63,14 @@ if (lang) {
   document.documentElement.style.setProperty('--cat-bg', `url(${catBgUrl})`)
   document.documentElement.style.setProperty('--luces', `url(${lucesUrl})`)
   document.documentElement.style.setProperty('--bio', `url(${bioUrl})`)
-  initHero(heroBgUrl, heroCharUrl) // hero multi-capa en las home /es/ /en/
-  initSigns() // iguala el ancho de las sílabas de los letreros
+  if (isMobile) {
+    // composición distinta (primer plano, sin capas bg/personaje separadas) → fondo CSS plano,
+    // sin el shader de profundidad (que necesita las dos texturas desktop)
+    document.documentElement.style.setProperty('--hero-mobile', `url(${heroMobileUrl})`)
+  } else {
+    initHero(heroBgUrl, heroCharUrl) // hero multi-capa (shader de profundidad) en desktop
+  }
+  initSigns() // iguala el ancho de las sílabas de los letreros (no-op si el nav está oculto)
   initCharlie() // glitch/swap por carácter del lockup al hover (P2.B)
   // Punto 4: la pantalla central proyecta una CAPTURA estática del Home con "Proyectos" activo
   // (var --home-shot). Antes se clonaba el DOM del hero, pero las proporciones no calzaban
