@@ -905,7 +905,7 @@ body.route-category .crt {
   left: 6%;
   top: 26%;
   z-index: 4; /* sobre el CRT reforzado del video */
-  width: min(45%, 35rem);
+  width: min(45%, 37rem); /* 35→37rem (30/7): el título EN necesita ~522px de ancho natural */
   box-sizing: border-box;
   padding: 1.8rem 2rem 1.9rem;
   --os-fill: rgba(2, 13, 7, 0.95); /* leve transparencia: se intuye la ciudad detrás */
