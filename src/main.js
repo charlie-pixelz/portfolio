@@ -55,6 +55,18 @@ import { initRouter } from './core/router.js'
 import { initLenis } from './core/lenis.js'
 import { initDebug } from './core/debug.js'
 
+// F5: restituye la sub-ruta real tras el rebote de 404.html (GitHub Pages no tiene rutas de
+// servidor — solo /, /es/ y /en/ existen como archivo). 404.html guarda la ruta pedida antes de
+// redirigir a la home del idioma; acá se repone en la barra de direcciones ANTES de que se lea
+// más abajo (path/lang) y de que router.js decida qué sección mostrar al arrancar.
+try {
+  const redirect = sessionStorage.getItem('cp-redirect')
+  if (redirect) {
+    sessionStorage.removeItem('cp-redirect')
+    history.replaceState(null, '', redirect)
+  }
+} catch {}
+
 // Recuerda el idioma de esta página para que la próxima visita salte el selector.
 const path = location.pathname
 const lang = path.includes('/en/') ? 'en' : path.includes('/es/') ? 'es' : null

@@ -65,7 +65,7 @@ Detalle y evidencia en [`CRITICA_FABLE5.md`](files/CRITICA_FABLE5.md). Marca `�
 | F2 | Licencias tipográficas | ☑ | Las 5 son **OFL**; guardar OFL/License en `/docs/licencias/` |
 | F3 | Volumen de contenido | ☑ | Piso lanzable = **8 casos** (2/categoría × ES/EN) |
 | F4 | IDs del SVG del preloader | ☑ | Reemplazado por **matriz en canvas** (elimina riesgo SVGO) |
-| F5 | SPA vs GitHub Pages / SEO | ☐ | Enfoque **ratificado** (20/7): HTML estático real por ruta `/es/` `/en/` + transiciones encima. Cierra al verificar en build |
+| F5 | SPA vs GitHub Pages / SEO | ☑ | HTML estático real por ruta `/es/` `/en/` confirmado. Gap real encontrado (2/8) al verificar en producción: sub-rutas (`/es/proyectos/`, etc.) 404eaban en GitHub Pages y el router siempre forzaba Home al cargar — cerrado con `public/404.html` (rebote sessionStorage, con página de error propia para links realmente rotos) + `router.js` leyendo la ruta inicial |
 | F6 | Presupuestos de bytes | ☑ | **OGL elegido** (21/7): ~98 KB gz proyectado vs ~213 con Three. Presupuestos en §3; verificar gz real en build |
 | F7 | Fecha de lanzamiento | ☐ | Hito 1 (deploy técnico) **CERRADO 21/7** → `charlie-pixelz.github.io/portfolio/`. Hito 2 (8 casos) **sin fecha** (recom. ≤31/7) — eslabón más débil |
 | F8 | Dominio | ☐ | Alias **"Charlie Pixelz" ratificado** por Charlie (20/7); TLD + registro pendientes |

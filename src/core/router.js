@@ -61,6 +61,17 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
     contacto: `${base}${lang}/${CONTACTO[lang]}/`,
   }
   const catUrl = (c) => `${base}${lang}/${SEG[lang]}/${c}/`
+  // misma lógica que usa popstate para reconstruir la vista a partir de una URL (F5: deep
+  // links). Se comparte para que la carga inicial (abajo) también pueda arrancar en la sección
+  // correcta en vez de forzar Home.
+  const viewFromPath = (p) => {
+    const cat = CATS.find((c) => p.includes(`/${SEG[lang]}/${c}`))
+    if (cat) return 'cat:' + cat
+    if (p.includes(`/${SEG[lang]}`)) return 'projects'
+    if (p.includes(`/${BIO[lang]}`)) return 'bio'
+    if (p.includes(`/${CONTACTO[lang]}`)) return 'contacto'
+    return 'home'
+  }
   TITLE[lang].home = document.title
   const reduced = quality.reducedMotion
 
@@ -646,22 +657,15 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
   )
 
   window.addEventListener('popstate', (e) => {
-    let view = e.state && e.state.view
-    if (!view) {
-      const p = location.pathname
-      const cat = CATS.find((c) => p.includes(`/${SEG[lang]}/${c}`))
-      view = cat
-        ? 'cat:' + cat
-        : p.includes(`/${SEG[lang]}`)
-          ? 'projects'
-          : p.includes(`/${BIO[lang]}`)
-            ? 'bio'
-            : p.includes(`/${CONTACTO[lang]}`)
-              ? 'contacto'
-              : 'home'
-    }
+    const view = (e.state && e.state.view) || viewFromPath(location.pathname)
     go(view, false)
   })
 
-  history.replaceState({ view: 'home' }, '', url.home)
+  // F5: si la carga arrancó en una sub-ruta (deep link, refresh, o rebote de 404.html — ver
+  // sessionStorage 'cp-redirect' en main.js), mostrarla directo en vez de forzar Home. Antes
+  // esta línea SIEMPRE reescribía la URL a la home del idioma, así que refrescar en /proyectos/
+  // (o compartir ese link) perdía la sección aunque el archivo existiera.
+  const initialView = viewFromPath(location.pathname)
+  if (initialView !== 'home') applyInstant(initialView, false)
+  history.replaceState({ view: initialView }, '', initialView === 'home' ? url.home : location.pathname)
 }

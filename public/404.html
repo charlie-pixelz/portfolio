@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>404 — Charlie Pixelz</title>
+    <script>
+      // GitHub Pages no tiene rutas de servidor: cualquier sub-ruta real del sitio
+      // (/es/proyectos/, /en/biography/, /es/proyectos/ilustracion/, etc.) cae acá porque
+      // solo /, /es/ y /en/ existen como archivo (gate F5). Si la ruta pedida es una de esas
+      // sub-rutas válidas, la guardamos y rebotamos a la home de ese idioma — main.js/router.js
+      // la restituyen antes de pintar la sección correcta. Si NO matchea nada conocido, es un
+      // link roto de verdad: se queda en esta página y se muestra el 404 de abajo.
+      ;(function () {
+        var BASE = '/portfolio/' // ver vite.config.js — actualizar junto a esa base si cambia el dominio
+        var path = location.pathname
+        if (path.indexOf(BASE) !== 0) return
+        var rest = path.slice(BASE.length)
+        var m = rest.match(/^(es|en)(\/|$)/)
+        if (!m) return
+        try {
+          sessionStorage.setItem('cp-redirect', path + location.search + location.hash)
+        } catch (e) {}
+        location.replace(BASE + m[1] + '/')
+      })()
+    </script>
+    <style>
+      @font-face {
+        font-family: 'Handjet';
+        src: url('/portfolio/404-assets/Handjet-subset.woff2') format('woff2');
+        font-weight: 100 900;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Space Grotesk';
+        src: url('/portfolio/404-assets/SpaceGrotesk-subset.woff2') format('woff2');
+        font-weight: 300 700;
+        font-display: swap;
+      }
+      :root {
+        --void: #010135;
+        --phosphor: #33ff66;
+        --phosphor-dim: #1fa648;
+        --phosphor-glow: rgba(51, 255, 102, 0.35);
+        --magenta: #f202cd;
+        --cyan: #4bdff4;
+        --ink: #e8e8f2;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--void);
+        color: var(--ink);
+        font-family: 'Space Grotesk', system-ui, sans-serif;
+      }
+      body {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        min-height: 100vh;
+        text-align: center;
+        padding: 1.5rem;
+        overflow: hidden;
+      }
+      .bg {
+        position: fixed;
+        inset: 0;
+        background: url('/portfolio/404-assets/bg.webp') center 20% / cover no-repeat;
+        filter: grayscale(70%) brightness(0.35) contrast(1.1);
+        z-index: 0;
+      }
+      /* barrido de scanlines — estático, sin parpadeo (WCAG 2.3.1: nada de destellos) */
+      .scan {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0 1px, transparent 1px 3px);
+        mix-blend-mode: multiply;
+      }
+      /* contenido en su propio stacking context, explícitamente por encima del fondo/scanlines */
+      .content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+      }
+      h1 {
+        margin: 0;
+        font-family: 'Handjet', 'Space Grotesk', monospace;
+        font-size: clamp(4rem, 18vw, 9rem);
+        line-height: 1;
+        letter-spacing: 0.05em;
+        color: var(--ink);
+        text-shadow:
+          3px 0 var(--magenta),
+          -3px 0 var(--cyan);
+      }
+      p {
+        margin: 0;
+        font-size: clamp(1rem, 2.5vw, 1.25rem);
+        color: var(--ink);
+        max-width: 32rem;
+      }
+      p.sub {
+        opacity: 0.75;
+        font-size: 0.95em;
+      }
+      nav {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+      }
+      a {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.95rem;
+        color: var(--phosphor);
+        text-decoration: none;
+        border: 1px solid var(--phosphor-dim);
+        border-radius: 4px;
+        padding: 0.6em 1.4em;
+        box-shadow: 0 0 8px var(--phosphor-glow) inset;
+        transition: color 0.2s ease, border-color 0.2s ease;
+      }
+      a:hover,
+      a:focus-visible {
+        color: #fff;
+        border-color: var(--phosphor);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg" aria-hidden="true"></div>
+    <div class="scan" aria-hidden="true"></div>
+    <div class="content">
+      <h1>404</h1>
+      <p>Esta señal no existe — puede que el link esté roto o la página se haya movido.</p>
+      <p class="sub">This signal doesn't exist — the link may be broken or the page has moved.</p>
+      <nav>
+        <a href="/portfolio/es/">‹ Inicio</a>
+        <a href="/portfolio/en/">‹ Home</a>
+      </nav>
+    </div>
+  </body>
+</html>
