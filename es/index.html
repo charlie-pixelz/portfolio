@@ -11,15 +11,19 @@
     <link rel="alternate" hreflang="es" href="https://charlie-pixelz.github.io/portfolio/es/" />
     <link rel="alternate" hreflang="en" href="https://charlie-pixelz.github.io/portfolio/en/" />
     <link rel="alternate" hreflang="x-default" href="https://charlie-pixelz.github.io/portfolio/" />
+    <!-- CSS como <link> (no importado desde main.js): bloquea el primer pintado, así el documento
+         nunca se ve un instante en HTML crudo sin estilo (FOUC al cambiar de idioma, 31/7) -->
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/styles/base.css" />
     <script type="module" src="/src/main.js"></script>
   </head>
-  <body>
+  <body class="scene">
     <main class="hero" id="hero">
       <nav class="neon-nav" aria-label="Navegación">
-        <a class="sign violeta" style="--ry: 14deg; left: 5.9%; top: 15.7%; width: 11.2%; height: 43.6%" href="#" aria-current="page" aria-label="Inicio"><span class="label"><i>IN</i><i>IC</i><i>IO</i></span></a>
-        <a class="sign magenta" data-route="projects" style="--ry: 8deg; left: 26.6%; top: 3.8%; width: 11.1%; height: 32%" href="proyectos/" aria-label="Proyectos"><span class="label"><i>PRO</i><i>YEC</i><i>TOS</i></span></a>
-        <a class="sign violeta" data-route="bio" style="--ry: -8deg; left: 58.8%; top: 3%; width: 13.4%; height: 29.3%" href="biografia/" aria-label="Biografía"><span class="label"><i>BIO</i><i>GRA</i><i>FÍA</i></span></a>
-        <a class="sign magenta" data-route="contacto" style="--ry: -14deg; left: 78.7%; top: 17.9%; width: 13.4%; height: 41.4%" href="contacto/" aria-label="Contacto"><span class="label"><i>CON</i><i>TAC</i><i>TO</i></span></a>
+        <a class="sign violeta" style="--ry: 26deg; left: 5.9%; top: 15.7%; width: 11.2%; height: 43.6%" href="#" aria-current="page" aria-label="Inicio"><span class="label"><i>IN</i><i>IC</i><i>IO</i></span></a>
+        <a class="sign magenta" data-route="projects" style="--ry: 16deg; left: 26.6%; top: 3.8%; width: 11.1%; height: 32%" href="proyectos/" aria-label="Proyectos"><span class="label"><i>PRO</i><i>YEC</i><i>TOS</i></span></a>
+        <a class="sign violeta" data-route="bio" style="--ry: -16deg; left: 58.8%; top: 3%; width: 13.4%; height: 29.3%" href="biografia/" aria-label="Biografía"><span class="label"><i>BIO</i><i>GRA</i><i>FÍA</i></span></a>
+        <a class="sign magenta" data-route="contacto" style="--ry: -26deg; left: 78.7%; top: 17.9%; width: 13.4%; height: 41.4%" href="contacto/" aria-label="Contacto"><span class="label"><i>CON</i><i>TAC</i><i>TO</i></span></a>
       </nav>
       <h1 class="brand">
         <span class="brand__charlie">Charlie</span><span class="brand__pixelz">PIXELZ</span>
@@ -40,7 +44,17 @@
          completa). -->
     <section class="room-mobile" hidden aria-label="Proyectos">
       <div class="room-mobile__frame">
-        <div class="screen-m screen-m--vertical" aria-hidden="true"></div>
+        <div class="screen-m screen-m--vertical" aria-hidden="true">
+          <!-- placeholder del MENÚ de categorías: reusa los MISMOS elementos que el menú real
+               (.projects-menu__cat.os-frame) para que el zoom-in no cambie de estética, solo de
+               escala (pedido de Charlie 31/7, "no podemos ocupar el mismo?"). Textos por JS. -->
+          <nav class="projects-menu__cats">
+            <div class="projects-menu__cat os-frame"><span></span></div>
+            <div class="projects-menu__cat os-frame"><span></span></div>
+            <div class="projects-menu__cat os-frame"><span></span></div>
+            <div class="projects-menu__cat os-frame"><span></span></div>
+          </nav>
+        </div>
         <div class="screen-m screen-m--horizontal" aria-hidden="true"></div>
       </div>
     </section>
@@ -78,9 +92,9 @@
         <svg class="bio__wires" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
         <!-- Mobile: aros verdes sobre el esqueleto — tocar uno activa esa caja (una a la vez). -->
         <div class="bio__rings">
-          <button class="bio__ring" type="button" data-anchor="tools" style="left: 48%; top: 40%" aria-label="Herramientas"></button>
-          <button class="bio__ring" type="button" data-anchor="about" style="left: 48%; top: 64%" aria-label="¿Quién es Charlie?"></button>
-          <button class="bio__ring" type="button" data-anchor="skills" style="left: 86%; top: 77%" aria-label="Habilidades"></button>
+          <button class="bio__ring" type="button" data-anchor="tools" style="left: 35%; top: 43%" aria-label="Herramientas"></button>
+          <button class="bio__ring" type="button" data-anchor="about" style="left: 30%; top: 64%" aria-label="¿Quién es Charlie?"></button>
+          <button class="bio__ring" type="button" data-anchor="skills" style="left: 92%; top: 80%" aria-label="Habilidades"></button>
         </div>
       </div>
       <!-- Las cajas van FUERA de .bio__scene a propósito: la escena está bloqueada al aspecto de

@@ -31,6 +31,9 @@ const TITLE = {
 }
 const DUR = 0.8
 const XF = 0.18
+// factor del encuadre de la pantalla horizontal (sala móvil) para que el personaje calce con el
+// del hero real en vez de verse más grande — ver el comentario de zoomTo()
+const HERO_MATCH = 0.88
 const PROJECTS_BEAT_MS = 750 // pausa del "peek" a la sala móvil, solo la 1.ª vez por sesión
 
 export function initRouter({ lang, base, category, bio, contacto, isMobile = false }) {
@@ -182,12 +185,17 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
 
   // transform que lleva un elemento (pantalla) a llenar el viewport. contain=min (encaje
   // exacto, para la central); cover=max (llenar, para monitores de categoría).
-  const zoomTo = (el, mode, targetFrame = frame) => {
+  // k: factor extra sobre la escala final (1 = encuadre exacto). Se usa para que el zoom a la
+  // pantalla horizontal de la sala móvil no quede MÁS grande que el personaje del hero real:
+  // esa pantalla muestra el hero limpio con `cover` y el hero de verdad se dibuja con `contain`,
+  // así que llenar el viewport con la pantalla dejaba al personaje sobredimensionado (Charlie 31/7).
+  const zoomTo = (el, mode, targetFrame = frame, k = 1) => {
     const fr = targetFrame.getBoundingClientRect()
     const cr = el.getBoundingClientRect()
     const vw = window.innerWidth
     const vh = window.innerHeight
-    const scale = mode === 'cover' ? Math.max(vw / cr.width, vh / cr.height) * 1.02 : Math.min(vw / cr.width, vh / cr.height)
+    const base = mode === 'cover' ? Math.max(vw / cr.width, vh / cr.height) * 1.02 : Math.min(vw / cr.width, vh / cr.height)
+    const scale = base * k
     const lx = cr.x + cr.width / 2 - fr.x
     const ly = cr.y + cr.height / 2 - fr.y
     return { scale, x: vw / 2 - fr.x - scale * lx, y: vh / 2 - fr.y - scale * ly }
@@ -307,7 +315,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
     // roomMobileEl.hidden=false PRIMERO: mientras está oculto (display:none) sus hijos miden
     // rect 0×0 → zoomTo() daría NaN/Infinity y el tween quedaría roto en silencio (sin onComplete)
     roomMobileEl.hidden = false // el DOM order la deja tapando el hero al instante
-    const zIn = zoomTo(screenHorizontal, 'cover', mFrame)
+    const zIn = zoomTo(screenHorizontal, 'cover', mFrame, HERO_MATCH)
     gsap.set(mFrame, { x: zIn.x, y: zIn.y, scale: zIn.scale }) // arranca ya "cerca" (como el hero)
     tvGlitch() // enmascara el empalme hero↔pantalla horizontal
     hero.hidden = true
@@ -389,7 +397,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
       onComplete: () => {
         // sala completa visible un instante → zoom-in a la pantalla horizontal (mismo destino
         // visual que el hero) y AHÍ se revela el hero real, tapado por la glitch
-        const zOut = zoomTo(screenHorizontal, 'cover', mFrame)
+        const zOut = zoomTo(screenHorizontal, 'cover', mFrame, HERO_MATCH)
         gsap.to(mFrame, {
           x: zOut.x,
           y: zOut.y,

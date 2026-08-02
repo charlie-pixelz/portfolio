@@ -27,8 +27,9 @@ const TOOLS = [
 const CONTENT = {
   es: {
     title: '¿Quién es Charlie?',
+    // (2/8) 2.ª redacción del docx — reemplaza la versión resumida del 1/8
     about:
-      'Soy un desarrollador, diseñador e ilustrador chileno, con 9 años de trayectoria entre retail, consultoras, productoras y startups. Mi trabajo cruza la ilustración de personajes, la creación de piezas publicitarias, la dirección de marca y el motion graphics, pero lo que sostiene todo es el criterio: no soy solo un ejecutor, tengo pensamiento crítico y un ojo de diseñador extremadamente refinado para decidir qué funciona y por qué. Hoy sumo la IA generativa a mi flujo como una herramienta más — para explorar, generar, iterar y testear más rápido, sin reducir la exigencia ni la calidad con la que siempre trabajo.',
+      'Soy desarrollador, diseñador e ilustrador chileno, con 9 años entre retail, consultoras, productoras y startups. Mi trabajo cruza ilustración de personajes, piezas publicitarias, dirección de marca y motion graphics, sostenido por criterio humano: pensamiento crítico y ojo de diseñador, para decidir qué funciona y cómo puede funcionar mejor. Actualmente uso la IA como otra herramienta en mi flujo creativo sin reducir la calidad de mi trabajo.',
     toolsTitle: 'Herramientas',
     skillsTitle: 'Habilidades',
     skills: [
@@ -42,7 +43,7 @@ const CONTENT = {
   en: {
     title: 'Who is Charlie?',
     about:
-      "I'm a Chilean developer, designer and illustrator with 9 years of experience across retail, consultancies, production studios and startups. My work spans character illustration, advertising pieces, brand direction and motion graphics, but what holds it all together is judgment: I'm not just an executor — I have critical thinking and an extremely refined designer's eye to decide what works and why. Today I add generative AI to my workflow as one more tool — to explore, generate, iterate and test faster, without lowering the standard or quality I always work with.",
+      "I'm a Chilean developer, designer and illustrator with 9 years across retail, consulting, production studios and startups. My work spans character illustration, advertising pieces, brand direction and motion graphics, held together by human judgment: critical thinking and a designer's eye for what works and how it can work better. Recently added generative AI to my creative process without lowering the quality of my work.",
     toolsTitle: 'Tools',
     skillsTitle: 'Skills',
     skills: [
@@ -50,7 +51,7 @@ const CONTENT = {
       'Character illustration & 2D graphic design',
       'Motion graphics & animation',
       'Web design & UX/UI',
-      'Strategic integration of generative AI',
+      'Strategic integration of generative AI tools',
     ],
   },
 }
@@ -78,9 +79,22 @@ export function initBio({ lang, isMobile = false }) {
   // mitad de cuello, muy por encima del hombro real). Esto era la causa de que los cables
   // "no se mostraran bien" — apuntaban a partes equivocadas del cuerpo.
   const ANCHORS_DESKTOP = { about: [49, 66], tools: [50, 32], skills: [37, 74] }
-  // mobile: medidas sobre bio_mobile_desktop_4602w.webp (mismo método, composición distinta —
-  // ver también los aros en el HTML, que usan las MISMAS coordenadas)
-  const ANCHORS_MOBILE = { tools: [48, 40], about: [48, 64], skills: [86, 77] }
+  // mobile: anclas medidas sobre el render REAL (bio_mobile_desktop_4602w.webp con `cover` en
+  // 100vw×100svh), no sobre la maqueta — el encuadre no es el mismo. Los aros del HTML usan estas
+  // MISMAS coordenadas.
+  // Calibrados TODOS en el viewport real de Charlie (425×767) y verificados a ojo sobre el render
+  // en vivo — no reconstruyendo la imagen aparte. El método bueno: superponer aros candidatos
+  // sobre la página real y comparar en una captura; reconstruir el `cover` en un <canvas> aparte
+  // me dio dos veces coordenadas desplazadas (el bounding-box de la máscara oscura englobaba
+  // AMBAS cuencas y el centroide caía en el puente nasal).
+  //   tools  → cuenca del ojo izquierda del cráneo.
+  //   about  → cuello, lado izquierdo.
+  //   skills → cabeza del húmero (hombro derecho). x=92% no es solo anatomía: la caja de
+  //            Habilidades termina en x=87%, así que el ancla necesita separarse lo suficiente
+  //            para que el TRAMO HORIZONTAL del cable se vea (5 puntos). Con el ancla a 87.5% el
+  //            codo medía 0.5 puntos y el cable parecía una línea recta. y=80% lo despeja de la
+  //            caja de Herramientas, que termina en 75% de alto en este viewport.
+  const ANCHORS_MOBILE = { tools: [35, 43], about: [30, 64], skills: [92, 80] }
   const ANCHORS = isMobile ? ANCHORS_MOBILE : ANCHORS_DESKTOP
 
   // texto estático (títulos de caja + nombres de herramientas no cambian por idioma)
@@ -92,11 +106,16 @@ export function initBio({ lang, isMobile = false }) {
   ).join('')
   skillsUl.innerHTML = c.skills.map((s) => `<li>${s}</li>`).join('')
 
-  // dibuja los cables conectores como líneas ORTOGONALES delgadas (sin círculo en el extremo),
-  // que apuntan a zonas concretas del esqueleto. SVG con viewBox 0..100 (x e y independientes).
-  // mobile: geometría MUCHO más simple (una caja arriba a todo ancho para about/skills, un panel
-  // a la derecha para tools) — sube derecho desde el ancla y entra por ABAJO (o por la izquierda
-  // en el panel lateral), sin la lógica de codo/lado de desktop (pensada para columnas L/R fijas).
+  // Los cables son líneas ORTOGONALES delgadas (sin círculo en el extremo) que apuntan a zonas
+  // concretas del esqueleto. SVG con viewBox 0..100 (x e y independientes).
+  // Cables mobile — geometría de las maquetas (31/7): SIEMPRE 2 tramos ortogonales, empezando en
+  // el ancla (el trazo nace del esqueleto) y entrando a la caja por el borde que le corresponde:
+  //   tools  (panel derecho, Mobile-03): sube por el eje del ancla → entra por el borde IZQUIERDO
+  //   skills (caja angosta arriba, Mobile-02): sube por el eje del ancla → entra por el DERECHO
+  //   about  (caja ancha arriba, Mobile-01): va en horizontal hasta un carril cerca del borde
+  //          izquierdo de la caja → sube y entra por ABAJO
+  // Antes había un tramo extra (codo doble) en tools y una entrada centrada por abajo en los otros
+  // dos: eso era lo que a Charlie "no le convencían las strings".
   const drawWireMobile = (key) => {
     const a = ANCHORS[key]
     const box = el.querySelector(`.bio__box--${key}`)
@@ -108,15 +127,16 @@ export function initBio({ lang, isMobile = false }) {
     const boxBottom = ((br.bottom - sr.top) / sr.height) * 100
     const boxLeft = ((br.left - sr.left) / sr.width) * 100
     const boxRight = ((br.right - sr.left) / sr.width) * 100
+    const p = (x, y) => `${x.toFixed(2)},${y.toFixed(2)}`
     let pts
-    if (key === 'tools') {
-      // panel a la derecha: entra por su borde izquierdo, a la altura del ancla
-      const ey = Math.min(Math.max(a[1], boxTop + 4), boxBottom - 4)
-      pts = `${a[0]},${a[1]} ${(boxLeft - 6).toFixed(2)},${a[1]} ${(boxLeft - 6).toFixed(2)},${ey.toFixed(2)} ${boxLeft.toFixed(2)},${ey.toFixed(2)}`
+    if (key === 'about') {
+      const laneX = boxLeft + 5 // carril vertical pegado al borde izquierdo, como en la maqueta
+      pts = `${p(a[0], a[1])} ${p(laneX, a[1])} ${p(laneX, boxBottom)}`
     } else {
-      // caja arriba (about/skills): sube recto y entra por abajo, centrada
-      const cx = (boxLeft + boxRight) / 2
-      pts = `${a[0]},${a[1]} ${a[0]},${boxBottom.toFixed(2)} ${cx.toFixed(2)},${boxBottom.toFixed(2)}`
+      // entra por el lateral, a un octavo de la altura de la caja desde arriba (maquetas 02/03)
+      const entryY = boxTop + (boxBottom - boxTop) * 0.13
+      const edgeX = key === 'tools' ? boxLeft : boxRight
+      pts = `${p(a[0], a[1])} ${p(a[0], entryY)} ${p(edgeX, entryY)}`
     }
     wire.setAttribute('points', pts)
   }
@@ -210,6 +230,7 @@ export function initBio({ lang, isMobile = false }) {
     if (aboutBox) aboutBox.style.minHeight = ''
     scene?.classList.remove('is-on', 'is-off')
     activeKey = null
+    gsap.set(rings, { opacity: 1 }) // leave() los apaga; reset acá para la próxima entrada
     rings.forEach((r) => {
       r.classList.remove('is-active')
       r.setAttribute('aria-pressed', 'false')
@@ -384,7 +405,10 @@ export function initBio({ lang, isMobile = false }) {
       return
     }
     const wireEls = [...wires.querySelectorAll('.bio__wire')]
-    gsap.to([...boxes, ...wireEls], {
+    // los aros (mobile) se apagan JUNTO con cajas/cables — antes se quedaban encendidos durante
+    // TODO el flicker de apagado del esqueleto (950ms) y recién desaparecían de golpe al ocultar
+    // .bio entero: se veían "flotando" sobre un esqueleto que ya se estaba yendo (Charlie 1/8).
+    gsap.to([...boxes, ...wireEls, ...rings], {
       opacity: 0,
       duration: 0.22,
       ease: 'power2.in',

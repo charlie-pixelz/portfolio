@@ -11,6 +11,10 @@
     <link rel="alternate" hreflang="es" href="https://charlie-pixelz.github.io/portfolio/es/" />
     <link rel="alternate" hreflang="en" href="https://charlie-pixelz.github.io/portfolio/en/" />
     <link rel="alternate" hreflang="x-default" href="https://charlie-pixelz.github.io/portfolio/" />
+    <!-- CSS como <link> (no importado desde main.js): bloquea el primer pintado, así el documento
+         nunca se ve un instante en HTML crudo sin estilo (FOUC al cambiar de idioma, 31/7) -->
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/styles/base.css" />
     <script type="module" src="/src/main.js"></script>
   </head>
   <body>

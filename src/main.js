@@ -1,8 +1,11 @@
 // Charlie Pixelz — entrada compartida.
 // Fase 1: arquitectura base. P1.B: hero con depth-map en las home /es/ /en/.
 
-import './styles/tokens.css'
-import './styles/base.css'
+// tokens.css y base.css NO se importan acá a propósito: van como <link rel="stylesheet"> en el
+// <head> de cada HTML. Importados desde el módulo, el CSS solo llega DESPUÉS de que el navegador
+// descarga y ejecuta main.js → el documento se pinta un instante en HTML crudo (blanco, con los
+// textos sin estilo). Eso es exactamente lo que veía Charlie al elegir idioma (31/7). Como <link>
+// el CSS bloquea el primer pintado y el documento nunca aparece sin estilo — ni en dev ni en build.
 import heroBgUrl from '../assets/upscale/hero_bg_2400w.webp'
 import heroCharUrl from '../assets/upscale/hero_character_2400w.webp'
 import heroCleanUrl from '../assets/upscale/hero_desktop_clean_2400w.webp'
@@ -12,6 +15,11 @@ import heroCleanUrl from '../assets/upscale/hero_desktop_clean_2400w.webp'
 // (confirmado por Charlie), el Pip-Boy vuelve a ser el menú secundario, igual que en desktop.
 import heroMobileBgUrl from '../assets/upscale/hero_mobile_bg_2400w.webp'
 import heroMobileCharUrl from '../assets/upscale/hero_mobile_character_2400w.webp'
+// composite plano (bg+personaje aplanados) SOLO para el preloader — su shader dithera una imagen
+// PLANA (no dos capas), y usar el hero clean de DESKTOP (4602/2810, muy ancho) en un viewport
+// portrait lo dejaba como una franja horizontal delgada (`contain` con barras arriba/abajo). Este
+// composite comparte aspecto con el hero mobile (825/1465, ya casi vertical) → llena la pantalla.
+import heroMobileCleanUrl from '../assets/upscale/hero_mobile_clean_2400w.webp'
 // captura del Home con "Proyectos"/"Projects" activo (pantalla central, Punto 4) — una por idioma
 import homeShotEsUrl from '../assets/upscale/home_proyectos_1280w.jpg'
 import homeShotEnUrl from '../assets/upscale/home_projects_en_1280w.jpg'
@@ -61,29 +69,28 @@ if (lang) {
 // Decidido una vez al cargar, como quality.tier; un resize que cruce el umbral pide recargar.
 const isMobile = matchMedia('(max-width: 768px)').matches
 document.documentElement.classList.toggle('is-mobile', isMobile)
-
-// Coordenadas propias de los 4 letreros sobre hero_mobile_bg_2400w.webp (composición ancha de
-// callejón, distinta a desktop) — pisan el style inline medido para desktop en el mismo <a>
-// (mismo texto/label, mismo componente .sign). Ángulos --ry en el mismo sentido que desktop:
-// positivo a la izquierda, negativo a la derecha (inclinación hacia el punto de fuga central).
-const MOBILE_SIGNS = {
-  home: { left: '5%', top: '37%', width: '24%', height: '22%', ry: '14deg' },
-  projects: { left: '7%', top: '10%', width: '35%', height: '19%', ry: '8deg' },
-  bio: { left: '59%', top: '7%', width: '35%', height: '20%', ry: '-8deg' },
-  contacto: { left: '73%', top: '35%', width: '24%', height: '24%', ry: '-14deg' },
+// dev/comparación: ?signs=2d muestra los letreros planos (rotate 2D, como la maqueta original) en
+// vez del default 3D (rotateY + perspective, técnica de desktop — la que Charlie prefirió 31/7).
+if (new URLSearchParams(location.search).get('signs') === '2d') {
+  document.documentElement.classList.add('signs-2d')
 }
+
+// (31/7, 4.ª vuelta) Las posiciones/ángulos de los 4 letreros móviles YA NO se aplican por JS —
+// viven en base.css con `!important` (busca "Letreros MOBILE", pisa el style inline de desktop
+// del mismo HTML). Antes se asignaban acá vía applyMobileSignLayout(), pero eso corre recién
+// cuando main.js termina de descargarse y ejecutarse: durante ese margen (más largo en dev, con
+// muchos módulos por red) el navegador ya había pintado el layout de ESCRITORIO (letreros altos y
+// angostos, en sus coordenadas originales) — el "flash azul de letreros largos" que reportó
+// Charlie. Con CSS puro no hay margen que cubrir: el primer pintado ya sale correcto.
+// Lo único que SÍ sigue necesitando JS es juntar las sílabas de Proyectos/Biografía en una sola
+// línea (fitSigns() estira ese <i> único al ancho del marco) — el texto accesible no cambia, el
+// aria-label del <a> es el que leen los lectores.
 const applyMobileSignLayout = () => {
-  const apply = (sel, key) => {
-    const a = document.querySelector(sel)
-    const c = MOBILE_SIGNS[key]
-    if (!a || !c) return
-    Object.assign(a.style, { left: c.left, top: c.top, width: c.width, height: c.height })
-    a.style.setProperty('--ry', c.ry)
-  }
-  apply('.neon-nav .sign:not([data-route])', 'home')
-  apply('.neon-nav .sign[data-route="projects"]', 'projects')
-  apply('.neon-nav .sign[data-route="bio"]', 'bio')
-  apply('.neon-nav .sign[data-route="contacto"]', 'contacto')
+  ;['projects', 'bio'].forEach((route) => {
+    const label = document.querySelector(`.neon-nav .sign[data-route="${route}"] .label`)
+    if (!label) return
+    label.innerHTML = `<i>${[...label.querySelectorAll('i')].map((i) => i.textContent).join('')}</i>`
+  })
 }
 
 // Arquitectura (ANIMATION_SPEC §0)
@@ -133,6 +140,13 @@ if (lang) {
       // hijos ELEMENTO, un nodo de texto suelto queda debajo del relleno (::after) y no se ve
       btn.querySelector('span').textContent = category.catTitle(btn.dataset.cat)
     })
+    // mismo texto en el placeholder de la pantalla vertical de la sala (lo que se ve ANTES del
+    // zoom-in) — mismas 4 categorías, mismo orden que los botones reales, mismos elementos
+    // (.projects-menu__cat) que el menú real, así el zoom-in no cambia de estética (31/7)
+    const cats = ['ilustracion', 'motion', 'web', 'ia']
+    document.querySelectorAll('.screen-m--vertical .projects-menu__cat span').forEach((span, n) => {
+      span.textContent = category.catTitle(cats[n])
+    })
   }
   initRouter({ lang, base: '/portfolio/', category, bio, contacto, isMobile }) // Inicio ↔ Proyectos ↔ Categoría ↔ Biografía ↔ Contacto
   initMenu() // menú Pip-Boy global (botón esq. sup. der. → panel de navegación + idioma)
@@ -165,7 +179,12 @@ if (lang) {
     document.querySelector('.crt')?.style.setProperty('display', 'none')
   }
 } else {
-  initPreloader({ sceneUrl: heroCleanUrl, preloadUrls: [heroBgUrl, heroCharUrl] }) // raíz = preloader
+  // raíz = preloader. isMobile ya se calculó arriba (independiente de /es//en/, aplica también acá.
+  initPreloader(
+    isMobile
+      ? { sceneUrl: heroMobileCleanUrl, preloadUrls: [heroMobileBgUrl, heroMobileCharUrl], isMobile }
+      : { sceneUrl: heroCleanUrl, preloadUrls: [heroBgUrl, heroCharUrl] },
+  )
 }
 initLenis()
 initDebug()

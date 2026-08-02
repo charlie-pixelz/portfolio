@@ -18,6 +18,21 @@
   padding: 0;
 }
 
+/* Reset de <button> — causa REAL de las "líneas blancas que ensucian los botones" que reportó
+   Charlie (31/7): sin reset, Chrome aplica su borde por defecto `2px outset buttonborder`, y con
+   `color-scheme: dark` ese buttonborder es BLANCO. El bisel `outset` pinta los lados claro/oscuro
+   y, recortado por el clip-path escalonado de .os-frame, se lee como rayas claras dentro del botón
+   (visible en .projects-menu__cat y en las flechas de la galería). Verificado en vivo:
+   getComputedStyle(...).border == "2px outset rgb(255,255,255)". */
+button {
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 html {
   color-scheme: dark;
 }
@@ -140,6 +155,27 @@ body {
   z-index: 1;
   container-type: inline-size; /* cqw = ancho del hero ≈ ancho del personaje */
 }
+/* La escena del hero la pinta el shader en #gl, que arranca TRANSPARENTE: hasta que su textura
+   carga solo se ve el fondo del <body>. El DOM del hero (letreros + lockup) en cambio se pinta de
+   inmediato → quedaba flotando sobre ese fondo azul durante todo lo que tarda main.js en
+   bajar/parsear/ejecutar (segundos en dev). Eso era el "pantallazo azul con los letreros" al
+   elegir idioma. Se revelan junto con la escena; hero.js pone la clase al cargar la textura.
+   `body.scene` (clase en el HTML de /es/ y /en/, disponible desde el primer pintado) reemplaza el
+   degradado azul del body por el mismo --void del shader, así el hueco no se nota. */
+.hero .neon-nav,
+.hero .brand {
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+body.hero-ready .hero .neon-nav,
+body.hero-ready .hero .brand,
+body.no-webgl .hero .neon-nav,
+body.no-webgl .hero .brand {
+  opacity: 1;
+}
+body.scene {
+  background: #000115; /* == voidc del shader (hero.js/preloader.js) */
+}
 
 /* lockup a altura del pecho, dentro del hero (más abajo; -20% respecto al tamaño previo).
    .central-home = réplica del Home dentro de la pantalla central (Punto 4): mismas reglas. */
@@ -195,7 +231,8 @@ body {
 /* ── Hero MOBILE (≤768px, sincronizado con main.js): composición ancha de callejón (30/7,
    reemplaza la de primer plano) — mismo shader multi-capa que desktop (#gl pinta la escena,
    sin background CSS acá). Los 4 letreros vuelven a ser la nav principal (coordenadas propias
-   aplicadas en JS vía applyMobileSignLayout(), pisan el style inline de desktop en el HTML). */
+   en el bloque "Letreros MOBILE" más abajo, con `!important` — pisan el style inline de desktop
+   del mismo HTML sin depender de que JS llegue a ejecutarse, ver ese bloque para el porqué). */
 @media (max-width: 768px) {
   .hero {
     width: 100vw;
@@ -203,8 +240,20 @@ body {
     aspect-ratio: auto;
   }
   .hero .brand {
-    top: 86%; /* a la altura del pecho, bajo el callejón que ocupa el resto del encuadre */
+    top: 84%; /* a la altura del pecho, bajo el callejón que ocupa el resto del encuadre */
   }
+  /* lockup MUCHO más grande (maqueta Hero_CharliePixelz_Mobile.png: ocupa casi todo el ancho).
+     Los clamp() de desktop tienen piso en rem pensado para un contenedor ancho — en 390px de
+     ancho, 8.8cqw = 34px y el piso de 2.08rem = 33px, o sea quedaba clavado en el mínimo. */
+  .hero .brand__charlie {
+    font-size: clamp(3.1rem, 17cqw, 5.4rem);
+  }
+  .hero .brand__pixelz {
+    font-size: clamp(1.35rem, 7.7cqw, 2.5rem);
+  }
+  /* Los overrides de .sign / .neon-nav NO van acá: las reglas base de .sign viven mucho más abajo
+     en este archivo y, con la misma especificidad, gana la última. Están en el bloque
+     "Letreros MOBILE" que sigue a .sign (buscar `signs-2d`). */
 }
 /* Punto 4: caja réplica del Home dentro de la pantalla central. Mismo aspecto (1.638) que
    el hero y que la imagen limpia → los letreros y el lockup caen en las MISMAS posiciones,
@@ -689,25 +738,56 @@ body.route-category .crt {
   transform-origin: 0 0; /* el router zoomea sobre este frame */
   will-change: transform;
 }
-/* cuadriláteros medidos en proyectos_movil_pantallas.json (validados, desviación máx. 0.46%) */
+/* Cuadriláteros re-medidos (31/7, 4.ª vuelta) por análisis de píxel directo sobre
+   proyectos_movil_1080w.webp — Charlie marcó (verde/rojo) que el lienzo quedaba MÁS CHICO que el
+   cristal real del monitor. Confirmado: la calibración anterior (`proyectos_movil_pantallas.json`)
+   apuntaba al borde INTERNO del vidrio, no al borde EXTERNO del bisel — con el vidrio y el bisel
+   casi del mismo tono (foto real, iluminación tenue) la diferencia no se nota a ojo en la imagen
+   sola, pero sí una vez que el contenido (verde) se compara contra el marco físico completo
+   (rojo). Recalibrado al bisel externo (borde bisel↔pared), que es lo que da el llenado
+   "inmersivo, borde a borde" que pidió Charlie. Mayor diferencia: el borde IZQUIERDO del monitor
+   vertical estaba 3.2 puntos adentro de su bisel real. */
 .screen-m {
   position: absolute;
 }
 .screen-m--vertical {
-  left: 11.34%;
-  top: 31.98%;
-  width: 32.32%;
-  height: 35.75%;
+  left: 8.1%;
+  top: 31.8%;
+  width: 36.4%;
+  height: 36.2%;
   clip-path: polygon(0.77% 0%, 49.81% 1.82%, 99.23% 3.05%, 100% 96.56%, 49.81% 99%, 0% 100%);
-  /* preview "apagado": mismo callejón que las pantallas de categoría (desktop) */
-  background: var(--alley) center / cover no-repeat;
+  /* preview: MISMA textura que .projects-menu (30/7, pedido de Charlie) — esta pantalla SE
+     CONVIERTE en el menú al hacer zoom-in, así que debe verse igual antes y después, sin salto */
+  background: var(--menu-mobile-bg) center / cover no-repeat;
   filter: brightness(0.7) saturate(1.05);
+  /* cqw del placeholder = ancho de ESTA pantalla. Los botones reales usan 7.5cqw del viewport;
+     al hacer zoom hasta llenarlo, esta pantalla ES el viewport → mismo tamaño relativo, el
+     empalme no salta de escala. */
+  container-type: inline-size;
+}
+/* Placeholder del menú de categorías dentro de la pantalla vertical: el HTML mete los MISMOS
+   elementos `.projects-menu__cat.os-frame` del menú real. Faltaban dos cosas para que de verdad se
+   viera igual (Charlie, 1/8: "sigue distinto, líneas muy gruesas y sin perspectiva"):
+   1. Las medidas del marco eran px FIJOS → en una caja de 142px se veían 2,7× más gruesas que en
+      la de 390px. Acá se re-expresan en cqw del contenedor (la propia pantalla), calibradas para
+      dar exactamente los mismos px que el menú real cuando este mide 100vw: 10px/390 = 2.564cqw.
+   2. El monitor de la foto está girado; el clip-path ya recorta la silueta en trapecio pero el
+      contenido iba plano. La rotación replica el escorzo del clip-path: su borde derecho mide
+      93.51% del izquierdo → con perspective 400px y media caja de ~61px, rotateY(12.7deg). */
+.screen-m--vertical .projects-menu__cat {
+  --os-step: 2.564cqw;
+  --os-notch: 1.282cqw;
+  --os-ring: 0.641cqw;
+  --os-glow: 2.31cqw;
+}
+.screen-m--vertical .projects-menu__cats {
+  transform: perspective(400px) rotateY(12.7deg);
 }
 .screen-m--horizontal {
-  left: 47.56%;
-  top: 42.3%;
-  width: 44.03%;
-  height: 14.53%;
+  left: 46.3%;
+  top: 42%;
+  width: 46.7%;
+  height: 15.8%;
   clip-path: polygon(0% 0.48%, 49.85% 0.96%, 100% 0%, 98.89% 98%, 49.85% 100%, 0% 98%);
   /* preview "apagado": hero limpio de desktop (proporción horizontal más cercana a este monitor
      que el hero móvil, que es un plano vertical) — es también el destino visual del zoom-out */
@@ -744,14 +824,14 @@ body.route-category .crt {
   list-style: none;
 }
 .projects-menu__cat {
-  padding: 3.2cqw 4cqw;
+  padding: 4.4cqw 4cqw;
   --os-fill: rgba(2, 13, 7, 0.82);
   font-family: var(--font-pixel);
   font-variation-settings: 'wght' 600, 'ELGR' 2;
-  font-size: 5cqw;
+  font-size: 7.5cqw; /* maquetas/Mobile_Menu_Proyectos.png: texto grande, centrado */
   line-height: 1.1;
   color: var(--phosphor);
-  text-align: left;
+  text-align: center;
   text-shadow: 0 0 8px var(--phosphor-glow);
   cursor: pointer;
 }
@@ -765,9 +845,13 @@ body.route-category .crt {
 }
 
 @media (max-width: 768px) {
-  /* fondo + proporción real de categoria_movil_1080w.webp (distinta a la desktop) */
+  /* fondo + proporción real de categoria_movil_1080w.webp (distinta a la desktop). Igual que
+     desktop: acotado también por ALTO (min con 100svh) — sin esto, en un viewport bajo/angosto
+     (p.ej. el panel de inspector del navegador con poca altura) el stage se pasaba de alto y
+     `.category{overflow:hidden}` recortaba la parte de abajo (el borde del lienzo incluido) —
+     causa real de "sigue mal cortado" en algunos viewports, más allá de la calibración del %. */
   .cat__stage {
-    width: 100vw;
+    width: min(100vw, calc(100svh * 1080 / 1827));
     aspect-ratio: 1080 / 1827;
   }
   .cat__stage::before {
@@ -776,20 +860,23 @@ body.route-category .crt {
   .cat__luces {
     background: var(--luces-mobile) center / cover no-repeat;
   }
-  /* cara del letrero medida por análisis de píxeles de categoria_movil_1080w.webp (overlay
-     verificado — no a ojo, ver historial de esta sesión) */
+  /* cara del letrero re-medida (31/7) sobre categoria_movil_1080w.webp COMPUESTA CON SU CAPA DE
+     LUCES (Categoria_Mobile_Luces.png, screen) — ahí el borde interno del marco tiene contraste
+     real y se puede detectar; en la imagen "apagada" sola el borde inferior se pierde en negro, y
+     por eso la medición anterior se quedaba 72 px corta de alto. Bordes en px del asset (1080×1827):
+     izq 251 · der 857 · arriba 465 · abajo 1332. Coincide exactamente con la marca ROJA de Charlie. */
   .cat__canvas {
-    left: 23.15%;
+    left: 23.24%;
     top: 25.45%;
-    width: 56.76%;
-    height: 43.51%;
+    width: 56.11%;
+    height: 47.46%;
   }
   /* Charlie (30/7): la UI quedaba muy chica — los cqw de arriba están pensados para el .cat__stage
      ANCHO de desktop; en el .cat__stage angosto de mobile (100vw) el mismo % da píxeles mucho
      menores. Flechas más grandes y más pegadas a los bordes; caja de info ANCHA y DEBAJO del
      lienzo entero (no superpuesta) — deja ver el borde inferior del lienzo para calibrar. */
   .cat__arrow {
-    top: 47%;
+    top: 49%; /* centro vertical del lienzo recalibrado (25.45% → 72.91%) */
     width: 11cqw;
     height: 11cqw;
     min-width: 40px;
@@ -803,7 +890,7 @@ body.route-category .crt {
   }
   .cat__info {
     left: 5%;
-    top: 72%; /* debajo del borde real del lienzo (25.45% + 43.51% = 68.96%) */
+    top: 76%; /* un poco más abajo (pedido de Charlie 30/7) — el lienzo termina en 68.96% */
     width: 90%;
     padding: 1em 1.2em 1.2em;
   }
@@ -814,7 +901,7 @@ body.route-category .crt {
     font-size: clamp(0.75rem, 3cqw, 1rem);
   }
   .cat__desc {
-    font-size: clamp(0.85rem, 3.2cqw, 1rem);
+    font-size: clamp(0.8rem, 3cqw, 0.95rem); /* -1 punto: pedido de Charlie, límite antes de ilegible */
   }
   .cat__tags li {
     font-size: clamp(0.68rem, 2.6cqw, 0.85rem);
@@ -1071,47 +1158,93 @@ body.route-category .crt {
   .bio__side {
     display: contents;
   }
+  /* Banda de cabecera RESERVADA: el breadcrumb termina en ~7% de alto y el botón Pip-Boy en ~8.5%.
+     Las cajas arrancaban en 8% → chocaban con los dos (reporte de Charlie 31/7). 11.5% las deja
+     libres con holgura, y es también donde arrancan las cajas en las 3 maquetas. */
   .bio__box--about,
   .bio__box--skills {
     position: fixed;
-    left: 5%;
-    right: 5%;
-    top: 8%;
+    left: 4%;
+    top: 11.5%;
     width: auto;
-    padding: 1.1rem 1.3rem;
+    padding: 0.9rem 1.05rem 1rem;
   }
+  /* Descripción arranca 1 punto más arriba que las otras dos: es la única que baja hasta la altura
+     de la cara, y con top:11.5% su borde inferior (40.6%) se solapaba 7px con el aro de
+     Herramientas, que vive en la cuenca del ojo (1/8). Sigue holgada respecto al botón Pip-Boy,
+     que termina en ~8.5%. */
+  .bio__box--about {
+    top: 10.5%;
+    right: 4%;
+  }
+  /* Habilidades (31/7): ensanchada hacia la derecha (right 22%→13%) para que cada ítem quepa en
+     UNA línea (pedido de Charlie) — el margen izquierdo se conserva (4%, igual que Descripción);
+     right:13% deja igual un carril libre de 2 puntos antes del aro del hombro (x≈89%) para el
+     tramo horizontal del cable. */
+  .bio__box--skills {
+    right: 13%;
+  }
+  /* Herramientas (31/7): Charlie pidió MÁS espacio para la calavera y confirmó que quiere que la
+     caja se salga de la pantalla por la derecha a propósito (para que el panel de 1 columna no
+     tenga que angostar más los íconos/texto). `right` negativo la extiende más allá del 100% —
+     `body{overflow:hidden}` (regla global, tope del archivo) recorta esa parte sin generar scroll
+     horizontal, exactamente lo que pidió ("dejando escondida el resto de la caja"). `left` sube de
+     52%→62% para descubrir más cráneo; el ancho total de la caja (62% a 112%, 50 puntos) es MAYOR
+     que la porción visible (62%→100%, 38 puntos) — de ahí que los íconos/texto puedan volver a un
+     tamaño más legible sin forzar el wrap de ningún nombre. */
+  /* (1/8, 3.ª pasada) Antes tenía `top` Y `bottom` — con position:fixed eso FUERZA la altura a
+     llenar ese rango exacto sin importar cuánto mida el contenido: si los 11 íconos medían un
+     poco menos, la caja igual se estiraba hasta el `bottom`, dejando un colchón de aire ABAJO que
+     no existe arriba (el padding sí es simétrico, 0.9rem los dos lados, pero la caja entera no lo
+     era). Quitar `bottom` deja que la altura la fije el CONTENIDO — la caja "se corta" justo donde
+     termina Magnific + su padding, y libera espacio real debajo para el aro de Habilidades. */
   .bio__box--tools {
     position: fixed;
-    right: 0;
-    top: 20%;
-    bottom: 12%;
-    width: 64%;
-    padding: 1.1rem 1.2rem;
+    right: -12%;
+    left: 62%;
+    top: 11.5%;
+    width: auto;
+    padding: 0.9rem 1rem;
     overflow-y: auto;
   }
   .bio__title,
   .bio__box-title {
-    font-size: 1.5rem;
+    font-size: 1.18rem;
   }
   .bio__text,
   .bio__skills li {
-    font-size: 1rem;
+    font-size: 0.82rem;
+    line-height: 1.38;
+    white-space: nowrap; /* una línea por ítem/párrafo — el ancho de la caja ya se ajustó para esto */
+  }
+  .bio__text {
+    white-space: normal; /* la Descripción SÍ debe poder partir en varias líneas (es un párrafo largo) */
   }
   .bio__tools {
     grid-template-columns: max-content; /* 1 columna: el panel lateral es angosto */
+    row-gap: 0.34rem;
   }
   .bio__tool-name {
-    font-size: 1rem;
+    font-size: 1.02rem;
   }
   .bio__tool-ico {
     width: 34px;
     height: 34px;
   }
+  /* cables (31/7, "un par de pixeles más gruesas"): stroke-width en unidades del viewBox 0..100;
+     con preserveAspectRatio="none" el grosor final depende del tamaño real en pantalla — este
+     valor se ve ~2px más grueso que el de desktop en un viewport de ~390px de ancho. */
+  .bio__wire {
+    stroke-width: 0.5;
+  }
 }
-/* aros: SOLO existen visualmente en mobile (desktop no los usa) */
+/* aros: SOLO existen visualmente en mobile (desktop no los usa). z-index por encima de las cajas
+   (30/7: la caja About las tapaba Y bloqueaba el click — con esto quedan siempre encima, visibles
+   y clickeables aunque una caja las cubra visualmente) */
 .bio__rings {
   position: absolute;
   inset: 0;
+  z-index: 2;
   pointer-events: none;
 }
 @media (min-width: 769px) {
@@ -1119,18 +1252,23 @@ body.route-category .crt {
     display: none;
   }
 }
+/* borde BLANCO (no fósforo): el esqueleto ya es fósforo brillante — un aro fósforo se pierde
+   encima (mismo problema que el "encendido" de los letreros del Hero resuelve con blanco +
+   glow de color, ver .sign[aria-current] — mismo patrón acá). */
 .bio__ring {
   position: absolute;
-  width: 46px;
-  height: 46px;
+  width: 34.5px; /* -25% (1/8): 46px×0.75 */
+  height: 34.5px;
   transform: translate(-50%, -50%);
   padding: 0;
-  border: 2px solid var(--phosphor);
+  border: 2.5px solid #fff;
   border-radius: 50%;
-  background: transparent;
+  background: rgba(0, 0, 0, 0.35); /* leve fondo oscuro: se distingue aun sobre hueso brillante */
   cursor: pointer;
   pointer-events: auto;
-  box-shadow: 0 0 8px var(--phosphor-glow);
+  box-shadow:
+    0 0 6px rgba(255, 255, 255, 0.6),
+    0 0 12px var(--phosphor-glow);
 }
 /* pulso constante: un aro "hijo" (::before) crece desde el centro y se desvanece — invita al tap
    sin depender de hover (no existe en touch). Un solo evento por ciclo, lento (WCAG 2.3.1). */
@@ -1138,7 +1276,7 @@ body.route-category .crt {
   content: '';
   position: absolute;
   inset: 0;
-  border: 2px solid var(--phosphor);
+  border: 2.5px solid #fff;
   border-radius: 50%;
   animation: bioRingPulse 2.4s ease-out infinite;
 }
@@ -1154,8 +1292,10 @@ body.route-category .crt {
   }
 }
 .bio__ring.is-active {
-  background: var(--phosphor);
-  box-shadow: 0 0 16px var(--phosphor-glow);
+  background: #fff;
+  box-shadow:
+    0 0 10px #fff,
+    0 0 22px var(--phosphor-glow);
 }
 .bio__ring:focus-visible {
   outline: 2px dashed #fff;
@@ -1166,22 +1306,31 @@ body.route-category .crt {
    fósforo con esquinas ESCALONADAS. clip-path define la silueta escalonada; ::after es el
    relleno oscuro inset → el borde queda como un aro fósforo que sigue los escalones. Estética
    lo-fi simulada en CSS (no horneada), grosor de píxel constante en cualquier caja (CLAUDE §3). */
+/* Las 4 medidas del marco son variables (no px literales) para poder REESCALARLAS cuando la misma
+   caja se dibuja en miniatura — p.ej. el menú de categorías dentro de la pantalla de la sala móvil.
+   Con px fijos, una caja de 142px de ancho quedaba con el mismo aro de 2.5px y el mismo escalón de
+   10px que la de 390px: proporcionalmente 2,7× más gruesos, y por eso el preview "se veía con unas
+   líneas muy gruesas" aunque fuera el mismo componente (Charlie, 1/8). */
 .os-frame {
+  --os-step: 10px; /* tamaño del escalón de esquina */
+  --os-notch: 5px; /* medio escalón */
+  --os-ring: 2.5px; /* grosor del aro fósforo */
+  --os-glow: 9px;
   --os-clip: polygon(
-    10px 0, calc(100% - 10px) 0, calc(100% - 10px) 5px, calc(100% - 5px) 5px, calc(100% - 5px) 10px, 100% 10px,
-    100% calc(100% - 10px), calc(100% - 5px) calc(100% - 10px), calc(100% - 5px) calc(100% - 5px), calc(100% - 10px) calc(100% - 5px), calc(100% - 10px) 100%,
-    10px 100%, 10px calc(100% - 5px), 5px calc(100% - 5px), 5px calc(100% - 10px), 0 calc(100% - 10px),
-    0 10px, 5px 10px, 5px 5px, 10px 5px
+    var(--os-step) 0, calc(100% - var(--os-step)) 0, calc(100% - var(--os-step)) var(--os-notch), calc(100% - var(--os-notch)) var(--os-notch), calc(100% - var(--os-notch)) var(--os-step), 100% var(--os-step),
+    100% calc(100% - var(--os-step)), calc(100% - var(--os-notch)) calc(100% - var(--os-step)), calc(100% - var(--os-notch)) calc(100% - var(--os-notch)), calc(100% - var(--os-step)) calc(100% - var(--os-notch)), calc(100% - var(--os-step)) 100%,
+    var(--os-step) 100%, var(--os-step) calc(100% - var(--os-notch)), var(--os-notch) calc(100% - var(--os-notch)), var(--os-notch) calc(100% - var(--os-step)), 0 calc(100% - var(--os-step)),
+    0 var(--os-step), var(--os-notch) var(--os-step), var(--os-notch) var(--os-notch), var(--os-step) var(--os-notch)
   );
   isolation: isolate; /* stacking context propio para el relleno ::after */
   clip-path: var(--os-clip);
   background: var(--phosphor); /* solo se ve en el aro del borde */
-  filter: drop-shadow(0 0 9px var(--phosphor-glow));
+  filter: drop-shadow(0 0 var(--os-glow) var(--phosphor-glow));
 }
 .os-frame::after {
   content: '';
   position: absolute;
-  inset: 2.5px; /* grosor del aro fósforo */
+  inset: var(--os-ring);
   z-index: 0;
   pointer-events: none;
   clip-path: var(--os-clip);
@@ -1437,7 +1586,12 @@ body.route-category .crt {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  perspective: 1100px; /* fuga del callejón (más marcada; giros mayores siguen legibles) */
+  /* (1/8) 1100px → 500px, para igualar en desktop el escorzo que tienen los letreros en mobile
+     (pedido de Charlie). El trapecio depende de `mitadDelAncho · sin(ry) / perspective`: en mobile
+     los marcos son MUCHO más anchos respecto al hero (31% vs 11%) y el ángulo es el doble, así
+     que con los 1100px de antes el efecto en desktop era ~4.6× más débil. Con 500px + los mismos
+     ángulos que mobile (ver los --ry inline en el HTML) los dos formatos se ven igual de girados. */
+  perspective: 500px;
 }
 .sign {
   position: absolute;
@@ -1487,6 +1641,73 @@ body.route-category .crt {
   transition:
     color 0.25s ease,
     text-shadow 0.25s ease;
+}
+/* ── Letreros MOBILE (31/7, 4.ª vuelta) ──────────────────────────────────────────────────────────
+   Todo — posición, tamaño Y ángulo — vive AQUÍ, con `!important`, en vez de aplicarse por JS.
+   Motivo: un <a class="sign" style="left:5.9%;..."> ya trae coordenadas de DESKTOP inline en el
+   HTML (las mismas 4 rutas sirven para las dos rutas /es//en/). Un override por JS
+   (Element.style.left = ...) tarda tanto en llegar como main.js en descargarse y ejecutarse —
+   margen suficiente para que el navegador pinte, aunque sea un instante, los letreros altos y
+   angostos de desktop en sus posiciones originales (el "flash azul con letreros largos" que
+   reportó Charlie). Una regla de HOJA DE ESTILO con `!important` sí gana a un `style` inline sin
+   `!important` — así el PRIMER pintado ya sale correcto, sin ventana de tiempo que cubrir.
+   Iguales razones de especificidad obligan a poner esto DESPUÉS de las reglas base de .sign.
+
+   Técnica de inclinación: 3D (`rotateY` + perspective, igual que desktop) por DEFAULT — Charlie
+   la prefirió (31/7) tras comparar con la plana. `?signs=2d` fuerza la plana (`rotate()`, la de
+   la maqueta original) para volver a comparar sin recompilar. */
+@media (max-width: 768px) {
+  .neon-nav {
+    perspective: 320px;
+  }
+  .sign {
+    transform: rotateY(var(--ry, 0deg));
+    /* marcos chicos: el padding de desktop (14px) dejaba los letreros de 1 línea medio vacíos */
+    padding: 9px;
+    border-radius: 12px;
+  }
+  html.signs-2d .neon-nav {
+    perspective: none;
+  }
+  html.signs-2d .sign {
+    transform: rotate(var(--rz, 0deg));
+  }
+  /* Medidas sobre maquetas/Hero_CharliePixelz_Mobile.png. Proyectos/Biografía en una sola línea
+     (marcos anchos y bajos) libera el espacio central del menú — pedido de Charlie 31/7. */
+  .neon-nav .sign:not([data-route]) {
+    left: 5.8% !important;
+    top: 30.2% !important;
+    width: 17% !important;
+    height: 23.7% !important;
+    --rz: 2deg;
+    --ry: 26deg !important;
+  }
+  .neon-nav .sign[data-route='projects'] {
+    left: 7.2% !important;
+    top: 13.4% !important;
+    width: 31% !important;
+    height: 8.2% !important;
+    --rz: 12deg;
+    --ry: 16deg !important;
+  }
+  /* ancho un poco menor que la maqueta (35% vs 36.3%) y corrido a la izquierda: con -15deg de
+     rotación la esquina superior derecha se comía el margen del viewport */
+  .neon-nav .sign[data-route='bio'] {
+    left: 57% !important;
+    top: 14.8% !important;
+    width: 35% !important;
+    height: 8.2% !important;
+    --rz: -15deg;
+    --ry: -16deg !important;
+  }
+  .neon-nav .sign[data-route='contacto'] {
+    left: 74.4% !important;
+    top: 32.1% !important;
+    width: 19.2% !important;
+    height: 22% !important;
+    --rz: -3deg;
+    --ry: -26deg !important;
+  }
 }
 /* ENCENDIDO: sección actual / hover / foco → borde blanco + glow de color, texto blanco */
 .sign[aria-current='page'],

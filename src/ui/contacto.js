@@ -94,9 +94,10 @@ export function initContacto({ lang, isMobile = false }) {
     } catch {}
   }
 
-  // reveal del panel + letrero (tras el barrido a la azotea). Mobile (30/7): la caja aparece
-  // unos segundos DESPUÉS de llegar (pedido de Charlie) — solo la caja/links, el breadcrumb de
-  // navegación se mantiene disponible de inmediato en ambos casos.
+  // reveal del panel + letrero (tras el barrido a la azotea): la caja aparece un momento DESPUÉS
+  // de llegar — solo la caja/links, el breadcrumb de navegación se mantiene disponible de
+  // inmediato. (30/7 solo mobile con 1.8s → 31/7 bajado a 0.3s → 1/8 mismo delay en desktop,
+  // pedido de Charlie: el barrido se lee igual en los dos.)
   const reveal = () => {
     if (quality.reducedMotion) {
       gsap.set(revealTargets, { opacity: 1, y: 0 })
@@ -105,7 +106,7 @@ export function initContacto({ lang, isMobile = false }) {
     }
     gsap.fromTo(crumb, { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' })
     gsap
-      .timeline({ delay: isMobile ? 1.8 : 0 })
+      .timeline({ delay: 0.3 })
       .fromTo(panel, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' })
       .to(el.querySelectorAll('.contacto__link'), { opacity: 1, x: 0, duration: 0.35, stagger: 0.1, startAt: { x: -14 } }, '-=0.2')
   }

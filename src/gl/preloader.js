@@ -25,6 +25,10 @@ const fragment = /* glsl */ `
   uniform float uProgress;
   uniform vec2 uMouse;
   uniform float uEyeActive;
+  uniform float uEyeStatic;  // 1 = pupila fija (mobile: no hay cursor que seguir)
+  uniform float uEyeFlicker; // 0..1 destello irregular (reemplaza al seguimiento en mobile)
+  uniform vec2 uPupil;       // posicion de la pupila en UV de imagen — DISTINTA por plataforma
+  uniform vec2 uEyeR;        // radios (nucleo, halo) en unidades de ANCHO de imagen en pantalla
   uniform float uDpr;
   uniform float uTime;
   uniform float uGlitch; // 0 limpio · 1 glitch de salida (transición al hero)
@@ -81,21 +85,34 @@ const fragment = /* glsl */ `
       col = mix(voidc, col, edge); // disuelve la costura de las barras
     }
 
-    // ojo rojo + pupila que sigue al cursor (rango restringido). Visible desde 0%.
+    // ojo rojo. Visible desde 0%. uEyeStatic=1 (mobile) → pupila FIJA, sin seguimiento; su vida la
+    // da uEyeFlicker (un destello irregular desde JS) en vez del cursor, que en touch no existe.
     // 10% menos de recorrido hacia la izquierda: más allá del hombro se pierde la ilusión de estar "dentro del ojo".
     float mx = uMouse.x < 0.0 ? uMouse.x * 0.9 : uMouse.x;
-    vec2 pupil = vec2(0.52, 0.57) + vec2(mx, uMouse.y) * vec2(0.006, 0.006);
-    float d = distance(cuv, pupil);
-    vec3 red = mix(vec3(0.470, 0.0, 0.0), vec3(0.973, 0.0, 0.0), uEyeActive); // #780000→#F80000
-    float core = smoothstep(0.00988, 0.0, d); // tamaño -5%
-    float halo = (0.35 + 0.55 * uEyeActive) * smoothstep(0.057, 0.0, d); // -5%
+    // uPupil viene de JS y es DISTINTA en desktop y mobile: cada uno dithera una imagen distinta
+    // (hero_desktop_clean vs hero_mobile_clean), o sea otro encuadre, y la pupila esta en UV de
+    // IMAGEN. Tenerla hardcodeada aqui hacia que calibrar mobile descuadrara desktop.
+    // OJO con el signo de la Y: en cuv el eje va INVERTIDO respecto a la pantalla (cuv.y=1 es el
+    // borde de ARRIBA), por eso bajar en pantalla = restar en cuv.
+    // (Sin acentos graves en este comentario: el shader vive dentro de un template literal de JS.)
+    vec2 pupil = uPupil + vec2(mx, uMouse.y) * vec2(0.006, 0.006) * (1.0 - uEyeStatic);
+    // "el ojo quedó apretado" (Charlie 31/7): cuv son UV de IMAGEN, que no es cuadrada, así que un
+    // distance() plano daba un óvalo — horizontal en desktop (ia 1.64) y vertical/aplastado en el
+    // hero móvil (ia 0.56). Dividir la componente Y por el aspecto mide en píxeles de PANTALLA:
+    // el ojo queda redondo en cualquier formato, y el radio pasa a estar en unidades de ancho.
+    vec2 ec = vec2(1.0, 1.0 / ia);
+    float d = distance(cuv * ec, pupil * ec);
+    float act = max(uEyeActive, uEyeFlicker);
+    vec3 red = mix(vec3(0.470, 0.0, 0.0), vec3(0.973, 0.0, 0.0), act); // #780000→#F80000
+    float core = smoothstep(uEyeR.x, 0.0, d);
+    float halo = (0.35 + 0.55 * act) * smoothstep(uEyeR.y, 0.0, d);
     col += red * (core + halo);
 
     gl_FragColor = vec4(col, 1.0);
   }
 `
 
-export function initPreloader({ sceneUrl, preloadUrls = [] }) {
+export function initPreloader({ sceneUrl, preloadUrls = [], isMobile = false }) {
   const pct = document.getElementById('pct')
   const langSelect = document.getElementById('langSelect')
   const links = langSelect ? [...langSelect.querySelectorAll('a[data-lang]')] : []
@@ -152,6 +169,14 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
       uProgress: { value: 0 },
       uMouse: { value: [0, 0] },
       uEyeActive: { value: 0 },
+      uEyeStatic: { value: isMobile ? 1 : 0 },
+      uEyeFlicker: { value: 0 },
+      // Calibrados por separado sobre CADA imagen (ver uPupil en el shader). Los radios van en
+      // unidades de ancho-de-imagen-en-pantalla — la métrica del ojo es circular (se corrige el
+      // aspecto), así que el mismo valor da un círculo igual de redondo en los dos formatos.
+      // Mobile los tiene ~2x porque ahí la escena se ve mucho más chica (pedido de Charlie 1/8).
+      uPupil: { value: isMobile ? [0.56, 0.5707] : [0.52, 0.57] },
+      uEyeR: { value: isMobile ? [0.0206, 0.1086] : [0.0105, 0.058] },
       uDpr: { value: quality.dpr },
       uTime: { value: 0 },
       uGlitch: { value: 0 },
@@ -180,6 +205,12 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
   let elapsed = 0
   let done = false
   let eyeActive = 0
+  // mobile: el ojo no sigue nada (Charlie 31/7, "en esta versión lo dejaría estático, quizá solo
+  // con un efecto glitch"). En su lugar, UN destello por evento cada 2.4–4.8 s — irregular, como
+  // el neón viejo, y jamás más de 3 destellos/s (WCAG 2.3.1).
+  let flicker = 0
+  let blipT = 0
+  let nextBlip = 1.2 + Math.random() * 2
 
   ticker.add((t, dt) => {
     elapsed += dt
@@ -192,10 +223,22 @@ export function initPreloader({ sceneUrl, preloadUrls = [] }) {
     program.uniforms.uTime.value = t * 0.001
     program.uniforms.uMouse.value = [pointer.pos.x, pointer.pos.y]
 
-    // ojo se aviva al acercar el cursor al selector (arriba-centro), una vez visible
-    const target = done ? Math.max(0, 1 - Math.hypot(pointer.pos.x, pointer.pos.y - 0.8) / 1.1) : 0
+    // desktop: el ojo se aviva al acercar el cursor al selector (arriba-centro), una vez visible.
+    // mobile: base fija y tenue; la "vida" la pone el destello de abajo.
+    const target = isMobile ? (done ? 0.3 : 0) : done ? Math.max(0, 1 - Math.hypot(pointer.pos.x, pointer.pos.y - 0.8) / 1.1) : 0
     eyeActive += (target - eyeActive) * Math.min(1, dt * 6)
     program.uniforms.uEyeActive.value = eyeActive
+
+    if (isMobile && !reduced) {
+      blipT += dt
+      if (blipT >= nextBlip) {
+        blipT = 0
+        nextBlip = 2.4 + Math.random() * 2.4
+        flicker = 1
+      }
+      flicker = Math.max(0, flicker - dt / 0.3) // un solo destello, decae en 300 ms
+      program.uniforms.uEyeFlicker.value = flicker * 0.9
+    }
 
     if (pct) {
       const v = Math.round(p * 100)

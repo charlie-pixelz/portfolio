@@ -89,6 +89,7 @@ export function initHero(bgUrl, charUrl) {
   const renderer = stage.renderer
   if (!renderer) {
     document.body.classList.add('no-webgl') // fallback CSS
+    document.body.classList.add('hero-ready') // sin shader no hay nada que esperar: mostrar ya
     return
   }
   const gl = renderer.gl
@@ -96,10 +97,15 @@ export function initHero(bgUrl, charUrl) {
   const uBg = new Texture(gl, texOpts)
   const uChar = new Texture(gl, texOpts)
 
-  const still = quality.reducedMotion || quality.tier === 'low'
+  // (31/7) `still` ya NO incluye tier low. El parallax de este shader son dos uniforms: cambiar su
+  // valor no cuesta ni un draw call más, así que apagarlo en tier low no ahorraba nada y sí dejaba
+  // el hero (la pieza central del sitio) completamente muerto en la mayoría de los teléfonos
+  // reales, que caen en 'low' por deviceMemory ≤ 4 GB. Ahora tier low = parallax a la mitad.
+  const still = quality.reducedMotion
   const normal = new URLSearchParams(location.search).get('parallax') === 'normal'
-  const big = quality.isTouch ? 0.011 : 0.016
-  const small = quality.isTouch ? 0.004 : 0.006
+  const k = quality.tier === 'low' ? 0.5 : 1
+  const big = (quality.isTouch ? 0.011 : 0.0208) * k // desktop +30% (1/8, pedido de Charlie)
+  const small = (quality.isTouch ? 0.004 : 0.0078) * k
   // Charlie eligió el parallax INVERTIDO (fondo se mueve más) como default; ?parallax=normal lo invierte
   const kBg = still ? 0 : normal ? small : big
   const kChar = still ? 0 : normal ? big : small
@@ -133,6 +139,11 @@ export function initHero(bgUrl, charUrl) {
       if (setSize) {
         program.uniforms.uImageSize.value = [img.naturalWidth, img.naturalHeight]
         if (!still) entering = true // arranca la resolución del glitch cuando hay señal
+        // avisa que la escena YA tiene textura: hasta acá el canvas está transparente y el DOM del
+        // hero (letreros + lockup) se vería flotando sobre el fondo del body. base.css los revela
+        // con esta clase. Sin esto, al elegir idioma se veía la pantalla azul con los letreros
+        // durante todo lo que tarda main.js en bajar/parsear/ejecutar (segundos en dev).
+        document.body.classList.add('hero-ready')
       }
     }
     img.src = url

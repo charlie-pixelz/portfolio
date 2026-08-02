@@ -8,7 +8,11 @@ import { gsap } from 'gsap'
 import { quality } from '../core/quality.js'
 
 export function initCharlie() {
-  if (quality.reducedMotion || quality.isTouch) return
+  // (31/7) Antes salía de una en cualquier device táctil → en mobile el lockup quedaba MUERTO: sin
+  // flicker ambiental y sin swap. Lo que no existe en touch es el HOVER, no el efecto. Ahora:
+  //   · flicker ambiental → siempre (es el latido del letrero, no depende del puntero)
+  //   · swap completo → hover en puntero fino, TAP en touch (se queda pixelado; otro tap vuelve)
+  if (quality.reducedMotion) return
   const lockup = document.querySelector('.hero .brand')
   const word = document.querySelector('.hero .brand__charlie')
   if (!lockup || !word) return
@@ -46,8 +50,28 @@ export function initCharlie() {
     })
   }
 
-  lockup.addEventListener('pointerenter', () => run(true))
-  lockup.addEventListener('pointerleave', () => run(false))
+  if (quality.isTouch) {
+    // (1/8) Charlie pidió que en touch se comporte como el hover de desktop: basta DESLIZAR el
+    // dedo por encima, sin tap. `pointerenter/leave` no sirven — en touch solo disparan con el
+    // dedo apoyado y además exigirían pointer-events sobre el lockup (robándole el tap al hero).
+    // En su lugar se escucha el movimiento global y se hace el hit-test a mano contra el rect del
+    // lockup: entrar → swap, salir → volver. Mismo modelo mental que el hover, cero taps.
+    let inside = false
+    addEventListener(
+      'pointermove',
+      (e) => {
+        const r = lockup.getBoundingClientRect()
+        const now = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+        if (now === inside) return
+        inside = now
+        run(now)
+      },
+      { passive: true },
+    )
+  } else {
+    lockup.addEventListener('pointerenter', () => run(true))
+    lockup.addEventListener('pointerleave', () => run(false))
+  }
 
   // flicker ambiental: una letra al azar parpadea a Rubik Glitch y vuelve (irregular, solo en reposo)
   const ambient = () => {
