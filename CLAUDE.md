@@ -67,13 +67,13 @@ Detalle y evidencia en [`CRITICA_FABLE5.md`](files/CRITICA_FABLE5.md). Marca `�
 | F4 | IDs del SVG del preloader | ☑ | Reemplazado por **matriz en canvas** (elimina riesgo SVGO) |
 | F5 | SPA vs GitHub Pages / SEO | ☑ | HTML estático real por ruta `/es/` `/en/` confirmado. Gap real encontrado (2/8) al verificar en producción: sub-rutas (`/es/proyectos/`, etc.) 404eaban en GitHub Pages y el router siempre forzaba Home al cargar — cerrado con `public/404.html` (rebote sessionStorage, con página de error propia para links realmente rotos) + `router.js` leyendo la ruta inicial |
 | F6 | Presupuestos de bytes | ☑ | **OGL elegido** (21/7): ~98 KB gz proyectado vs ~213 con Three. Presupuestos en §3; verificar gz real en build |
-| F7 | Fecha de lanzamiento | ☐ | Hito 1 (deploy técnico) **CERRADO 21/7**. Contenido de Hito 2 ya **SUPERADO** (2/8, verificado en `files/proyectos/casos.json`): 16 casos completos (4/categoría × ES/EN), no solo el piso de 8 — solo falta que Charlie **fije la fecha** de publicación |
+| F7 | Fecha de lanzamiento | ☑ | **Lanzamiento ratificado por Charlie: 3 de agosto de 2026** |
 | F8 | Dominio | ☑ | Alias "Charlie Pixelz" ratificado (20/7). **`charliepixelz.design` comprado (3/8, Spaceship)**, DNS apuntado a GitHub Pages, certificado HTTPS aprobado — base migrada a `/` (3/8) |
 | F9 | A11y preloader/cursor | ☑ | Verificado (2/8): preloader con `role=progressbar` + ARIA, selector de idioma con `<a href>` reales (no depende de JS para navegar), fallback sin WebGL completa igual; foco visible global (`:focus-visible` cian) + reglas propias en cada interactivo sobre el canvas |
 | F10 | Ratificar P1–P4 | ☑ | **P1→P2→P3→P4 ratificado** por Charlie (20/7) como ruta de lanzamiento/degradación |
 | F11 | Sistema tipográfico | ☑ | 5 familias con roles + regla de frontera de Doto (ver ART_DIR §3) |
 
-**Gates abiertos:** solo queda **F7** (fecha de lanzamiento), decisión de Charlie. Lighthouse (2/8, `vite preview` + build real): Accesibilidad/Best Practices/SEO **100/100/100**. Performance móvil **44→74** tras acotar el precalentado de `category.js` (disparaba ~8 MB de media de las 4 categorías con solo cargar Inicio; ahora espera una señal real de que alguien va a Proyectos — hover/click del letrero). Sigue bajo el piso de 85: el LCP (~8.3s) no se movió con ese fix, parece atado al pipeline de texturas WebGL del hero — posiblemente inflado por el renderer por software del Chrome headless usado para medir (no es un dispositivo real). Pendiente: revisar con un dispositivo/PageSpeed real antes de perseguir más este número.
+**Gates abiertos:** ninguno — **F1–F11 cerrados**. Lighthouse (2/8, `vite preview` + build real): Accesibilidad/Best Practices/SEO **100/100/100**. Performance móvil **44→74** tras acotar el precalentado de `category.js` (disparaba ~8 MB de media de las 4 categorías con solo cargar Inicio; ahora espera una señal real de que alguien va a Proyectos — hover/click del letrero). Sigue bajo el piso de 85: el LCP (~8.3s) no se movió con ese fix, parece atado al pipeline de texturas WebGL del hero — posiblemente inflado por el renderer por software del Chrome headless usado para medir (no es un dispositivo real). Pendiente no-bloqueante: revisar con un dispositivo/PageSpeed real antes de perseguir más este número.
 
 ---
 
@@ -125,9 +125,11 @@ Optimizados listos en **`assets/upscale/`**; máster/fuente en `assets/efecto-*/
 
 **Listos (verificados en repo):** hero clean 2400/4602w · **depth-map hero** (`efecto-fake3d/…_depth-map.png`) · bio 2400/4602w · sala proyectos desktop 2400/4096w + móvil 1080/2446w · categoría desktop/móvil (apagadas) + **capas de LUCES** (`efecto-galeria/Categoria_*_Luces.png`, sin optimizar aún) · callejón 1536w · menú móvil · Contacto (webm+mp4+poster) · 11 íconos de herramientas + 3 flechas · JSON de pantallas (`files/pantallas/`) · 5 familias tipográficas (TTF+OFL) · `hero_css_demo_v6.html` (prototipo nav diegética).
 
-**Ya cerrados (verificado 2/8, doc estaba desactualizado):** copy Biografía ES/EN (`bio.js`) · contenido de los 16 casos, título/desc/tags/media ES/EN (`casos.json`) · datos de contacto reales — email, WhatsApp, LinkedIn (`contacto.js`; **falta Behance**, ¿se descarta o hay link?).
+**Ya cerrados (verificado 2/8, doc estaba desactualizado):** copy Biografía ES/EN (`bio.js`) · contenido de los 16 casos, título/desc/tags/media ES/EN (`casos.json`) · datos de contacto reales — email, WhatsApp, LinkedIn (`contacto.js`; **falta Behance**, descartado por ahora, Charlie evalúa sumarlo a futuro).
 
-**Pendientes (dueño):** `hero_mobile_1080x1920.webp` (crop 9:16) · boceto/definición de **matriz del preloader** + estados · **og:image** 1200×630 + versión hero marcos horneados · **favicon** · **script de GoatCounter** (F1 ratificado 20/7 pero nunca se agregó al HTML) · copiar OFL/License a `/docs/licencias/` (acción de F2, quedó suelta). Casi todo es **Charlie**; los derivados de imagen pueden generarse vía **MCP Higgsfield** (guardar en `assets/ai/` como `proyecto_formato_version.ext`).
+**Cerrados (3/8):** favicon + apple-touch-icon (recortados del ojo rojo del preloader) · og-image 1200×630 · GoatCounter (`<script>` con `no_onload` + conteo manual en `router.js`/`contacto.js`) · licencias OFL copiadas a `/docs/licencias/`.
+
+**Pendientes (dueño):** ninguno.
 
 ---
 
@@ -145,7 +147,7 @@ Optimizados listos en **`assets/upscale/`**; máster/fuente en `assets/efecto-*/
 - **Esqueleto DESPLEGADO y vivo (21/7):** Vite MPA `/es/` `/en/` + selector de idioma persistente + tema (paleta/fuentes/CRT). Verificado en la URL pública (200 + render OK en las 3 rutas). **Hito 1 saldado.**
 - **Deploy:** dominio propio **https://charliepixelz.design/** (comprado 3/8 en Spaceship; F8 cerrado) — **base `/`** + `public/CNAME`. Repo de proyecto **`portfolio`** (público), Pages con source "GitHub Actions" → **auto-deploy en cada push a `main`**. Push con la cuenta `charlie-pixelz` vía `gh` CLI (el MCP de GitHub es otra cuenta, `cperez-brand`). La URL `charlie-pixelz.github.io/portfolio/` queda histórica/sin usar (dejó de ser la base el 3/8; si el dominio hay que revertirlo, la base vuelve a `/portfolio/` + quitar `public/CNAME`).
 - **Ratificado 20/7:** alias "Charlie Pixelz" · P1→P2→P3→P4 · analytics sin cookies · i18n HTML por ruta.
-- **Abierto por Charlie:** fecha de lanzamiento (F7, contenido ya listo) · TLD/dominio (F8) · assets pendientes de §6 (favicon, og:image, GoatCounter, licencias).
+- **Lanzamiento (F7):** ratificado por Charlie para **3 de agosto de 2026**. Sin gates abiertos.
 - **Fase 1 EN CURSO (21/7):** F6 cerrado (OGL). Pendiente en la fase: subset de fuentes → woff2 (TTF actuales ~628 KB); arquitectura canvas persistente + RAF único + PointerManager + QualityManager + Lenis; preloader básico. DoD: 60 fps escena vacía · mouse y touch alimentan los mismos valores · reduced-motion.
 - **Regla de oro:** no escribir features hasta tener el esqueleto desplegándose al hosting real.
 
