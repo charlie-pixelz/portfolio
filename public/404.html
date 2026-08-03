@@ -154,9 +154,11 @@
       <h1>404</h1>
       <p>Esta señal no existe — puede que el link esté roto o la página se haya movido.</p>
       <p class="sub">This signal doesn't exist — the link may be broken or the page has moved.</p>
-      <nav>
-        <a href="/portfolio/es/">‹ Inicio</a>
-        <a href="/portfolio/en/">‹ Home</a>
+      <!-- selector de idioma, no "dos botones distintos" — mismo patrón/rótulos que
+           .pipboy__lang (ver es/index.html), ambos van al mismo sitio (Home) en su idioma -->
+      <nav class="lang" aria-label="Idioma / Language">
+        <a href="/portfolio/es/" data-lang="es">ESP</a>
+        <a href="/portfolio/en/" data-lang="en">ENG</a>
       </nav>
     </div>
     <script>
@@ -272,6 +274,10 @@
         var img = new Image()
         img.onload = function () {
           gl.bindTexture(gl.TEXTURE_2D, tex)
+          // OGL (usado en preloader.js) voltea las texturas en Y por defecto; WebGL puro no —
+          // sin esto la imagen queda de cabeza (el origen de <img> es arriba-izquierda, el de la
+          // textura WebGL es abajo-izquierda).
+          gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
           gl.uniform2f(uImageSize, img.naturalWidth, img.naturalHeight)
           resize()
