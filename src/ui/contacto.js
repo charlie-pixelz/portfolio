@@ -46,6 +46,14 @@ export function initContacto({ lang, isMobile = false }) {
       `<span class="contacto__link-label">${l.label}</span>` +
       `<span class="contacto__link-value">${l.value}</span></a></li>`,
   ).join('')
+  // GoatCounter: único clic que de verdad importa medir acá — el resto de la navegación (rutas
+  // internas) ya la cuenta router.js. Estos links salen del sitio (wa.me/mailto/linkedin), así que
+  // sin un evento explícito no quedarían registrados en ningún lado.
+  el.querySelectorAll('.contacto__link').forEach((a, i) => {
+    a.addEventListener('click', () => {
+      window.goatcounter?.count?.({ path: `contacto-click-${LINKS[i].label.toLowerCase()}`, event: true })
+    })
+  })
 
   const revealTargets = [panel, crumb]
 

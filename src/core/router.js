@@ -224,6 +224,10 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
     document.body.classList.toggle('route-bio', view === 'bio')
     document.body.classList.toggle('route-contacto', view === 'contacto')
     current = view
+    // GoatCounter: sitio con no_onload=true (el script de <head> solo cuenta la carga inicial
+    // real). Este es el único punto por el que pasan TODAS las vistas (clic, popstate, deep-link
+    // inicial de F5) — la URL ya quedó actualizada arriba, antes de esta línea.
+    window.goatcounter?.count?.({ path: location.pathname, title: document.title })
   }
 
   const applyInstant = (view, push) => {

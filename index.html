@@ -24,6 +24,15 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- GoatCounter (F1, ratificado 20/7): analytics sin cookies. no_onload=true porque el sitio
+         es un mini-router client-side (History API) — el conteo automático de count.js solo vería
+         la carga inicial; router.js dispara el conteo manual en cada cambio de vista (ver setState). -->
+    <script
+      data-goatcounter="https://charliepixelz.goatcounter.com/count"
+      data-goatcounter-settings='{"no_onload": true}'
+      async
+      src="//gc.zgo.at/count.js"
+    ></script>
     <!-- CSS como <link> (no importado desde main.js): bloquea el primer pintado, así el documento
          nunca se ve un instante en HTML crudo sin estilo (FOUC al cambiar de idioma, 31/7) -->
     <link rel="stylesheet" href="/src/styles/tokens.css" />
