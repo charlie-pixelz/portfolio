@@ -62,18 +62,18 @@ Detalle y evidencia en [`CRITICA_FABLE5.md`](files/CRITICA_FABLE5.md). Marca `�
 | # | Hallazgo | Estado | Acción viva |
 |---|---|---|---|
 | F1 | Definición de éxito + contacto medible | ☑ | Contacto especificado; **analytics sin cookies (GoatCounter) ratificado** por Charlie (20/7) |
-| F2 | Licencias tipográficas | ☑ | Las 5 son **OFL**; guardar OFL/License en `/docs/licencias/` |
+| F2 | Licencias tipográficas | ☑ | Las 6 son **OFL** (incluye Glitch Goblin); copiadas a [`/docs/licencias/`](docs/licencias/README.md) (2/8) |
 | F3 | Volumen de contenido | ☑ | Piso lanzable = **8 casos** (2/categoría × ES/EN) |
 | F4 | IDs del SVG del preloader | ☑ | Reemplazado por **matriz en canvas** (elimina riesgo SVGO) |
 | F5 | SPA vs GitHub Pages / SEO | ☑ | HTML estático real por ruta `/es/` `/en/` confirmado. Gap real encontrado (2/8) al verificar en producción: sub-rutas (`/es/proyectos/`, etc.) 404eaban en GitHub Pages y el router siempre forzaba Home al cargar — cerrado con `public/404.html` (rebote sessionStorage, con página de error propia para links realmente rotos) + `router.js` leyendo la ruta inicial |
 | F6 | Presupuestos de bytes | ☑ | **OGL elegido** (21/7): ~98 KB gz proyectado vs ~213 con Three. Presupuestos en §3; verificar gz real en build |
-| F7 | Fecha de lanzamiento | ☐ | Hito 1 (deploy técnico) **CERRADO 21/7** → `charlie-pixelz.github.io/portfolio/`. Hito 2 (8 casos) **sin fecha** (recom. ≤31/7) — eslabón más débil |
+| F7 | Fecha de lanzamiento | ☐ | Hito 1 (deploy técnico) **CERRADO 21/7**. Contenido de Hito 2 ya **SUPERADO** (2/8, verificado en `files/proyectos/casos.json`): 16 casos completos (4/categoría × ES/EN), no solo el piso de 8 — solo falta que Charlie **fije la fecha** de publicación |
 | F8 | Dominio | ☐ | Alias **"Charlie Pixelz" ratificado** por Charlie (20/7); TLD + registro pendientes |
-| F9 | A11y preloader/cursor | ☐ | 2 líneas al DoD Fase 2/3: preloader no bloquea lectores; foco visible sobre canvas |
+| F9 | A11y preloader/cursor | ☑ | Verificado (2/8): preloader con `role=progressbar` + ARIA, selector de idioma con `<a href>` reales (no depende de JS para navegar), fallback sin WebGL completa igual; foco visible global (`:focus-visible` cian) + reglas propias en cada interactivo sobre el canvas |
 | F10 | Ratificar P1–P4 | ☑ | **P1→P2→P3→P4 ratificado** por Charlie (20/7) como ruta de lanzamiento/degradación |
 | F11 | Sistema tipográfico | ☑ | 5 familias con roles + regla de frontera de Doto (ver ART_DIR §3) |
 
-**Gates abiertos que condicionan el build:** F5 y F6 se cierran **en Fase 1/2 al implementar**; quedan **F7** (fecha Hito 2) y el **TLD/registro de F8** por decisión de Charlie.
+**Gates abiertos:** solo quedan **F7** (fecha de lanzamiento) y **F8** (TLD/registro del dominio), ambas decisión de Charlie. Lighthouse (2/8, `vite preview` + build real): Accesibilidad/Best Practices/SEO **100/100/100**. Performance móvil **44** (bajo el piso de 85 del DoD) — causa identificada: `category.js` precalienta EN IDLE toda la media de las 4 categorías (imágenes + video, mobile y desktop) apenas carga Inicio, ~8 MB en 39 requests. No es urgente para un lanzamiento "soft" (no bloquea nada, solo compite por ancho de banda unos segundos después de cargar), pero conviene acotarlo antes de anunciarlo en serio.
 
 ---
 
@@ -125,7 +125,9 @@ Optimizados listos en **`assets/upscale/`**; máster/fuente en `assets/efecto-*/
 
 **Listos (verificados en repo):** hero clean 2400/4602w · **depth-map hero** (`efecto-fake3d/…_depth-map.png`) · bio 2400/4602w · sala proyectos desktop 2400/4096w + móvil 1080/2446w · categoría desktop/móvil (apagadas) + **capas de LUCES** (`efecto-galeria/Categoria_*_Luces.png`, sin optimizar aún) · callejón 1536w · menú móvil · Contacto (webm+mp4+poster) · 11 íconos de herramientas + 3 flechas · JSON de pantallas (`files/pantallas/`) · 5 familias tipográficas (TTF+OFL) · `hero_css_demo_v6.html` (prototipo nav diegética).
 
-**Pendientes (dueño):** `hero_mobile_1080x1920.webp` (crop 9:16) · boceto/definición de **matriz del preloader** + estados · **og:image** 1200×630 + versión hero marcos horneados · **favicon** · **copy Biografía ES/EN** · **datos de contacto reales** (email, WhatsApp, LinkedIn, Behance) · **contenido de los 8 casos** (título/desc/tags/media ES/EN). Casi todo es **Charlie**; los derivados de imagen pueden generarse vía **MCP Higgsfield** (guardar en `assets/ai/` como `proyecto_formato_version.ext`).
+**Ya cerrados (verificado 2/8, doc estaba desactualizado):** copy Biografía ES/EN (`bio.js`) · contenido de los 16 casos, título/desc/tags/media ES/EN (`casos.json`) · datos de contacto reales — email, WhatsApp, LinkedIn (`contacto.js`; **falta Behance**, ¿se descarta o hay link?).
+
+**Pendientes (dueño):** `hero_mobile_1080x1920.webp` (crop 9:16) · boceto/definición de **matriz del preloader** + estados · **og:image** 1200×630 + versión hero marcos horneados · **favicon** · **script de GoatCounter** (F1 ratificado 20/7 pero nunca se agregó al HTML) · copiar OFL/License a `/docs/licencias/` (acción de F2, quedó suelta). Casi todo es **Charlie**; los derivados de imagen pueden generarse vía **MCP Higgsfield** (guardar en `assets/ai/` como `proyecto_formato_version.ext`).
 
 ---
 
@@ -143,7 +145,7 @@ Optimizados listos en **`assets/upscale/`**; máster/fuente en `assets/efecto-*/
 - **Esqueleto DESPLEGADO y vivo (21/7):** Vite MPA `/es/` `/en/` + selector de idioma persistente + tema (paleta/fuentes/CRT). Verificado en la URL pública (200 + render OK en las 3 rutas). **Hito 1 saldado.**
 - **Deploy:** repo de proyecto **`portfolio`** (público) → **https://charlie-pixelz.github.io/portfolio/** (**base `/portfolio/`**); Pages con source "GitHub Actions" → **auto-deploy en cada push a `main`**. Push con la cuenta `charlie-pixelz` vía `gh` CLI (el MCP de GitHub es otra cuenta, `cperez-brand`). Con dominio propio (`.design`) → base `/` + `CNAME` + actualizar `hreflang`.
 - **Ratificado 20/7:** alias "Charlie Pixelz" · P1→P2→P3→P4 · analytics sin cookies · i18n HTML por ruta.
-- **Abierto por Charlie:** push del repo · fecha Hito 2 (F7) · TLD/dominio (F8) · datos de contacto · copy Bio ES/EN · contenido de los 8 casos.
+- **Abierto por Charlie:** fecha de lanzamiento (F7, contenido ya listo) · TLD/dominio (F8) · assets pendientes de §6 (favicon, og:image, GoatCounter, licencias).
 - **Fase 1 EN CURSO (21/7):** F6 cerrado (OGL). Pendiente en la fase: subset de fuentes → woff2 (TTF actuales ~628 KB); arquitectura canvas persistente + RAF único + PointerManager + QualityManager + Lenis; preloader básico. DoD: 60 fps escena vacía · mouse y touch alimentan los mismos valores · reduced-motion.
 - **Regla de oro:** no escribir features hasta tener el esqueleto desplegándose al hosting real.
 
