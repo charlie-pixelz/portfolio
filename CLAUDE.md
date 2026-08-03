@@ -73,7 +73,7 @@ Detalle y evidencia en [`CRITICA_FABLE5.md`](files/CRITICA_FABLE5.md). Marca `�
 | F10 | Ratificar P1–P4 | ☑ | **P1→P2→P3→P4 ratificado** por Charlie (20/7) como ruta de lanzamiento/degradación |
 | F11 | Sistema tipográfico | ☑ | 5 familias con roles + regla de frontera de Doto (ver ART_DIR §3) |
 
-**Gates abiertos:** solo quedan **F7** (fecha de lanzamiento) y **F8** (TLD/registro del dominio), ambas decisión de Charlie. Lighthouse (2/8, `vite preview` + build real): Accesibilidad/Best Practices/SEO **100/100/100**. Performance móvil **44** (bajo el piso de 85 del DoD) — causa identificada: `category.js` precalienta EN IDLE toda la media de las 4 categorías (imágenes + video, mobile y desktop) apenas carga Inicio, ~8 MB en 39 requests. No es urgente para un lanzamiento "soft" (no bloquea nada, solo compite por ancho de banda unos segundos después de cargar), pero conviene acotarlo antes de anunciarlo en serio.
+**Gates abiertos:** solo quedan **F7** (fecha de lanzamiento) y **F8** (TLD/registro del dominio), ambas decisión de Charlie. Lighthouse (2/8, `vite preview` + build real): Accesibilidad/Best Practices/SEO **100/100/100**. Performance móvil **44→74** tras acotar el precalentado de `category.js` (disparaba ~8 MB de media de las 4 categorías con solo cargar Inicio; ahora espera una señal real de que alguien va a Proyectos — hover/click del letrero). Sigue bajo el piso de 85: el LCP (~8.3s) no se movió con ese fix, parece atado al pipeline de texturas WebGL del hero — posiblemente inflado por el renderer por software del Chrome headless usado para medir (no es un dispositivo real). Pendiente: revisar con un dispositivo/PageSpeed real antes de perseguir más este número.
 
 ---
 
