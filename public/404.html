@@ -13,7 +13,7 @@
       // la restituyen antes de pintar la sección correcta. Si NO matchea nada conocido, es un
       // link roto de verdad: se queda en esta página y se muestra el 404 de abajo.
       ;(function () {
-        var BASE = '/portfolio/' // ver vite.config.js — actualizar junto a esa base si cambia el dominio
+        var BASE = '/' // dominio propio (charliepixelz.design) — antes era /portfolio/, ver vite.config.js
         var path = location.pathname
         if (path.indexOf(BASE) !== 0) return
         var rest = path.slice(BASE.length)
@@ -28,13 +28,13 @@
     <style>
       @font-face {
         font-family: 'Handjet';
-        src: url('/portfolio/404-assets/Handjet-subset.woff2') format('woff2');
+        src: url('/404-assets/Handjet-subset.woff2') format('woff2');
         font-weight: 100 900;
         font-display: swap;
       }
       @font-face {
         font-family: 'Space Grotesk';
-        src: url('/portfolio/404-assets/SpaceGrotesk-subset.woff2') format('woff2');
+        src: url('/404-assets/SpaceGrotesk-subset.woff2') format('woff2');
         font-weight: 300 700;
         font-display: swap;
       }
@@ -74,7 +74,7 @@
       .bg {
         position: fixed;
         inset: 0;
-        background: url('/portfolio/404-assets/bg.webp') center 20% / cover no-repeat;
+        background: url('/404-assets/bg.webp') center 20% / cover no-repeat;
         filter: grayscale(70%) brightness(0.3) contrast(1.1);
         z-index: 0;
       }
@@ -157,8 +157,8 @@
       <!-- selector de idioma, no "dos botones distintos" — mismo patrón/rótulos que
            .pipboy__lang (ver es/index.html), ambos van al mismo sitio (Home) en su idioma -->
       <nav class="lang" aria-label="Idioma / Language">
-        <a href="/portfolio/es/" data-lang="es">ESP</a>
-        <a href="/portfolio/en/" data-lang="en">ENG</a>
+        <a href="/es/" data-lang="es">ESP</a>
+        <a href="/en/" data-lang="en">ENG</a>
       </nav>
     </div>
     <script>
@@ -286,7 +286,7 @@
           if (bgCss) bgCss.style.display = 'none' // el canvas ya cubre el fondo
           if (!reduced) requestAnimationFrame(loop)
         }
-        img.src = '/portfolio/404-assets/bg.webp'
+        img.src = '/404-assets/bg.webp'
 
         function draw() {
           gl.clear(gl.COLOR_BUFFER_BIT)

@@ -160,7 +160,7 @@ if (lang) {
       span.textContent = category.catTitle(cats[n])
     })
   }
-  initRouter({ lang, base: '/portfolio/', category, bio, contacto, isMobile }) // Inicio ↔ Proyectos ↔ Categoría ↔ Biografía ↔ Contacto
+  initRouter({ lang, base: '/', category, bio, contacto, isMobile }) // Inicio ↔ Proyectos ↔ Categoría ↔ Biografía ↔ Contacto
   initMenu() // menú Pip-Boy global (botón esq. sup. der. → panel de navegación + idioma)
   // precalienta en idle los assets COMPARTIDOS de la galería (billboard + luces, unos pocos KB)
   // → la sala/menú de Proyectos no arranca en negro. La MEDIA de los 16 casos (category.warm(),

@@ -1,11 +1,11 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
-// Repo de proyecto "portfolio" → se sirve en /portfolio/ (charlie-pixelz.github.io/portfolio/).
-// Cuando llegue el dominio propio (.design), cambiar base a '/' + añadir CNAME (ver CLAUDE.md §7).
+// Dominio propio (charliepixelz.design, comprado 3/8) → base '/' + public/CNAME. Antes se servía
+// en /portfolio/ (charlie-pixelz.github.io/portfolio/); ver CLAUDE.md §7 si hay que revertir.
 // MPA real: /es/ y /en/ son HTML independientes (cierra F5: deep links + SEO en GitHub Pages).
 export default defineConfig({
-  base: '/portfolio/',
+  base: '/',
   appType: 'mpa',
   build: {
     outDir: 'dist',
