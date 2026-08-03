@@ -70,11 +70,19 @@
         padding: 1.5rem;
         overflow: hidden;
       }
+      /* fallback CSS (sin WebGL): imagen plana oscurecida. #glbg la tapa encima si el canvas arranca. */
       .bg {
         position: fixed;
         inset: 0;
         background: url('/portfolio/404-assets/bg.webp') center 20% / cover no-repeat;
-        filter: grayscale(70%) brightness(0.35) contrast(1.1);
+        filter: grayscale(70%) brightness(0.3) contrast(1.1);
+        z-index: 0;
+      }
+      #glbg {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
         z-index: 0;
       }
       /* barrido de scanlines — estático, sin parpadeo (WCAG 2.3.1: nada de destellos) */
@@ -140,6 +148,7 @@
   </head>
   <body>
     <div class="bg" aria-hidden="true"></div>
+    <canvas id="glbg" aria-hidden="true"></canvas>
     <div class="scan" aria-hidden="true"></div>
     <div class="content">
       <h1>404</h1>
@@ -150,5 +159,156 @@
         <a href="/portfolio/en/">‹ Home</a>
       </nav>
     </div>
+    <script>
+      // Fondo con el mismo tratamiento "pantalla de fósforo" del preloader (src/gl/preloader.js:
+      // grid de celdas ASCII/CRT + tinte teal + luminancia), pero SIN el ojo ni el reveal por
+      // progreso (siempre a la vista) y bastante más oscuro (pedido de Charlie, "no me molesta que
+      // quede más oscuro que el preloader"). Cada tanto dispara el mismo glitch "cambio de canal"
+      // (bandas + aberración cromática) que usa el router al transicionar — irregular, corto, WCAG
+      // 2.3.1 (nunca más de 1 pulso cada pocos segundos). Vanilla WebGL: este archivo se sirve tal
+      // cual (no pasa por Vite), así que no puede importar OGL ni el resto del bundle.
+      ;(function () {
+        var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
+        var canvas = document.getElementById('glbg')
+        var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+        if (!gl) return // sin WebGL: se queda el fallback .bg (CSS)
+
+        var vertexSrc = 'attribute vec2 position;' + 'varying vec2 vUv;' + 'void main() {' + '  vUv = position * 0.5 + 0.5;' + '  gl_Position = vec4(position, 0.0, 1.0);' + '}'
+
+        // mismo algoritmo que preloader.js (grid de celdas + soft blob + tinte fósforo), sin
+        // uProgress (siempre revelado) y sin el ojo. uGlitch pulsa periódicamente desde JS.
+        var fragmentSrc =
+          'precision highp float;' +
+          'uniform sampler2D uScene;' +
+          'uniform vec2 uResolution;' +
+          'uniform vec2 uImageSize;' +
+          'uniform float uTime;' +
+          'uniform float uGlitch;' +
+          'varying vec2 vUv;' +
+          'float hash(vec2 p) { return fract(sin(dot(p, vec2(41.31, 289.17))) * 43758.5453); }' +
+          'void main() {' +
+          '  vec3 voidc = vec3(0.0118, 0.0157, 0.0157);' +
+          '  float ra = uResolution.x / uResolution.y;' +
+          '  float ia = uImageSize.x / uImageSize.y;' +
+          '  vec2 scale = ra > ia ? vec2(ia / ra, 1.0) : vec2(1.0, ra / ia);' +
+          '  vec2 cuv = (vUv - 0.5) / scale + 0.5;' +
+          '  float g = uGlitch;' +
+          '  if (g > 0.001) {' +
+          '    float band = floor(cuv.y * 22.0);' +
+          '    cuv.x += (hash(vec2(band, floor(uTime * 16.0))) - 0.5) * 0.08 * g;' +
+          '  }' +
+          '  vec3 col = voidc;' +
+          '  if (cuv.x >= 0.0 && cuv.x <= 1.0 && cuv.y >= 0.0 && cuv.y <= 1.0) {' +
+          '    vec3 W = vec3(0.299, 0.587, 0.114);' +
+          '    vec2 CELLS = vec2(150.0, 190.0);' +
+          '    vec2 cf = cuv * CELLS;' +
+          '    vec2 cell = floor(cf);' +
+          '    vec2 cfrac = fract(cf) - 0.5;' +
+          '    vec2 quv = (cell + 0.5) / CELLS;' +
+          '    vec3 lc;' +
+          '    if (g > 0.001) {' +
+          '      float ca = 0.006 * g;' +
+          '      lc = vec3(' +
+          '        dot(texture2D(uScene, quv + vec2(ca, 0.0)).rgb, W),' +
+          '        dot(texture2D(uScene, quv).rgb, W),' +
+          '        dot(texture2D(uScene, quv - vec2(ca, 0.0)).rgb, W)' +
+          '      );' +
+          '    } else {' +
+          '      lc = vec3(dot(texture2D(uScene, quv).rgb, W));' +
+          '    }' +
+          '    float soft = 0.42 + 0.58 * smoothstep(0.58, 0.12, max(abs(cfrac.x) * 0.82, abs(cfrac.y) * 1.5));' +
+          '    vec3 tint = vec3(0.58, 0.96, 0.90);' +
+          '    col = tint * pow(lc, vec3(0.85)) * 0.8 * soft;' + // más oscuro que el preloader (ahí *1.38)
+          '    if (g > 0.001) col += (hash(cell + uTime) - 0.5) * 0.3 * g;' +
+          '    float edge = smoothstep(0.0, 0.03, cuv.x) * smoothstep(1.0, 0.97, cuv.x) *' +
+          '                 smoothstep(0.0, 0.03, cuv.y) * smoothstep(1.0, 0.97, cuv.y);' +
+          '    col = mix(voidc, col, edge);' +
+          '  }' +
+          '  gl_FragColor = vec4(col, 1.0);' +
+          '}'
+
+        function compile(type, src) {
+          var s = gl.createShader(type)
+          gl.shaderSource(s, src)
+          gl.compileShader(s)
+          return s
+        }
+        var program = gl.createProgram()
+        gl.attachShader(program, compile(gl.VERTEX_SHADER, vertexSrc))
+        gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragmentSrc))
+        gl.linkProgram(program)
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return // fallback .bg
+        gl.useProgram(program)
+
+        var buf = gl.createBuffer()
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+        // triángulo único que cubre toda la pantalla (evita index buffer para un quad)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
+        var posLoc = gl.getAttribLocation(program, 'position')
+        gl.enableVertexAttribArray(posLoc)
+        gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0)
+
+        var uResolution = gl.getUniformLocation(program, 'uResolution')
+        var uImageSize = gl.getUniformLocation(program, 'uImageSize')
+        var uTime = gl.getUniformLocation(program, 'uTime')
+        var uGlitch = gl.getUniformLocation(program, 'uGlitch')
+
+        var tex = gl.createTexture()
+        gl.bindTexture(gl.TEXTURE_2D, tex)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+
+        function resize() {
+          var dpr = Math.min(window.devicePixelRatio || 1, 2)
+          canvas.width = window.innerWidth * dpr
+          canvas.height = window.innerHeight * dpr
+          gl.viewport(0, 0, canvas.width, canvas.height)
+          gl.uniform2f(uResolution, canvas.width, canvas.height)
+        }
+        window.addEventListener('resize', resize, { passive: true })
+
+        var img = new Image()
+        img.onload = function () {
+          gl.bindTexture(gl.TEXTURE_2D, tex)
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img)
+          gl.uniform2f(uImageSize, img.naturalWidth, img.naturalHeight)
+          resize()
+          draw()
+          var bgCss = document.querySelector('.bg')
+          if (bgCss) bgCss.style.display = 'none' // el canvas ya cubre el fondo
+          if (!reduced) requestAnimationFrame(loop)
+        }
+        img.src = '/portfolio/404-assets/bg.webp'
+
+        function draw() {
+          gl.clear(gl.COLOR_BUFFER_BIT)
+          gl.drawArrays(gl.TRIANGLES, 0, 3)
+        }
+
+        // glitch "cambio de canal" irregular — nunca más de 1 pulso cada pocos segundos (WCAG 2.3.1,
+        // misma cadencia que el destello del ojo en preloader.js: 2.4-4.8s entre eventos)
+        var glitch = 0
+        var nextBlip = 2.4 + Math.random() * 2.4
+        var t0 = performance.now()
+        var lastBlip = 0
+
+        function loop(now) {
+          var time = (now - t0) * 0.001
+          var sinceBlip = time - lastBlip
+          if (sinceBlip >= nextBlip) {
+            lastBlip = time
+            nextBlip = 2.4 + Math.random() * 2.4
+            glitch = 1
+          }
+          glitch = Math.max(0, glitch - 1 / 24) // decae en ~400ms a 60fps
+          gl.uniform1f(uTime, time)
+          gl.uniform1f(uGlitch, glitch)
+          draw()
+          requestAnimationFrame(loop)
+        }
+      })()
+    </script>
   </body>
 </html>
