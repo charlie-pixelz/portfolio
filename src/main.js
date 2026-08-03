@@ -162,8 +162,10 @@ if (lang) {
   }
   initRouter({ lang, base: '/portfolio/', category, bio, contacto, isMobile }) // Inicio ↔ Proyectos ↔ Categoría ↔ Biografía ↔ Contacto
   initMenu() // menú Pip-Boy global (botón esq. sup. der. → panel de navegación + idioma)
-  // precalienta en idle los assets compartidos de la galería (billboard + luces) y la media de
-  // los proyectos → la 1.ª apertura de categoría no arranca en negro (el preloader solo cubre el hero)
+  // precalienta en idle los assets COMPARTIDOS de la galería (billboard + luces, unos pocos KB)
+  // → la sala/menú de Proyectos no arranca en negro. La MEDIA de los 16 casos (category.warm(),
+  // más abajo) se dispara aparte: sumaba ~8 MB de imágenes+video (Lighthouse móvil 2/8: Performance
+  // 44/100) para CUALQUIERA que cargara Home, hubiera entrado o no a Proyectos.
   const warmGallery = () => {
     const shared = isMobile
       ? [roomMobileUrl, menuMobileBgUrl, catMobileBgUrl, lucesMobileUrl, bioMobileUrl]
@@ -172,11 +174,18 @@ if (lang) {
       const im = new Image()
       im.src = u
     })
-    category?.warm?.()
-    contacto?.warm?.() // precarga el video de Contacto → el 1.er barrido no se frena
+    contacto?.warm?.() // un solo video — barato, se mantiene en idle
   }
   if ('requestIdleCallback' in window) requestIdleCallback(warmGallery, { timeout: 2500 })
   else setTimeout(warmGallery, 1800)
+  // la media pesada de los 16 casos recién se precalienta cuando hay intención real de entrar a
+  // Proyectos (hover/foco del letrero en desktop, click/tap en cualquier plataforma) — para ese
+  // momento aún falta la animación de zoom a la sala + elegir categoría, tiempo de sobra para que
+  // no se note. category.warm() es idempotente (se auto-protege con un flag `warmed`).
+  document.querySelectorAll('[data-route="projects"]').forEach((el) => {
+    el.addEventListener('pointerenter', () => category?.warm?.(), { once: true })
+    el.addEventListener('click', () => category?.warm?.(), { once: true })
+  })
   // modos de calibración (dev): /es/?cal → pantallas de la sala · /es/?calcat → lienzo de la galería
   if (calMode) {
     import('./ui/calibrate.js').then((m) => m.initCalibrate())
