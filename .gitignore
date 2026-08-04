@@ -32,3 +32,7 @@ assets/*.docx
 
 # Artefactos de Playwright (verificación en navegador)
 .playwright-mcp/
+
+# Bitácoras de conversación exportadas (PDF): viajan con la carpeta,
+# pero el repo es público — nunca se publican.
+docs/conversaciones/
