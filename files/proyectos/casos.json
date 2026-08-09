@@ -92,12 +92,12 @@
       "media": "motion-2.mp4",
       "type": "video",
       "title": {
-        "es": "Animación de nuevo logo",
-        "en": "New logo animation"
+        "es": "Video presentación para un evento",
+        "en": "Video presentation for an event"
       },
       "desc": {
-        "es": "Propuesta animada del nuevo logotipo con la integración del avatar de la marca para cierre de piezas publicitarias audiovisuales.",
-        "en": "Animated proposal of the new logo with the integration of the brand avatar for closing audiovisual advertising pieces."
+        "es": "Propuesta animada en loop de presentación de la empresa para stand de evento EILA 2026.",
+        "en": "Animated looped proposal for the company presentation for the EILA 2026 event stand."
       },
       "tags": [
         "Illustrator",
