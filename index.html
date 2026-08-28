@@ -13,6 +13,12 @@
     <link rel="alternate" hreflang="x-default" href="https://charliepixelz.design/" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Handjet/Doto son las únicas que se ven en el primer pintado (letreros, lockup, % del
+         preloader): precargarlas aquí arranca la descarga en paralelo con main.js, en vez de
+         esperar a que main.js baje y ejecute para recién pedirlas (el "flash" reportado por
+         Charlie). Rutas /fonts/ estables (public/, sin hash) para que esta URL exista sin build. -->
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/Handjet-subset.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/Doto-subset.woff2" crossorigin />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Charlie Pixelz — Portafolio" />
     <meta

@@ -10,8 +10,11 @@
   font-display: swap;
 }
 @font-face {
+  /* /fonts/ (public, sin hash de Vite) a propósito: la URL tiene que ser predecible para poder
+     precargarla con <link rel=preload> desde el <head> — ver es/en/index.html. Handjet abajo,
+     misma razón: son las dos que se ven al instante en el hero (letreros + lockup "Pixelz"). */
   font-family: 'Doto';
-  src: url('../fonts/Doto-subset.woff2') format('woff2');
+  src: url('/fonts/Doto-subset.woff2') format('woff2');
   font-weight: 100 900;
   font-display: swap;
 }
@@ -23,7 +26,7 @@
 }
 @font-face {
   font-family: 'Handjet';
-  src: url('../fonts/Handjet-subset.woff2') format('woff2');
+  src: url('/fonts/Handjet-subset.woff2') format('woff2');
   font-weight: 100 900;
   font-display: swap;
 }

@@ -41,6 +41,7 @@ import bioMobileUrl from '../assets/upscale/bio_mobile_desktop_4602w.webp'
 import { ticker } from './core/ticker.js'
 import { quality } from './core/quality.js'
 import { pointer } from './core/pointer.js'
+import { forceFontLoad } from './core/loader.js'
 import { stage } from './gl/stage.js'
 import { initHero } from './gl/hero.js'
 import { initPreloader } from './gl/preloader.js'
@@ -59,6 +60,13 @@ import { initDebug } from './core/debug.js'
 // servidor — solo /, /es/ y /en/ existen como archivo). 404.html guarda la ruta pedida antes de
 // redirigir a la home del idioma; acá se repone en la barra de direcciones ANTES de que se lea
 // más abajo (path/lang) y de que router.js decida qué sección mostrar al arrancar.
+// Dispara la descarga de las 6 fuentes YA, sin esperar a saber si esta carga es el preloader (/)
+// o una entrada directa a /es//en/ (recarga de Inicio, deep link) — antes solo se forzaba dentro
+// de preload(), que la rama /es//en/ nunca llama. Handjet/Doto además tienen <link rel=preload>
+// en el <head> de cada HTML (arrancan antes que este script); esto cubre las otras 4 y sirve de
+// respaldo si el navegador ignora el preload.
+forceFontLoad()
+
 try {
   const redirect = sessionStorage.getItem('cp-redirect')
   if (redirect) {
