@@ -615,6 +615,28 @@ body.route-room .crt {
   padding: 0.12em 0.6em;
   background: rgba(1, 12, 5, 0.35);
 }
+.cat__link[hidden] {
+  display: none;
+}
+.cat__link {
+  display: inline-block;
+  margin-top: 0.6em;
+  font-family: var(--font-pixel);
+  font-weight: 600;
+  font-size: clamp(0.6rem, 1.3cqw, 0.9rem);
+  color: var(--phosphor);
+  text-decoration: none;
+  border: 1px solid var(--phosphor);
+  padding: 0.3em 0.8em;
+  text-shadow: 0 0 8px var(--phosphor-glow);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.cat__link:hover,
+.cat__link:focus-visible {
+  background: var(--phosphor);
+  color: #000700;
+  text-shadow: none;
+}
 /* breadcrumb + volver (esquina superior izquierda, la reservada para navegación) */
 .cat__crumb,
 .bio__crumb,
@@ -905,6 +927,9 @@ body.route-category .crt {
   }
   .cat__tags li {
     font-size: clamp(0.68rem, 2.6cqw, 0.85rem);
+  }
+  .cat__link {
+    font-size: clamp(0.7rem, 2.8cqw, 0.9rem);
   }
   /* red de seguridad: la sala desktop nunca debe verse en mobile, sea cual sea el estado del
      router (belt-and-suspenders, no depende solo de la lógica JS) */

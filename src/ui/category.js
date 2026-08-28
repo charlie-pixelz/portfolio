@@ -33,6 +33,7 @@ export function initCategory({ lang }) {
   const titleEl = el.querySelector('.cat__title')
   const descEl = el.querySelector('.cat__desc')
   const tagsEl = el.querySelector('.cat__tags')
+  const linkEl = el.querySelector('.cat__link')
   const counterEl = el.querySelector('.cat__counter')
   const prevBtn = el.querySelector('.cat__arrow--prev')
   const nextBtn = el.querySelector('.cat__arrow--next')
@@ -132,6 +133,15 @@ export function initCategory({ lang }) {
     descEl.textContent = it.desc[lang]
     tagsEl.innerHTML = it.tags.map((t) => `<li>${t}</li>`).join('')
     if (counterEl) counterEl.textContent = `${idx + 1} / ${items.length}`
+    if (linkEl) {
+      if (it.link) {
+        linkEl.href = it.link
+        linkEl.hidden = false
+      } else {
+        linkEl.hidden = true
+        linkEl.removeAttribute('href')
+      }
+    }
   }
 
   const move = (d) => {

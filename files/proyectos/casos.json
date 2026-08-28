@@ -163,6 +163,24 @@
       ]
     },
     {
+      "media": "web-4.jpg",
+      "type": "image",
+      "title": {
+        "es": "Nuevo portafolio web",
+        "en": "New web portfolio"
+      },
+      "desc": {
+        "es": "Portafolio construido de principio a fin junto a la IA, desde el preloader hasta contacto, planificado con Claude. Recursos hechos en Photoshop e Illustrator y animaciones programadas junto a Claude Code.",
+        "en": "Portfolio built end to end alongside AI, from preloader to contact, planned with Claude. Assets made in Photoshop and Illustrator, with animations coded together with Claude Code."
+      },
+      "tags": [
+        "Claude",
+        "Photoshop",
+        "Illustrator",
+        "2026"
+      ]
+    },
+    {
       "media": "web-2.jpg",
       "type": "image",
       "title": {
@@ -178,7 +196,8 @@
         "GitHub",
         "Brand",
         "2026"
-      ]
+      ],
+      "link": "https://charlie-pixelz.github.io/compara-landings/"
     },
     {
       "media": "web-3.jpg",
@@ -196,25 +215,8 @@
         "Hubspot",
         "Photoshop",
         "2026"
-      ]
-    },
-    {
-      "media": "web-4.jpg",
-      "type": "image",
-      "title": {
-        "es": "Nuevo portafolio web",
-        "en": "New web portfolio"
-      },
-      "desc": {
-        "es": "Portafolio construido de principio a fin junto a la IA, desde el preloader hasta contacto, planificado con Claude. Recursos hechos en Photoshop e Illustrator y animaciones programadas junto a Claude Code.",
-        "en": "Portfolio built end to end alongside AI, from preloader to contact, planned with Claude. Assets made in Photoshop and Illustrator, with animations coded together with Claude Code."
-      },
-      "tags": [
-        "Claude",
-        "Photoshop",
-        "Illustrator",
-        "2026"
-      ]
+      ],
+      "link": "https://charlie-pixelz.github.io/compara-landings/auto.html"
     }
   ],
   "ia": [
