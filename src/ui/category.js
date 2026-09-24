@@ -197,6 +197,25 @@ export function initCategory({ lang }) {
     e.preventDefault()
     move(1)
   })
+  // teclado (← →) y swipe horizontal en touch: lo esperable en un carrusel, sin tocar la UI
+  document.addEventListener('keydown', (e) => {
+    if (el.hidden || e.altKey || e.metaKey || e.ctrlKey || /input|textarea|select/i.test(e.target.tagName)) return
+    if (e.key === 'ArrowRight') move(1)
+    else if (e.key === 'ArrowLeft') move(-1)
+  })
+  let sx = 0
+  let sy = 0
+  const stage = el.querySelector('.cat__stage')
+  stage?.addEventListener('touchstart', (e) => ({ clientX: sx, clientY: sy } = e.touches[0]), { passive: true })
+  stage?.addEventListener(
+    'touchend',
+    (e) => {
+      const t = e.changedTouches[0]
+      const dx = t.clientX - sx
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(t.clientY - sy) * 1.5) move(dx < 0 ? 1 : -1)
+    },
+    { passive: true },
+  )
 
   // poblar SIN encender (lámparas apagadas, chrome oculto) — lo llama el router antes del zoom
   const prepare = (cat) => {
