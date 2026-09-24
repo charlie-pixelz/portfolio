@@ -52,7 +52,9 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
   const screenVertical = roomMobileEl && roomMobileEl.querySelector('.screen-m--vertical')
   const screenHorizontal = roomMobileEl && roomMobileEl.querySelector('.screen-m--horizontal')
   const projectsMenuEl = document.querySelector('.projects-menu')
-  if (mFrame) gsap.set(mFrame, { transformOrigin: '0 0' })
+  // (sin gsap.set de transformOrigin al iniciar: ya está en el CSS de ambos marcos, y GSAP lee el
+  // estilo computado del elemento → dentro de la sala OCULTA eso forzaba a Chrome a descargar sus
+  // fondos en plena carga, compitiendo con las texturas del hero)
 
   const url = {
     home: `${base}${lang}/`,
@@ -74,8 +76,6 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
   }
   TITLE[lang].home = document.title
   const reduced = quality.reducedMotion
-
-  gsap.set(frame, { transformOrigin: '0 0' })
 
   // overlay de "cambio de canal" (glitch de TV) — se crea una vez y lo comparte todo el router
   const glitchEl =
@@ -621,16 +621,32 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
     done()
   }
 
+  // Navegación que llega DURANTE una transición. Un clic se puede ignorar, pero un back/forward del
+  // navegador (popstate) ya cambió la URL: descartarlo dejaba la barra de direcciones mostrando una
+  // sección y la pantalla otra. Se guarda la última y se ejecuta al terminar la transición en curso.
+  let pending = null
+
   const go = (view, push) => {
-    if (view === current || busy) return
+    if (busy) {
+      if (!push) pending = view
+      return
+    }
+    if (view === current) return
     if (reduced) return applyInstant(view, push)
 
     busy = true
+    document.body.dataset.transitioning = '1' // stage.js no mide rendimiento del shader mientras tanto
     const from = current
     setState(view, push)
 
     const finish = () => {
       busy = false
+      delete document.body.dataset.transitioning
+      if (pending !== null) {
+        const next = pending
+        pending = null
+        go(next, false)
+      }
     }
     const fn = direct(from, view)
     if (fn) fn(finish)
