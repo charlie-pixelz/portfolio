@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "media": "node scripts/media.mjs"
   },
   "devDependencies": {
     "prettier": "^3.9.5",

@@ -493,6 +493,11 @@ body.route-room .crt {
      focos (.cat__luces, screen) caiga SOBRE las obras en vez de quedar debajo de ellas */
   isolation: isolate;
 }
+/* las imágenes llegan envueltas en <picture> (AVIF → WebP → JPG): el wrapper no genera caja,
+   así el <img> se posiciona contra el lienzo exactamente igual que antes */
+.cat__canvas picture {
+  display: contents;
+}
 .cat__media {
   /* absolute inset:0 → la caja del media ES la del lienzo (no la pista del grid, que crecía
      con el aspecto del video y hacía desbordar los verticales). object-fit hace el letterbox. */

@@ -6,16 +6,24 @@ import { gsap } from 'gsap'
 import { quality } from '../core/quality.js'
 import casos from '../../files/proyectos/casos.json'
 
-// URLs de la media OPTIMIZADA (solo los slugs de nivel superior; los originales viven en _src/)
-const mediaUrls = import.meta.glob('../../assets/proyectos/*/*.{jpg,png,mp4}', {
+// Media OPTIMIZADA (la genera `npm run media`; los originales viven en _src/, fuera del bundle).
+// Se indexa por id ("ia-3") con todas sus variantes: avif/webp (+ jpg/png del máster como último
+// respaldo) para imágenes, mp4 + poster para videos. casos.json acepta "ia-3" o "ia-3.mp4".
+const files = import.meta.glob('../../assets/proyectos/*/*.{avif,webp,jpg,png,mp4}', {
   eager: true,
   query: '?url',
   import: 'default',
 })
-const urlFor = (file) => {
-  const hit = Object.entries(mediaUrls).find(([p]) => p.endsWith('/' + file))
-  return hit ? hit[1] : ''
+const media = {}
+for (const [path, url] of Object.entries(files)) {
+  const m = /^(.+?)(-poster)?\.(\w+)$/.exec(path.split('/').pop())
+  if (!m) continue
+  const e = (media[m[1]] ||= {})
+  if (m[2]) e.poster = url
+  else e[m[3]] = url
 }
+const idOf = (file) => file.replace(/\.\w+$/, '')
+const srcOf = (it) => media[idOf(it.media)] || {}
 
 const CAT_TITLE = {
   ilustracion: { es: 'Ilustraciones', en: 'Illustrations' },
@@ -68,26 +76,56 @@ export function initCategory({ lang }) {
   let items = []
   let idx = 0
 
-  // construye un nodo de media (img/video); blur=true → copia decorativa para el relleno
+  // construye la media de una obra. Devuelve { node, el }: `node` va al DOM (un <picture> en las
+  // imágenes, para que el navegador elija AVIF → WebP → JPG) y `el` es el <img>/<video> que se estiliza.
+  // blur=true → copia decorativa para el relleno.
   const makeMedia = (it, blur) => {
-    let n
+    const s = srcOf(it)
+    let el
+    let node
     if (it.type === 'video') {
-      n = document.createElement('video')
-      n.src = urlFor(it.media)
-      n.muted = true
-      n.loop = true
-      n.autoplay = true
-      n.playsInline = true
-      n.setAttribute('playsinline', '')
-      n.play?.().catch(() => {})
+      el = node = document.createElement('video')
+      el.muted = true
+      el.loop = true
+      el.autoplay = true
+      el.playsInline = true
+      el.setAttribute('playsinline', '')
+      if (s.poster) el.poster = s.poster // primer frame al instante, sin lienzo negro mientras carga
+      el.src = s.mp4 || ''
+      el.play?.().catch(() => {})
     } else {
-      n = document.createElement('img')
-      n.src = urlFor(it.media)
-      n.loading = 'lazy'
+      node = document.createElement('picture')
+      if (s.avif) node.append(Object.assign(document.createElement('source'), { type: 'image/avif', srcset: s.avif }))
+      if (s.webp) node.append(Object.assign(document.createElement('source'), { type: 'image/webp', srcset: s.webp }))
+      el = document.createElement('img')
+      el.decoding = 'async'
+      node.append(el)
+      // el src va DESPUÉS de meter el <img> en el <picture>: si no, arranca bajando el JPG antes de
+      // ver los <source> y termina descargando dos formatos
+      el.src = s.jpg || s.png || s.webp || ''
     }
-    if (blur) n.setAttribute('aria-hidden', 'true')
-    else if (it.type === 'image') n.alt = it.title[lang]
-    return n
+    if (blur) el.setAttribute('aria-hidden', 'true')
+    else if (it.type === 'image') el.alt = it.title[lang]
+    return { node, el }
+  }
+
+  // precarga liviana de una obra: la imagen en el formato que se va a usar, o el poster del video
+  // (el video en sí arranca por streaming al mostrarse — faststart — y el poster tapa la espera)
+  const preloaded = new Set()
+  const preloadItem = (it) => {
+    if (!it || preloaded.has(it.media)) return
+    preloaded.add(it.media)
+    if (it.type === 'video') {
+      const p = srcOf(it).poster
+      if (p) new Image().src = p
+    } else {
+      makeMedia(it, false) // <picture> suelto: descarga el mismo formato que elegirá al mostrarse
+    }
+  }
+  const preloadNeighbors = () => {
+    if (items.length < 2) return
+    preloadItem(items[(idx + 1) % items.length])
+    preloadItem(items[(idx - 1 + items.length) % items.length])
   }
 
   const render = () => {
@@ -106,8 +144,8 @@ export function initCategory({ lang }) {
       canvas.appendChild(fill)
     } else if (it.type === 'image' || heavy) {
       const fill = makeMedia(it, true)
-      fill.className = 'cat__fill cat__fill--media'
-      canvas.appendChild(fill)
+      fill.el.className = 'cat__fill cat__fill--media'
+      canvas.appendChild(fill.node)
     } else {
       const fill = document.createElement('div')
       fill.className = 'cat__fill' // fallback oscuro (CSS) en tier bajo con video
@@ -115,11 +153,12 @@ export function initCategory({ lang }) {
     }
 
     // media principal (contain por defecto; it.fit:"cover" para un recorte sutil)
-    const media = makeMedia(it, false)
+    const { node, el: media } = makeMedia(it, false)
     media.className = 'cat__media'
     if (it.fit === 'cover') media.classList.add('cat__media--cover')
-    canvas.appendChild(media)
+    canvas.appendChild(node)
     currentMedia = it.type === 'video' ? media : null
+    preloaded.add(it.media)
 
     // botón de audio solo si la obra tiene sonido (it.sound)
     if (it.type === 'video' && it.sound) {
@@ -148,6 +187,7 @@ export function initCategory({ lang }) {
     if (!items.length) return
     idx = (idx + d + items.length) % items.length
     render()
+    preloadNeighbors()
   }
   prevBtn?.addEventListener('click', (e) => {
     e.preventDefault()
@@ -164,6 +204,7 @@ export function initCategory({ lang }) {
     idx = 0
     if (nameEl) nameEl.textContent = CAT_TITLE[cat]?.[lang] || ''
     render()
+    preloadNeighbors()
     gsap.set(luces, { opacity: 0 })
     gsap.set(reveal, { opacity: 0, y: 10 })
   }
@@ -189,23 +230,15 @@ export function initCategory({ lang }) {
     canvas.querySelectorAll('video').forEach((v) => v.pause())
   }
 
-  // precalienta en segundo plano TODA la media de la galería (imágenes con Image; videos con
-  // <link rel=prefetch> de baja prioridad) para que la 1.ª apertura de categoría no arranque en negro.
+  // intención de entrar a Proyectos (hover/clic del letrero): se precarga SOLO la primera obra de
+  // cada categoría — la que se ve al abrirla —; el resto llega de a una (la anterior y la siguiente
+  // a la que se está mirando). Antes se precargaba TODA la galería (~8 MB con 16 casos): así el
+  // costo de entrada ya no crece con la cantidad de casos.
   let warmed = false
   const warm = () => {
     if (warmed) return
     warmed = true
-    Object.entries(mediaUrls).forEach(([path, url]) => {
-      if (/\.(jpg|png)$/i.test(path)) {
-        const img = new Image()
-        img.src = url
-      } else {
-        const link = document.createElement('link')
-        link.rel = 'prefetch'
-        link.href = url
-        document.head.appendChild(link)
-      }
-    })
+    Object.values(casos).forEach((list) => preloadItem(list[0]))
   }
 
   return { el, prepare, lightOn, reset, warm, catTitle: (cat) => CAT_TITLE[cat]?.[lang] || '' }
