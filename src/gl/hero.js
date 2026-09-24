@@ -103,7 +103,10 @@ export function initHero(bgUrl, charUrl) {
   // reales, que caen en 'low' por deviceMemory ≤ 4 GB. Ahora tier low = parallax a la mitad.
   const still = quality.reducedMotion
   const normal = new URLSearchParams(location.search).get('parallax') === 'normal'
-  const k = quality.tier === 'low' ? 0.5 : 1
+  // ?pk=2 multiplica la intensidad del parallax: para probar valores en vivo antes de fijar uno
+  // (no cambia el default). Tope en 4: más allá el borde de la textura se estira a la vista.
+  const pk = Math.min(4, Math.max(0, Number(new URLSearchParams(location.search).get('pk')) || 1))
+  const k = (quality.tier === 'low' ? 0.5 : 1) * pk
   const big = (quality.isTouch ? 0.011 : 0.0208) * k // desktop +30% (1/8, pedido de Charlie)
   const small = (quality.isTouch ? 0.004 : 0.0078) * k
   // Charlie eligió el parallax INVERTIDO (fondo se mueve más) como default; ?parallax=normal lo invierte
