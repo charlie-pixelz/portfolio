@@ -34,8 +34,13 @@ export function initContacto({ lang, isMobile = false }) {
   const panel = el.querySelector('.contacto__panel')
   const glitchEl = el.querySelector('.contacto__glitch')
 
-  // fuentes del video (preload none: solo baja al entrar). poster estático mientras tanto.
-  video.poster = isMobile ? posterMobileUrl : posterUrl
+  // fuentes del video (preload none: solo baja al entrar). El poster se asigna recién al precalentar
+  // o al entrar: el atributo `poster` descarga aunque el <video> esté oculto, y a la carga de Inicio
+  // le sumaba 70 KB en paralelo con las texturas del hero.
+  const poster = isMobile ? posterMobileUrl : posterUrl
+  const setPoster = () => {
+    if (!video.poster) video.poster = poster
+  }
   video.innerHTML = `<source src="${webmUrl}" type="video/webm"><source src="${mp4Url}" type="video/mp4">`
 
   // contenido (la tagline hace de título de la caja; el nombre "Contacto" va en el breadcrumb)
@@ -58,6 +63,7 @@ export function initContacto({ lang, isMobile = false }) {
   const revealTargets = [panel, crumb]
 
   const prepare = () => {
+    setPoster()
     gsap.set(revealTargets, { opacity: 0 })
     gsap.set(el.querySelectorAll('.contacto__link'), { opacity: 0 })
   }
@@ -87,15 +93,22 @@ export function initContacto({ lang, isMobile = false }) {
     }
   })
 
+  // idempotente: lo llaman el idle Y la intención (hover/foco del letrero) — un segundo load()
+  // reiniciaría la descarga ya en curso (o el video que ya se está viendo)
+  let warmed = false
+
   // arranca el video (durante el barrido). muted → autoplay permitido. reduced-motion = poster fijo.
   const enter = () => {
+    warmed = true // si el idle llega después, un load() reiniciaría el video que ya se está viendo
     if (!quality.reducedMotion) video.play?.().catch(() => {})
   }
 
   // precalienta el video (idle): baja los datos por adelantado → el 1.er barrido no se frena
   // al hacer play (el "freno" era el decode del video en la primera reproducción).
   const warm = () => {
-    if (quality.reducedMotion) return
+    setPoster()
+    if (quality.reducedMotion || warmed) return
+    warmed = true
     video.preload = 'auto'
     try {
       video.load()

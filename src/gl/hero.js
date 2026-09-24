@@ -182,6 +182,11 @@ export function initHero(bgUrl, charUrl) {
   addEventListener('cp:hero-resume', () => (settled = false))
 
   ticker.add((t, dt) => {
+    // fuera de Inicio (galería, Biografía, Contacto) el hero está tapado/oculto: sin esto el shader
+    // seguía dibujándose a pantalla completa cada frame por nada (GPU + batería, clave en móvil).
+    // stage.render() deja de dibujar cuando no queda ninguna malla visible.
+    mesh.visible = !heroEl?.hidden
+    if (!mesh.visible) return
     const time = t * 0.001
     program.uniforms.uTime.value = time
     const tx = settled ? 0 : pointer.pos.x

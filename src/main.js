@@ -26,14 +26,14 @@ import homeShotEnUrl from '../assets/upscale/home_projects_en_1280w.jpg'
 import roomBgUrl from '../assets/upscale/proyectos_desktop_2400w.webp'
 import alleyUrl from '../assets/upscale/pantalla_callejon_1536w.webp'
 import catBgUrl from '../assets/upscale/categoria_desktop_2534w.webp'
-import lucesUrl from '../assets/efecto-galeria/Categoria_Desktop_Luces.png'
+import lucesUrl from '../assets/efecto-galeria/Categoria_Desktop_Luces.webp' // WebP con alpha: 84 KB vs 377 KB del PNG (el PNG queda como máster)
 // Mobile — Proyectos/Categoría (ADENDUM §3, "decisión final"): sala de 2 pantallas (vertical =
 // destino del zoom, horizontal = ambiental) → zoom-in a la vertical → esa pantalla se convierte
 // en la página "menú" (título + 4 categorías) sobre el mismo fondo de callejón compartido.
 import roomMobileUrl from '../assets/upscale/proyectos_movil_1080w.webp'
 import menuMobileBgUrl from '../assets/upscale/menu_movil_1080w.webp'
 import catMobileBgUrl from '../assets/upscale/categoria_movil_1080w.webp'
-import lucesMobileUrl from '../assets/efecto-galeria/Categoria_Mobile_Luces.png'
+import lucesMobileUrl from '../assets/efecto-galeria/Categoria_Mobile_Luces.webp'
 import bioUrl from '../assets/upscale/bio_desktop_2400w.webp' // esqueleto rayos-X (Biografía)
 // Mobile — Biografía (30/7): misma composición ancha de callejón que el hero móvil, en modo
 // rayos X. Interacción propia (aros pulsantes → una caja visible a la vez), ver bio.js.
@@ -56,10 +56,6 @@ import { initRouter } from './core/router.js'
 import { initLenis } from './core/lenis.js'
 import { initDebug } from './core/debug.js'
 
-// F5: restituye la sub-ruta real tras el rebote de 404.html (GitHub Pages no tiene rutas de
-// servidor — solo /, /es/ y /en/ existen como archivo). 404.html guarda la ruta pedida antes de
-// redirigir a la home del idioma; acá se repone en la barra de direcciones ANTES de que se lea
-// más abajo (path/lang) y de que router.js decida qué sección mostrar al arrancar.
 // Dispara la descarga de las 6 fuentes YA, sin esperar a saber si esta carga es el preloader (/)
 // o una entrada directa a /es//en/ (recarga de Inicio, deep link) — antes solo se forzaba dentro
 // de preload(), que la rama /es//en/ nunca llama. Handjet/Doto además tienen <link rel=preload>
@@ -67,6 +63,10 @@ import { initDebug } from './core/debug.js'
 // respaldo si el navegador ignora el preload.
 forceFontLoad()
 
+// F5: restituye la sub-ruta real tras el rebote de 404.html (GitHub Pages no tiene rutas de
+// servidor — solo /, /es/ y /en/ existen como archivo). 404.html guarda la ruta pedida antes de
+// redirigir a la home del idioma; acá se repone en la barra de direcciones ANTES de que se lea
+// más abajo (path/lang) y de que router.js decida qué sección mostrar al arrancar.
 try {
   const redirect = sessionStorage.getItem('cp-redirect')
   if (redirect) {
@@ -170,22 +170,52 @@ if (lang) {
   }
   initRouter({ lang, base: '/', category, bio, contacto, isMobile }) // Inicio ↔ Proyectos ↔ Categoría ↔ Biografía ↔ Contacto
   initMenu() // menú Pip-Boy global (botón esq. sup. der. → panel de navegación + idioma)
-  // precalienta en idle los assets COMPARTIDOS de la galería (billboard + luces, unos pocos KB)
-  // → la sala/menú de Proyectos no arranca en negro. La MEDIA de los 16 casos (category.warm(),
-  // más abajo) se dispara aparte: sumaba ~8 MB de imágenes+video (Lighthouse móvil 2/8: Performance
-  // 44/100) para CUALQUIERA que cargara Home, hubiera entrado o no a Proyectos.
-  const warmGallery = () => {
-    const shared = isMobile
-      ? [roomMobileUrl, menuMobileBgUrl, catMobileBgUrl, lucesMobileUrl, bioMobileUrl]
-      : [catBgUrl, lucesUrl, bioUrl]
-    shared.forEach((u) => {
+  // Precarga ESCALONADA de las otras escenas. Antes todo (sala, galería, bio, video de Contacto,
+  // ~1.8 MB) salía en paralelo con las texturas del hero y les robaba ancho de banda: en 4G lento
+  // el hero (y con él el LCP) llegaba segundos tarde. Orden ahora:
+  //   1) texturas del hero (initHero) → 2) la sala de Proyectos (el zoom-out tiene que estar listo
+  //   al primer clic) → 3) billboard/luces/rayos X → 4) video de Contacto.
+  // Con saveData o red 2G/3G se corta en el paso 2; el resto llega igual por intención (hover/foco).
+  const warm = (urls) =>
+    urls.forEach((u) => {
       const im = new Image()
+      im.decoding = 'async'
       im.src = u
     })
-    contacto?.warm?.() // un solo video — barato, se mantiene en idle
+  const conn = navigator.connection
+  const slowNet = !!conn && (conn.saveData || /2g|3g/.test(conn.effectiveType || ''))
+  const idle = (fn, timeout) => ('requestIdleCallback' in window ? requestIdleCallback(fn, { timeout }) : setTimeout(fn, 300))
+  const whenHeroReady = (fn) => {
+    if (document.body.classList.contains('hero-ready')) return fn()
+    const mo = new MutationObserver(() => {
+      if (!document.body.classList.contains('hero-ready')) return
+      mo.disconnect()
+      fn()
+    })
+    mo.observe(document.body, { attributes: true, attributeFilter: ['class'] })
   }
-  if ('requestIdleCallback' in window) requestIdleCallback(warmGallery, { timeout: 2500 })
-  else setTimeout(warmGallery, 1800)
+  const scenes = isMobile ? [catMobileBgUrl, lucesMobileUrl, bioMobileUrl] : [catBgUrl, lucesUrl, bioUrl]
+  // cada etapa espera un respiro mínimo además del idle: requestIdleCallback mira el hilo principal,
+  // no la red, y en un equipo rápido con 4G lento las tres etapas se encimaban igual
+  const after = (ms, fn) => setTimeout(() => idle(fn, 3000), ms)
+  whenHeroReady(() =>
+    after(0, () => {
+      warm(isMobile ? [roomMobileUrl, menuMobileBgUrl, heroCleanUrl] : [roomBgUrl, alleyUrl, lang === 'en' ? homeShotEnUrl : homeShotEsUrl])
+      if (slowNet) return
+      after(1500, () => {
+        warm(scenes)
+        after(2500, () => contacto?.warm?.())
+      })
+    }),
+  )
+  // intención explícita (hover/foco/clic) → se adelanta lo de esa sección, sin esperar el idle
+  const onIntent = (sel, fn) =>
+    document.querySelectorAll(sel).forEach((el) => {
+      el.addEventListener('pointerenter', fn, { once: true })
+      el.addEventListener('focus', fn, { once: true })
+    })
+  onIntent('[data-route="contacto"]', () => contacto?.warm?.())
+  onIntent('[data-route="bio"]', () => warm([isMobile ? bioMobileUrl : bioUrl]))
   // la media pesada de los 16 casos recién se precalienta cuando hay intención real de entrar a
   // Proyectos (hover/foco del letrero en desktop, click/tap en cualquier plataforma) — para ese
   // momento aún falta la animación de zoom a la sala + elegir categoría, tiempo de sobra para que
@@ -217,5 +247,5 @@ if (lang) {
 }
 initLenis()
 initDebug()
-ticker.add(() => stage.render()) // render AL FINAL del frame, tras las actualizaciones
+ticker.add((t, dt) => stage.render(dt)) // render AL FINAL del frame, tras las actualizaciones
 ticker.start()

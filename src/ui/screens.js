@@ -49,6 +49,11 @@ function applyPlane(cat, t = 0) {
   const plane = planeOf[cat]
   const q = quads[cat]
   if (!plane || !q) return
+  // La sala arranca oculta. Leer offsetWidth de un nodo dentro de un [hidden] igual obliga a Chrome
+  // a resolver su estilo, y eso DESCARGA sus fondos (sala + callejón + captura de Inicio, ~430 KB)
+  // en plena carga, compitiendo con las texturas del hero. La precarga de la sala va ordenada en
+  // main.js (después de hero-ready); acá solo se mide cuando la sala ya es visible.
+  if (plane.closest('[hidden]')) return
   const w = plane.offsetWidth
   const h = plane.offsetHeight
   if (!w || !h) return // oculto → no medir
