@@ -8,9 +8,9 @@
 // el CSS bloquea el primer pintado y el documento nunca aparece sin estilo — ni en dev ni en build.
 import heroBgUrl from '../assets/upscale/hero_bg_2400w.webp'
 import heroCharUrl from '../assets/upscale/hero_character_2400w.webp'
-// H1 (revisión 25/9): depth map real del hero — el shader lo usa para desplazar el fondo píxel a
-// píxel (blanco = cerca, negro = lejos) en vez de una lámina plana. Antes existía pero no se usaba.
-import heroDepthUrl from '../assets/upscale/hero_depth_1600w.webp'
+// H1 (revisión 25/9): depth map SOLO del fondo (silueta del personaje rellenada con la profundidad de
+// la calle; generado desde hero_depth_1600w). El fondo se desplaza píxel a píxel según él.
+import heroDepthUrl from '../assets/upscale/hero_bgdepth_1600w.webp'
 import heroCleanUrl from '../assets/upscale/hero_desktop_clean_2400w.webp'
 // preview "apagado" de la pantalla horizontal de la sala móvil: se ve a ~150px de ancho, no hace
 // falta el hero de escritorio completo (255 KB) — una versión de 800w alcanza (P5, revisión 25/9)
@@ -21,7 +21,7 @@ import heroCleanMobileUrl from '../assets/upscale/hero_desktop_clean_800w.webp'
 // (confirmado por Charlie), el Pip-Boy vuelve a ser el menú secundario, igual que en desktop.
 import heroMobileBgUrl from '../assets/upscale/hero_mobile_bg_2400w.webp'
 import heroMobileCharUrl from '../assets/upscale/hero_mobile_character_2400w.webp'
-import heroMobileDepthUrl from '../assets/upscale/hero_mobile_depth_1600w.webp'
+import heroMobileDepthUrl from '../assets/upscale/hero_mobile_bgdepth_1600w.webp'
 // composite plano (bg+personaje aplanados) SOLO para el preloader — su shader dithera una imagen
 // PLANA (no dos capas), y usar el hero clean de DESKTOP (4602/2810, muy ancho) en un viewport
 // portrait lo dejaba como una franja horizontal delgada (`contain` con barras arriba/abajo). Este

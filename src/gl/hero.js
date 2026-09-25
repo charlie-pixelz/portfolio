@@ -42,27 +42,15 @@ const fragment = /* glsl */ `
 
   // compone fondo (desplazado píxel a píxel según el depth map) + personaje (alpha, plano único)
   vec3 scene(vec2 uv, vec2 look) {
-    // el personaje se muestrea PRIMERO: su alpha (ya en su posición desplazada, la real en
-    // pantalla) es lo que se usa después para atenuar el fondo — así la máscara y el borde
-    // visible del personaje quedan exactamente alineados, sin importar cuánto se haya movido.
     vec4 ch = texture2D(uChar, uv + look * uStrengthChar);
     // blanco = cerca, negro = lejos (mismo criterio que ADENDUM §4/ART_DIR). El punto de fuga de la
     // calle queda ~0 → no se mueve (ancla natural); lo más cercano del fondo se mueve al pico.
     float depth = clamp(texture2D(uDepth, uv).r * uDepthNorm, 0.0, 1.0);
-    // el personaje ocupa el extremo blanco del MISMO mapa (es un solo depth map para toda la
-    // escena) — el fondo leía esa silueta como "lo más cercano" y se desplazaba al pico justo ahí.
-    // No era solo un salto de brillo en 1-2 px: la calle tiene letreros de neón muy saturados cerca
-    // del contorno, y el desplazamiento alcanzaba a "traerlos" hasta el filo del personaje (el aro
-    // magenta que encontró Charlie, con zoom, en el hombro). Ensanchar el margen 1% no bastaba —
-    // el neón podía estar más lejos que eso. Ahora el radio de seguridad es ~3.5% del ancho de
-    // imagen, en 8 direcciones, para que ningún neón cercano llegue a rozar el borde.
-    float spread = 0.035;
-    float charMask = ch.a;
-    for (int i = 0; i < 8; i++) {
-      float ang = float(i) * 0.7853981634; // 2π/8
-      charMask = max(charMask, texture2D(uChar, uv + vec2(cos(ang), sin(ang)) * spread).a);
-    }
-    vec2 bgOffset = look * uStrengthBg * depth * (1.0 - charMask);
+    // uDepth es un mapa SOLO del fondo (hero_bgdepth): la silueta del personaje, que en el depth
+    // map original ocupa el extremo blanco, viene rellenada con la profundidad de la calle que la
+    // rodea. Con el mapa original el fondo leía esa silueta como "lo más cercano" y se desplazaba
+    // de más justo en el contorno (aro); enmascararlo en el shader solo movía el borde de lugar.
+    vec2 bgOffset = look * uStrengthBg * depth;
     vec3 bg = texture2D(uBg, uv + bgOffset).rgb;
     return mix(bg, ch.rgb, ch.a);
   }
