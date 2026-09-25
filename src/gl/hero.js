@@ -141,9 +141,10 @@ export function initHero(bgUrl, charUrl, depthUrl) {
   // H1 (revisión 25/9): el fondo se desplaza según el depth map real, no como una lámina plana —
   // el punto de fuga se queda quieto y solo lo cercano se mueve al pico. Intensidad elegida por
   // Charlie probando con ?pk=2 (25/9): ×4 el fondo y ×2 el personaje respecto de antes de H1
-  // (0.0208 / 0.0078 desktop).
-  const big = (quality.isTouch ? 0.044 : 0.0832) * k
-  const small = (quality.isTouch ? 0.008 : 0.0156) * k
+  // (0.0208 / 0.0078 desktop). En celular volvió a probar con el giroscopio y pidió otro ×2 (?pk=2
+  // sobre el default táctil anterior, 0.044 / 0.008).
+  const big = (quality.isTouch ? 0.088 : 0.0832) * k
+  const small = (quality.isTouch ? 0.016 : 0.0156) * k
   // Charlie eligió el parallax INVERTIDO (fondo se mueve más) como default; ?parallax=normal lo invierte
   const kBg = still ? 0 : normal ? small : big
   const kChar = still ? 0 : normal ? big : small
