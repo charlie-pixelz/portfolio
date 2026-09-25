@@ -36,12 +36,25 @@ const fragment = /* glsl */ `
                                 // borde real de la textura (H1: recorte 4-6%)
   uniform float uTime;
   uniform float uGlitch; // 0 = limpio · 1 = glitch máximo (transición de entrada)
+  // H5 — reflejo de cada letrero en el piso mojado, en coordenadas de PANTALLA (vUv, y hacia arriba):
+  // uRefl = (centro x, línea de espejo y, medio ancho, largo) · uReflColor = (rgb, intensidad)
+  uniform vec4 uRefl[4];
+  uniform vec4 uReflColor[4];
+  uniform float uRipple; // 0 con movimiento reducido: el reflejo queda, el agua no ondula
   varying vec2 vUv;
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(41.31, 289.17))) * 43758.5453); }
+  float vnoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0)), f.x), f.y);
+  }
 
-  // compone fondo (desplazado píxel a píxel según el depth map) + personaje (alpha, plano único)
-  vec3 scene(vec2 uv, vec2 look) {
+  // compone fondo (desplazado píxel a píxel según el depth map) + reflejos + personaje (alpha, plano
+  // único). El reflejo se suma al FONDO, antes del personaje: donde él está parado, lo tapa (como
+  // taparía un reflejo real en la calle detrás suyo).
+  vec3 scene(vec2 uv, vec2 look, vec3 refl) {
     vec4 ch = texture2D(uChar, uv + look * uStrengthChar);
     // blanco = cerca, negro = lejos (mismo criterio que ADENDUM §4/ART_DIR). El punto de fuga de la
     // calle queda ~0 → no se mueve (ancla natural); lo más cercano del fondo se mueve al pico.
@@ -51,7 +64,7 @@ const fragment = /* glsl */ `
     // rodea. Con el mapa original el fondo leía esa silueta como "lo más cercano" y se desplazaba
     // de más justo en el contorno (aro); enmascararlo en el shader solo movía el borde de lugar.
     vec2 bgOffset = look * uStrengthBg * depth;
-    vec3 bg = texture2D(uBg, uv + bgOffset).rgb;
+    vec3 bg = texture2D(uBg, uv + bgOffset).rgb + refl;
     return mix(bg, ch.rgb, ch.a);
   }
 
@@ -84,16 +97,34 @@ const fragment = /* glsl */ `
     vec2 drift = vec2(sin(uTime * 0.25), cos(uTime * 0.2)) * 0.18;
     vec2 look = uMouse + drift;
 
+    // H5: una estela vertical por letrero encendido, bajo la línea donde su edificio toca la calle.
+    // Gaussiana en x (el ancho del letrero), se desvanece hacia abajo, con bandas y ondulado de agua.
+    vec3 refl = vec3(0.0);
+    for (int i = 0; i < 4; i++) {
+      vec4 r = uRefl[i];
+      vec4 c = uReflColor[i];
+      float dy = r.y - vUv.y;
+      if (c.a < 0.005 || dy < 0.0 || dy > r.w) continue;
+      float t = dy / r.w;
+      float wob = (sin(vUv.y * 90.0 + uTime * 2.2) + 0.5 * sin(vUv.y * 211.0 - uTime * 3.1)) * 0.003 * (0.3 + t) * uRipple;
+      float dx = (vUv.x + wob - r.x) / r.z;
+      float core = exp(-dx * dx * 2.5);
+      // charcos: ruido estirado en horizontal (no bandas regulares, que se leían como persiana)
+      float streak = 0.35 + 0.65 * vnoise(vec2(vUv.x * 26.0, vUv.y * 150.0 - uTime * 0.9 * uRipple));
+      float fade = (1.0 - t) * (1.0 - t) * smoothstep(0.0, 0.06, t);
+      refl += c.rgb * (c.a * core * streak * fade);
+    }
+
     vec3 comp;
     if (g > 0.001) {
       float ca = 0.006 * g; // aberración cromática (separa R/B)
-      comp.r = scene(suv + vec2(ca, 0.0), look).r;
-      comp.g = scene(suv, look).g;
-      comp.b = scene(suv - vec2(ca, 0.0), look).b;
+      comp.r = scene(suv + vec2(ca, 0.0), look, refl).r;
+      comp.g = scene(suv, look, refl).g;
+      comp.b = scene(suv - vec2(ca, 0.0), look, refl).b;
       float st = hash(cuv * vec2(420.0, 320.0) + uTime); // estática
       comp += (st - 0.5) * 0.35 * g;
     } else {
-      comp = scene(suv, look);
+      comp = scene(suv, look, refl);
     }
 
     // difuminar bordes hacia --void: disuelve la costura de las barras (aspect-lock)
@@ -111,6 +142,23 @@ const fragment = /* glsl */ `
 const SIGN_DEPTH = {
   desktop: { home: 1.4, projects: 0.66, bio: 0.6, contacto: 1.28 },
   mobile: { home: 1.09, projects: 0.6, bio: 0.91, contacto: 1.4 },
+}
+
+// H5 — dónde empieza el reflejo de cada letrero, en múltiplos del alto del propio letrero bajo su
+// borde inferior: espejado a la misma distancia bajo la línea donde su edificio toca la calle
+// (medida sobre hero_bg). Por eso Proyectos/Biografía, más altos, reflejan bastante más abajo.
+// Solo desktop: en móvil los letreros son barras sobre un retrato sin calle debajo.
+const REFL_GAP = { home: 0.12, projects: 1.19, bio: 1.33, contacto: 0.05 }
+const REFL_STRENGTH = 0.55
+const LIT = ':hover, :focus-visible, [aria-current="page"]'
+
+// color CSS → [r,g,b] 0..1 (el canvas normaliza cualquier formato a #rrggbb)
+const ctx2d = document.createElement('canvas').getContext('2d')
+function rgbOf(css) {
+  ctx2d.fillStyle = '#000'
+  ctx2d.fillStyle = css
+  const hex = ctx2d.fillStyle
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
 }
 
 export function initHero(bgUrl, charUrl, depthUrl) {
@@ -168,6 +216,11 @@ export function initHero(bgUrl, charUrl, depthUrl) {
       uZoom: { value: 1.05 }, // overscan 5% (H1: rango pedido 4-6%)
       uTime: { value: 0 },
       uGlitch: { value: still ? 0 : 1 }, // entra glitcheado y se resuelve (continúa la transición del preloader)
+      // arrays COMUNES, no Float32Array: OGL resuelve `uRefl[0]` con Array.isArray y descarta en
+      // silencio un typed array (el uniform quedaba en cero)
+      uRefl: { value: new Array(16).fill(0) },
+      uReflColor: { value: new Array(16).fill(0) },
+      uRipple: { value: still ? 0 : 1 },
     },
   })
   const mesh = new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program })
@@ -208,8 +261,38 @@ export function initHero(bgUrl, charUrl, depthUrl) {
     const route = el.dataset.route || 'home'
     const angleProp = isFlat ? '--rz' : '--ry'
     const angle = getComputedStyle(el).getPropertyValue(angleProp).trim() || '0deg'
-    return { el, depthMul: depthTable[route] ?? 1, rotate: isFlat ? `rotate(${angle})` : `rotateY(${angle})` }
+    return {
+      el,
+      depthMul: depthTable[route] ?? 1,
+      rotate: isFlat ? `rotate(${angle})` : `rotateY(${angle})`,
+      gap: REFL_GAP[route] ?? 0.12,
+      rgb: rgbOf(getComputedStyle(el).getPropertyValue('--c-on').trim() || '#ff54c8'),
+      glow: 0,
+    }
   })
+  const refl = program.uniforms.uRefl.value
+  const reflColor = program.uniforms.uReflColor.value
+  // posición en PANTALLA de cada reflejo, a partir del rect real del letrero (incluye su parallax y
+  // cualquier transform del router). Se lee al inicio del frame, antes de escribir los transforms.
+  const updateReflections = (dt) => {
+    signs.forEach((s, i) => {
+      if (i > 3) return
+      const r = s.el.getBoundingClientRect()
+      const h = r.height / innerHeight
+      refl[i * 4] = (r.left + r.right) / 2 / innerWidth
+      refl[i * 4 + 1] = 1 - r.bottom / innerHeight - s.gap * h
+      refl[i * 4 + 2] = r.width / 2 / innerWidth
+      refl[i * 4 + 3] = h * 1.15
+      // encendido = misma regla que el CSS (sección actual, hover, foco); la opacidad del letrero
+      // trae el parpadeo de neón (ignite / neonIdle), así el reflejo titila junto con el tubo
+      const on = s.el.matches(LIT) ? Number(getComputedStyle(s.el).opacity) : 0
+      s.glow += (on - s.glow) * Math.min(1, dt * 14)
+      reflColor[i * 4] = s.rgb[0]
+      reflColor[i * 4 + 1] = s.rgb[1]
+      reflColor[i * 4 + 2] = s.rgb[2]
+      reflColor[i * 4 + 3] = s.glow * REFL_STRENGTH
+    })
+  }
   const heroEl = document.querySelector('.hero')
   let heroW = 0
   let heroH = 0
@@ -245,6 +328,7 @@ export function initHero(bgUrl, charUrl, depthUrl) {
     if (!mesh.visible) return
     const time = t * 0.001
     program.uniforms.uTime.value = time
+    if (!isMobileLayout) updateReflections(dt)
     const tx = settled ? 0 : pointer.pos.x
     const ty = settled ? 0 : pointer.pos.y
     hm.x += (tx - hm.x) * 0.12
