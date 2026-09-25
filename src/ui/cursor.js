@@ -20,6 +20,8 @@ const STATES = [
   ['.sign', 'entrar'],
   ['.screen[data-cat]', 'ver'],
 ]
+// sin retícula: texto que los corchetes tapaban y que ya tiene hover propio (espejo del CSS)
+const NO_RETICLE = '.pipboy__panel, .contacto__links'
 
 export function initCursor({ lang }) {
   if (quality.isTouch || quality.reducedMotion || !matchMedia('(pointer: fine)').matches) return
@@ -45,6 +47,7 @@ export function initCursor({ lang }) {
     label.textContent = labels[next] || ''
   }
   const stateOf = (node) => {
+    if (node?.closest?.(NO_RETICLE)) return ''
     const hit = node?.closest?.('[data-cursor], a, button, [role="button"], summary, label, .bio__ring')
     if (!hit) return ''
     return hit.dataset.cursor || 'link'
