@@ -134,9 +134,9 @@ export function initHero(bgUrl, charUrl, depthUrl) {
   // reales, que caen en 'low' por deviceMemory ≤ 4 GB. Ahora tier low = parallax a la mitad.
   const still = quality.reducedMotion
   const normal = new URLSearchParams(location.search).get('parallax') === 'normal'
-  // ?pk=N multiplica la intensidad sobre el default, para probar valores en vivo. Tope en 2: más
-  // allá el borde de la textura se estira a la vista.
-  const pk = Math.min(2, Math.max(0, Number(new URLSearchParams(location.search).get('pk')) || 1))
+  // ?pk=N multiplica la intensidad sobre el default, para probar valores en vivo (tope 8). Con
+  // valores altos el borde de la textura puede estirarse a la vista: es parte de lo que se evalúa.
+  const pk = Math.min(8, Math.max(0, Number(new URLSearchParams(location.search).get('pk')) || 1))
   const k = (quality.tier === 'low' ? 0.5 : 1) * pk
   // H1 (revisión 25/9): el fondo se desplaza según el depth map real, no como una lámina plana —
   // el punto de fuga se queda quieto y solo lo cercano se mueve al pico. Intensidad elegida por

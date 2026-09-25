@@ -7,7 +7,9 @@ import { damp } from './math.js'
 import { quality } from './quality.js'
 
 const LERP = 0.12
-const TILT = 20 // grados de inclinación que equivalen a llevar el mouse al borde de la pantalla
+// grados de inclinación que equivalen a llevar el mouse al borde de la pantalla. ?tilt=N para probar
+// en vivo: menos grados = basta inclinar menos para llegar al máximo (más sensible).
+const TILT = Math.min(45, Math.max(4, Number(new URLSearchParams(location.search).get('tilt')) || 20))
 const TOUCH_PRIORITY_MS = 800 // tras tocar la pantalla, el dedo manda sobre el giroscopio
 
 const target = { x: 0, y: 0 } // objetivo normalizado
