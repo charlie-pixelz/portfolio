@@ -42,18 +42,21 @@ const fragment = /* glsl */ `
 
   // compone fondo (desplazado píxel a píxel según el depth map) + personaje (alpha, plano único)
   vec3 scene(vec2 uv, vec2 look) {
+    // el personaje se muestrea PRIMERO: su alpha (ya en su posición desplazada, la real en
+    // pantalla) es lo que se usa después para atenuar el fondo — así la máscara y el borde
+    // visible del personaje quedan exactamente alineados, sin importar cuánto se haya movido.
+    vec4 ch = texture2D(uChar, uv + look * uStrengthChar);
     // blanco = cerca, negro = lejos (mismo criterio que ADENDUM §4/ART_DIR). El punto de fuga de la
     // calle queda ~0 → no se mueve (ancla natural); lo más cercano del fondo se mueve al pico.
     float depth = clamp(texture2D(uDepth, uv).r * uDepthNorm, 0.0, 1.0);
     // el personaje ocupa el extremo blanco del MISMO mapa (es un solo depth map para toda la
     // escena) — sin esto, el fondo leía esa silueta como "lo más cercano" y se desplazaba al pico
-    // justo ahí, generando un aro que se ve (y se mueve) de más en el borde del personaje, incluso
-    // con el mouse quieto (drift ambiental amplificado). Atenuar por (1 - alpha del personaje EN
-    // ESTA MISMA uv, sin desplazar) apaga la profundidad exactamente donde no aplica.
-    float charHere = texture2D(uChar, uv).a;
-    vec2 bgOffset = look * uStrengthBg * depth * (1.0 - charHere);
+    // justo ahí, generando un aro en su contorno. Atenuar por (1 - ch.a) apaga la profundidad
+    // exactamente donde no aplica, usando el MISMO alpha (misma uv desplazada) que pinta al
+    // personaje — un intento anterior atenuaba con el alpha SIN desplazar y dejaba un resto
+    // justo en el filo, porque la máscara y el borde real ya no coincidían con el mouse movido.
+    vec2 bgOffset = look * uStrengthBg * depth * (1.0 - ch.a);
     vec3 bg = texture2D(uBg, uv + bgOffset).rgb;
-    vec4 ch = texture2D(uChar, uv + look * uStrengthChar);
     return mix(bg, ch.rgb, ch.a);
   }
 
