@@ -106,7 +106,7 @@ Detalle y evidencia en [`CRITICA_FABLE5.md`](files/CRITICA_FABLE5.md). Marca `�
 
 ## 5. No-negociables
 
-- **Accesibilidad (piso):** `prefers-reduced-motion` → sin parallax/partículas/cursor custom/shader; fades ≤ 300 ms; contenido 100% navegable. Teclado completo con foco visible propio. Cursor custom = capa visual (`pointer-events:none`), nunca reemplaza al del sistema. Audio solo **opt-in**, jamás autoplay.
+- **Accesibilidad (piso):** `prefers-reduced-motion` → sin parallax/partículas/cursor custom/shader; fades ≤ 300 ms; contenido 100% navegable. Teclado completo con foco visible propio. Cursor custom = capa visual (`pointer-events:none`), nunca reemplaza al del sistema: el cursor nativo puede llevar imagen por CSS (flecha/punto/retícula fósforo, 25/9 — sigue siendo el del sistema, sin retraso y sin depender de JS), pero nunca se oculta para dibujar uno con JS. Audio solo **opt-in**, jamás autoplay.
 - **Fotosensibilidad (WCAG 2.3.1, obligatorio):** nunca **> 3 destellos/s**, sin strobe de pantalla completa a alto contraste. Flicker de neón "antiguo" = lento e irregular (2–4 s entre eventos).
 - **Contraste:** texto de lectura (Space Grotesk) cumple **AA (4.5:1)**; nunca párrafos en magenta puro; Doto nunca lleva cuerpo de lectura (regla de frontera, F11).
 - **Identidad:** los referentes (Blade Runner, Cyberpunk, Fallout/Pip-Boy) **se evocan, nunca se citan** — cero marcas, nombres o assets de esas IPs en el sitio ni en el dominio. La ingeniería se hereda de unseen.co; la estética es 100% de Charlie.

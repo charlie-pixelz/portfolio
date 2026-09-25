@@ -1795,7 +1795,26 @@ body.route-category .crt {
   }
 }
 
-/* H3 — cursor retícula (capa OS). Nunca reemplaza al cursor del sistema: va encima, sin eventos. */
+/* H3 — cursor de capa OS, pedido de Charlie (25/9): flecha pixelada fósforo por defecto que se
+   convierte en retícula sobre lo clickeable. Es el cursor NATIVO con imagen (lo dibuja el sistema:
+   sin retraso, funciona sin JS, respeta el no-negociable de "nunca reemplazar el cursor del
+   sistema") + una capa DOM (.reticle) solo para los corchetes y la etiqueta que se fijan alrededor.
+   Sobre lo clickeable, el nativo pasa a ser el punto central: marca EXACTO dónde cae el click,
+   mientras los corchetes llegan con inercia. Sin JS o con movimiento reducido: retícula estática. */
+@media (hover: hover) and (pointer: fine) {
+  html {
+    cursor: url('/cursors/arrow.png') 1 1, auto;
+    cursor: image-set(url('/cursors/arrow.png') 1x, url('/cursors/arrow@2x.png') 2x) 1 1, auto;
+  }
+  html :is(a, button, [role='button'], summary, label, [data-cursor], .bio__ring) {
+    cursor: url('/cursors/reticle.png') 13 13, pointer !important;
+    cursor: image-set(url('/cursors/reticle.png') 1x, url('/cursors/reticle@2x.png') 2x) 13 13, pointer !important;
+  }
+  html.has-reticle :is(a, button, [role='button'], summary, label, [data-cursor], .bio__ring) {
+    cursor: url('/cursors/dot.png') 3 3, pointer !important;
+    cursor: image-set(url('/cursors/dot.png') 1x, url('/cursors/dot@2x.png') 2x) 3 3, pointer !important;
+  }
+}
 .reticle {
   position: fixed;
   left: 0;
@@ -1807,34 +1826,34 @@ body.route-category .crt {
   transition: opacity 0.2s ease;
   will-change: transform;
 }
-.reticle.is-on {
+.reticle.is-on:is([data-state='link'], [data-state='entrar'], [data-state='ver']) {
   opacity: 1;
 }
-.reticle.is-down {
-  opacity: 0.6;
+.reticle.is-down[data-state] .reticle__ring {
+  width: 26px;
+  height: 26px;
 }
 .reticle__ring {
   position: absolute;
   left: 0;
   top: 0;
-  width: 22px;
-  height: 22px;
+  /* en reposo, abierta y grande: al entrar a algo clickeable se cierra sobre el punto ("fijado") */
+  width: 64px;
+  height: 64px;
   overflow: visible;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 4;
+  stroke-linecap: square;
+  shape-rendering: crispEdges; /* trazo pixelado, igual que el cursor nativo */
   vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 4px var(--phosphor-glow));
+  filter: drop-shadow(0 0 1px #02100a) drop-shadow(0 0 1px #02100a) drop-shadow(0 0 5px var(--phosphor-glow));
   transition:
-    width 0.18s ease,
-    height 0.18s ease;
+    width 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+    height 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
 .reticle__ring path {
   vector-effect: non-scaling-stroke;
-}
-.reticle__ring rect {
-  fill: currentColor;
-  stroke: none;
 }
 .reticle[data-state='link'] .reticle__ring {
   width: 32px;
@@ -1853,7 +1872,7 @@ body.route-category .crt {
   font-variation-settings:
     'wght' 600,
     'ELGR' 2;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.16em;
   line-height: 1;
   white-space: nowrap;

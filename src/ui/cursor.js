@@ -1,8 +1,9 @@
-// H3 — cursor retícula (capa OS, P2.A de ANIMATION_SPEC). Una mira fósforo que sigue al cursor del
-// sistema con inercia y se estira con la velocidad. NO lo reemplaza (pointer-events:none, el cursor
-// real sigue visible) y no existe en touch ni con movimiento reducido.
-// Estados por `data-cursor` en el elemento bajo el puntero: 'entrar' / 'ver' muestran una etiqueta;
-// cualquier otro link o botón agranda la mira sin texto.
+// H3 — cursor de capa OS (P2.A de ANIMATION_SPEC). El cursor NATIVO lleva imagen por CSS (flecha
+// fósforo; sobre lo clickeable, un punto): lo dibuja el sistema, sin retraso. Esta capa DOM solo
+// agrega los corchetes y la etiqueta, que se cierran con inercia alrededor de ese punto al entrar a
+// algo clickeable y se estiran con la velocidad. No existe en touch ni con movimiento reducido (ahí
+// el CSS usa una retícula estática como cursor nativo).
+// Estados por `data-cursor`: 'entrar' / 'ver' muestran etiqueta; otro link o botón, solo corchetes.
 
 import { ticker } from '../core/ticker.js'
 import { damp } from '../core/math.js'
@@ -29,9 +30,10 @@ export function initCursor({ lang }) {
   el.className = 'reticle'
   el.setAttribute('aria-hidden', 'true')
   el.innerHTML =
-    '<svg class="reticle__ring" viewBox="0 0 32 32"><path d="M1 9V1h8M23 1h8v8M31 23v8h-8M9 31H1v-8"/><rect x="14.5" y="14.5" width="3" height="3"/></svg>' +
+    '<svg class="reticle__ring" viewBox="0 0 32 32"><path d="M1 9V1h8M23 1h8v8M31 23v8h-8M9 31H1v-8"/></svg>' +
     '<span class="reticle__label"></span>'
   document.body.appendChild(el)
+  document.documentElement.classList.add('has-reticle') // el CSS cambia la retícula estática por el punto
   const ring = el.firstChild
   const label = el.lastChild
 
@@ -43,7 +45,7 @@ export function initCursor({ lang }) {
     label.textContent = labels[next] || ''
   }
   const stateOf = (node) => {
-    const hit = node?.closest?.('[data-cursor], a, button, [role="button"]')
+    const hit = node?.closest?.('[data-cursor], a, button, [role="button"], summary, label, .bio__ring')
     if (!hit) return ''
     return hit.dataset.cursor || 'link'
   }
