@@ -50,18 +50,18 @@ const fragment = /* glsl */ `
     // calle queda ~0 → no se mueve (ancla natural); lo más cercano del fondo se mueve al pico.
     float depth = clamp(texture2D(uDepth, uv).r * uDepthNorm, 0.0, 1.0);
     // el personaje ocupa el extremo blanco del MISMO mapa (es un solo depth map para toda la
-    // escena) — el fondo leía esa silueta como "lo más cercano" y se desplazaba al pico justo ahí,
-    // generando un aro visible en su contorno. Atenuar por (1 - alpha) NO alcanzaba: el borde con
-    // antialiasing mide 1-2 px, muy poco para que la transición de "sin desplazamiento" a "pico" se
-    // sienta gradual — quedaba un salto perceptible aunque chico. Se ensancha el margen "ensuciando"
-    // la máscara con el alpha de 4 puntos vecinos (spread ~1% del ancho de imagen): la atenuación
-    // empieza ANTES del borde real y se nota como degradado, no como salto.
-    float spread = 0.01;
+    // escena) — el fondo leía esa silueta como "lo más cercano" y se desplazaba al pico justo ahí.
+    // No era solo un salto de brillo en 1-2 px: la calle tiene letreros de neón muy saturados cerca
+    // del contorno, y el desplazamiento alcanzaba a "traerlos" hasta el filo del personaje (el aro
+    // magenta que encontró Charlie, con zoom, en el hombro). Ensanchar el margen 1% no bastaba —
+    // el neón podía estar más lejos que eso. Ahora el radio de seguridad es ~3.5% del ancho de
+    // imagen, en 8 direcciones, para que ningún neón cercano llegue a rozar el borde.
+    float spread = 0.035;
     float charMask = ch.a;
-    charMask = max(charMask, texture2D(uChar, uv + vec2(spread, 0.0)).a);
-    charMask = max(charMask, texture2D(uChar, uv - vec2(spread, 0.0)).a);
-    charMask = max(charMask, texture2D(uChar, uv + vec2(0.0, spread)).a);
-    charMask = max(charMask, texture2D(uChar, uv - vec2(0.0, spread)).a);
+    for (int i = 0; i < 8; i++) {
+      float ang = float(i) * 0.7853981634; // 2π/8
+      charMask = max(charMask, texture2D(uChar, uv + vec2(cos(ang), sin(ang)) * spread).a);
+    }
     vec2 bgOffset = look * uStrengthBg * depth * (1.0 - charMask);
     vec3 bg = texture2D(uBg, uv + bgOffset).rgb;
     return mix(bg, ch.rgb, ch.a);
