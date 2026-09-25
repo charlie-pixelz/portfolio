@@ -134,15 +134,16 @@ export function initHero(bgUrl, charUrl, depthUrl) {
   // reales, que caen en 'low' por deviceMemory ≤ 4 GB. Ahora tier low = parallax a la mitad.
   const still = quality.reducedMotion
   const normal = new URLSearchParams(location.search).get('parallax') === 'normal'
-  // ?pk=2 multiplica la intensidad del parallax: para probar valores en vivo antes de fijar uno
-  // (no cambia el default). Tope en 4: más allá el borde de la textura se estira a la vista.
-  const pk = Math.min(4, Math.max(0, Number(new URLSearchParams(location.search).get('pk')) || 1))
+  // ?pk=N multiplica la intensidad sobre el default, para probar valores en vivo. Tope en 2: más
+  // allá el borde de la textura se estira a la vista.
+  const pk = Math.min(2, Math.max(0, Number(new URLSearchParams(location.search).get('pk')) || 1))
   const k = (quality.tier === 'low' ? 0.5 : 1) * pk
-  // H1 (revisión 25/9): el fondo ahora se desplaza según el depth map real, no como una lámina
-  // plana — el punto de fuga se queda quieto y solo lo cercano se mueve al pico, así que ese pico
-  // puede subir ×2 sin verse forzado. Antes: 0.0208 desktop / 0.011 touch.
-  const big = (quality.isTouch ? 0.022 : 0.0416) * k
-  const small = (quality.isTouch ? 0.004 : 0.0078) * k
+  // H1 (revisión 25/9): el fondo se desplaza según el depth map real, no como una lámina plana —
+  // el punto de fuga se queda quieto y solo lo cercano se mueve al pico. Intensidad elegida por
+  // Charlie probando con ?pk=2 (25/9): ×4 el fondo y ×2 el personaje respecto de antes de H1
+  // (0.0208 / 0.0078 desktop).
+  const big = (quality.isTouch ? 0.044 : 0.0832) * k
+  const small = (quality.isTouch ? 0.008 : 0.0156) * k
   // Charlie eligió el parallax INVERTIDO (fondo se mueve más) como default; ?parallax=normal lo invierte
   const kBg = still ? 0 : normal ? small : big
   const kChar = still ? 0 : normal ? big : small
