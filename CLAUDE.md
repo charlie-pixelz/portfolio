@@ -99,7 +99,7 @@ Detalle y evidencia en [`CRITICA_FABLE5.md`](files/CRITICA_FABLE5.md). Marca `�
 ## 4. Stack y arquitectura (de `ANIMATION_SPEC` §0)
 
 - **Build:** Vite (vanilla JS + módulos ES), output estático para GitHub Pages (Action → `gh-pages`). **Sin framework UI** (no React).
-- **WebGL:** **OGL** (elegido en F6 por presupuesto; ~15 KB gz, hecho para planos+shaders). **DOM/timelines:** GSAP + SplitText + ScrollTrigger. **Scroll:** Lenis, sincronizado al RAF.
+- **WebGL:** **OGL** (elegido en F6 por presupuesto; ~15 KB gz, hecho para planos+shaders). **DOM/timelines:** GSAP + SplitText + ScrollTrigger. **Scroll:** ninguna vista lo usa (`body{overflow:hidden}`) — Lenis se quitó el 25/9 (revisión de rendimiento, P2); vuelve si G4 ("Casos con proceso") se retoma.
 - **El "secreto unseen":** 1 canvas WebGL persistente (`#gl`, `fixed inset:0`, nunca se destruye) · **1 solo RAF** central · SPA por idioma con rutas estáticas `/es/` `/en/` + History API dentro de cada una · **DOM = fuente de verdad** (textos/estructura en HTML por a11y+SEO; imágenes con efecto = planos WebGL sincronizados al DOM) · **PointerManager** global (mouse+touch → `{x,y}` -1..1 + velocidad) · **lerp everywhere** (cursor 0.12, ojos 0.08, parallax 0.05) · **QualityManager** por tier · preloader que precarga con **progreso real**.
 
 ---

@@ -9,6 +9,9 @@
 import heroBgUrl from '../assets/upscale/hero_bg_2400w.webp'
 import heroCharUrl from '../assets/upscale/hero_character_2400w.webp'
 import heroCleanUrl from '../assets/upscale/hero_desktop_clean_2400w.webp'
+// preview "apagado" de la pantalla horizontal de la sala móvil: se ve a ~150px de ancho, no hace
+// falta el hero de escritorio completo (255 KB) — una versión de 800w alcanza (P5, revisión 25/9)
+import heroCleanMobileUrl from '../assets/upscale/hero_desktop_clean_800w.webp'
 // Mobile (30/7, reemplaza la composición de primer plano anterior): composición ancha de
 // callejón con espacio real para los 4 letreros — mismo tratamiento que desktop (shader de
 // profundidad multi-capa bg+personaje). Los letreros vuelven a ser la nav principal en mobile
@@ -53,7 +56,6 @@ import { initContacto } from './ui/contacto.js'
 import { initMenu } from './ui/menu.js'
 import { initCharlie } from './ui/charlie.js'
 import { initRouter } from './core/router.js'
-import { initLenis } from './core/lenis.js'
 import { initDebug } from './core/debug.js'
 
 // Dispara la descarga de las 6 fuentes YA, sin esperar a saber si esta carga es el preloader (/)
@@ -133,7 +135,7 @@ if (lang) {
     // preview "apagado" de ambas pantallas de la sala de tránsito: la vertical comparte el
     // callejón (mismo patrón que las pantallas de categoría desktop), la horizontal usa el hero
     // limpio de desktop (proporción más cercana a la del monitor horizontal, sugerido por Charlie)
-    document.documentElement.style.setProperty('--hero-clean', `url(${heroCleanUrl})`)
+    document.documentElement.style.setProperty('--hero-clean', `url(${heroCleanMobileUrl})`)
     document.documentElement.style.setProperty('--bio-mobile', `url(${bioMobileUrl})`)
     initHero(heroMobileBgUrl, heroMobileCharUrl) // mismo shader multi-capa que desktop
     applyMobileSignLayout()
@@ -200,7 +202,7 @@ if (lang) {
   const after = (ms, fn) => setTimeout(() => idle(fn, 3000), ms)
   whenHeroReady(() =>
     after(0, () => {
-      warm(isMobile ? [roomMobileUrl, menuMobileBgUrl, heroCleanUrl] : [roomBgUrl, alleyUrl, lang === 'en' ? homeShotEnUrl : homeShotEsUrl])
+      warm(isMobile ? [roomMobileUrl, menuMobileBgUrl, heroCleanMobileUrl] : [roomBgUrl, alleyUrl, lang === 'en' ? homeShotEnUrl : homeShotEsUrl])
       if (slowNet) return
       after(1500, () => {
         warm(scenes)
@@ -245,7 +247,6 @@ if (lang) {
       : { sceneUrl: heroCleanUrl, preloadUrls: [heroBgUrl, heroCharUrl] },
   )
 }
-initLenis()
 initDebug()
 ticker.add((t, dt) => stage.render(dt)) // render AL FINAL del frame, tras las actualizaciones
 ticker.start()
