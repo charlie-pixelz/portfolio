@@ -45,7 +45,13 @@ const fragment = /* glsl */ `
     // blanco = cerca, negro = lejos (mismo criterio que ADENDUM §4/ART_DIR). El punto de fuga de la
     // calle queda ~0 → no se mueve (ancla natural); lo más cercano del fondo se mueve al pico.
     float depth = clamp(texture2D(uDepth, uv).r * uDepthNorm, 0.0, 1.0);
-    vec2 bgOffset = look * uStrengthBg * depth;
+    // el personaje ocupa el extremo blanco del MISMO mapa (es un solo depth map para toda la
+    // escena) — sin esto, el fondo leía esa silueta como "lo más cercano" y se desplazaba al pico
+    // justo ahí, generando un aro que se ve (y se mueve) de más en el borde del personaje, incluso
+    // con el mouse quieto (drift ambiental amplificado). Atenuar por (1 - alpha del personaje EN
+    // ESTA MISMA uv, sin desplazar) apaga la profundidad exactamente donde no aplica.
+    float charHere = texture2D(uChar, uv).a;
+    vec2 bgOffset = look * uStrengthBg * depth * (1.0 - charHere);
     vec3 bg = texture2D(uBg, uv + bgOffset).rgb;
     vec4 ch = texture2D(uChar, uv + look * uStrengthChar);
     return mix(bg, ch.rgb, ch.a);
