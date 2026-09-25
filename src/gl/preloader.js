@@ -5,7 +5,7 @@
 
 import { Program, Mesh, Plane, Texture } from 'ogl'
 import { stage } from './stage.js'
-import { pointer } from '../core/pointer.js'
+import { pointer, requestGyro } from '../core/pointer.js'
 import { quality } from '../core/quality.js'
 import { ticker } from '../core/ticker.js'
 import { preload } from '../core/loader.js'
@@ -120,7 +120,8 @@ export function initPreloader({ sceneUrl, preloadUrls = [], isMobile = false }) 
   // ambas opciones "apagadas" por defecto (sin preselección lit); Charlie elige.
 
   const EXIT = 0.42 // duración del glitch de salida (≈500 ms con el margen de navegación)
-  let exiting = false
+  let exiting = false // ya se eligió idioma (evita doble click mientras iOS pide permiso)
+  let glitching = false // glitch de salida en curso (lo avanza el ticker)
 
   // click → guardar idioma + glitch de salida (o crossfade si reduced-motion) + navegar
   links.forEach((a) =>
@@ -129,15 +130,22 @@ export function initPreloader({ sceneUrl, preloadUrls = [], isMobile = false }) 
       try {
         localStorage.setItem('cp-lang', a.dataset.lang)
       } catch {}
+      if (exiting) return
+      exiting = true
       const href = a.getAttribute('href')
       const main = document.querySelector('.preloader')
-      if (main) main.classList.add('is-exiting') // desvanece la UI (%/marca/selector)
-      if (quality.reducedMotion || !stage.renderer) {
-        setTimeout(() => (location.href = href), 260) // crossfade corto (a11y)
-      } else {
-        exiting = true // arranca el glitch de shader desde el ticker central
-        setTimeout(() => (location.href = href), 460)
-      }
+      // H2: el permiso del giroscopio de iOS tiene que pedirse DENTRO de este gesto. La salida
+      // espera la respuesta, así el diálogo aparece sobre el preloader intacto y no a mitad del
+      // glitch (en Android/desktop resuelve al instante).
+      requestGyro().then(() => {
+        if (main) main.classList.add('is-exiting') // desvanece la UI (%/marca/selector)
+        if (quality.reducedMotion || !stage.renderer) {
+          setTimeout(() => (location.href = href), 260) // crossfade corto (a11y)
+        } else {
+          glitching = true // arranca el glitch de shader desde el ticker central
+          setTimeout(() => (location.href = href), 460)
+        }
+      })
     }),
   )
 
@@ -251,7 +259,7 @@ export function initPreloader({ sceneUrl, preloadUrls = [], isMobile = false }) 
     }
 
     // glitch de salida: 0 → 1 al elegir idioma (justo antes de navegar)
-    if (exiting) {
+    if (glitching) {
       program.uniforms.uGlitch.value = Math.min(1, program.uniforms.uGlitch.value + dt / EXIT)
     }
   })
