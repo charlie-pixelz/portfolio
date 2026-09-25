@@ -50,12 +50,19 @@ const fragment = /* glsl */ `
     // calle queda ~0 → no se mueve (ancla natural); lo más cercano del fondo se mueve al pico.
     float depth = clamp(texture2D(uDepth, uv).r * uDepthNorm, 0.0, 1.0);
     // el personaje ocupa el extremo blanco del MISMO mapa (es un solo depth map para toda la
-    // escena) — sin esto, el fondo leía esa silueta como "lo más cercano" y se desplazaba al pico
-    // justo ahí, generando un aro en su contorno. Atenuar por (1 - ch.a) apaga la profundidad
-    // exactamente donde no aplica, usando el MISMO alpha (misma uv desplazada) que pinta al
-    // personaje — un intento anterior atenuaba con el alpha SIN desplazar y dejaba un resto
-    // justo en el filo, porque la máscara y el borde real ya no coincidían con el mouse movido.
-    vec2 bgOffset = look * uStrengthBg * depth * (1.0 - ch.a);
+    // escena) — el fondo leía esa silueta como "lo más cercano" y se desplazaba al pico justo ahí,
+    // generando un aro visible en su contorno. Atenuar por (1 - alpha) NO alcanzaba: el borde con
+    // antialiasing mide 1-2 px, muy poco para que la transición de "sin desplazamiento" a "pico" se
+    // sienta gradual — quedaba un salto perceptible aunque chico. Se ensancha el margen "ensuciando"
+    // la máscara con el alpha de 4 puntos vecinos (spread ~1% del ancho de imagen): la atenuación
+    // empieza ANTES del borde real y se nota como degradado, no como salto.
+    float spread = 0.01;
+    float charMask = ch.a;
+    charMask = max(charMask, texture2D(uChar, uv + vec2(spread, 0.0)).a);
+    charMask = max(charMask, texture2D(uChar, uv - vec2(spread, 0.0)).a);
+    charMask = max(charMask, texture2D(uChar, uv + vec2(0.0, spread)).a);
+    charMask = max(charMask, texture2D(uChar, uv - vec2(0.0, spread)).a);
+    vec2 bgOffset = look * uStrengthBg * depth * (1.0 - charMask);
     vec3 bg = texture2D(uBg, uv + bgOffset).rgb;
     return mix(bg, ch.rgb, ch.a);
   }
