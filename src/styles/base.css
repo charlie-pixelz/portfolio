@@ -969,42 +969,60 @@ body.route-category .crt {
   width: min(100vw, calc(100vh * 2400 / 1465));
   aspect-ratio: 2400 / 1465;
 }
-/* el esqueleto rayos-X va en ::before para poder "encenderlo" (flicker) sin afectar las cajas */
+/* el esqueleto rayos-X va en ::before. B1 (Fase 4): se descubre de arriba abajo por detrás de la
+   barra de escaneo — --scan es la altura ya escaneada (bio.js la anima; 100 % = completo). */
 .bio__scene::before {
   content: '';
   position: absolute;
   inset: 0;
   background: var(--bio) center / cover no-repeat;
   opacity: 0;
+  clip-path: inset(0 0 calc(100% - var(--scan, 100%)) 0);
 }
 .bio__scene.is-on::before {
-  animation: bioXrayOn 1.3s steps(1, end) forwards;
+  opacity: 1;
 }
-/* encendido de tubo fluorescente: flicker duro e irregular (ADENDUM §4, WCAG: sin strobe pleno) */
-@keyframes bioXrayOn {
-  0% { opacity: 0; }
-  8% { opacity: 0.7; }
-  11% { opacity: 0.05; }
-  19% { opacity: 0.9; }
-  23% { opacity: 0.15; }
-  32% { opacity: 1; }
-  37% { opacity: 0.45; }
-  46% { opacity: 1; }
-  100% { opacity: 1; }
+@media (min-width: 769px) {
+  /* mismo difuminado de bordes que el shader del hero (smoothstep de 3 %): al llegar por la lente
+     de rayos X (B4) el cambio de canvas a esta escena no se nota */
+  .bio__scene::before {
+    -webkit-mask:
+      linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
+      linear-gradient(transparent, #000 3%, #000 97%, transparent);
+    -webkit-mask-composite: source-in;
+    mask:
+      linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
+      linear-gradient(transparent, #000 3%, #000 97%, transparent);
+    mask-composite: intersect;
+  }
 }
-/* apagado de la máquina (al salir de Biografía): flicker descendente ~simétrico al encendido */
-.bio__scene.is-off::before {
-  animation: bioXrayOff 0.95s steps(1, end) forwards;
+/* barra de escaneo: línea fósforo con núcleo casi blanco + estela tenue hacia arriba (lo recién
+   expuesto). Es un solo trazo que se desplaza, no un destello (WCAG 2.3.1). */
+.bio__scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 1;
+  height: 2px;
+  margin-top: -1px;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--phosphor) 8%, #d9ffe4 50%, var(--phosphor) 92%, transparent);
+  box-shadow:
+    0 0 12px 2px var(--phosphor-glow),
+    0 0 40px 6px rgba(51, 255, 102, 0.16);
 }
-@keyframes bioXrayOff {
-  0% { opacity: 1; }
-  18% { opacity: 0.5; }
-  30% { opacity: 0.95; }
-  45% { opacity: 0.2; }
-  60% { opacity: 0.7; }
-  78% { opacity: 0.08; }
-  100% { opacity: 0; }
+.bio__scan::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 9vh;
+  background: linear-gradient(to top, rgba(51, 255, 102, 0.14), transparent);
 }
+/* líneas guía (B2): SVG del tamaño de la ventana, coordenadas en px (bio.js fija el viewBox) */
 .bio__wires {
   position: absolute;
   inset: 0;
@@ -1015,16 +1033,67 @@ body.route-category .crt {
 }
 .bio__wire {
   stroke: var(--phosphor);
-  stroke-width: 0.22;
-  stroke-linecap: butt;
+  stroke-width: 1.5;
+  stroke-linecap: square;
   stroke-linejoin: miter;
   opacity: 0;
   filter: drop-shadow(0 0 2px var(--phosphor-glow));
 }
-.bio__node {
-  fill: var(--phosphor);
+/* miras (B2): corchetes como los del cursor (misma capa OS) + punto central; la etiqueta va del
+   lado opuesto al panel para no chocar con la línea guía */
+.bio__locks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.bio__lock {
+  position: absolute;
+  width: 0;
+  height: 0;
   opacity: 0;
-  filter: drop-shadow(0 0 3px var(--phosphor-glow));
+}
+.bio__lock svg {
+  position: absolute;
+  left: -13px;
+  top: -13px;
+  width: 26px;
+  height: 26px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--phosphor);
+  stroke-width: 2.5;
+  shape-rendering: crispEdges;
+  filter: drop-shadow(0 0 1px #02100a) drop-shadow(0 0 5px var(--phosphor-glow));
+}
+.bio__lock rect {
+  fill: var(--phosphor);
+  stroke: none;
+}
+.bio__tag {
+  position: absolute;
+  top: -11px;
+  left: 22px;
+  padding: 3px 7px 4px;
+  font-family: var(--font-pixel);
+  font-variation-settings: 'wght' 500, 'ELGR' 2;
+  font-size: 15px;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  color: var(--phosphor);
+  background: rgba(1, 12, 5, 0.82);
+  border-left: 2px solid var(--phosphor);
+  text-shadow: 0 0 6px var(--phosphor-glow);
+  opacity: 0;
+}
+.bio__lock:not([data-anchor='about']) .bio__tag {
+  left: auto;
+  right: 22px;
+  border-left: 0;
+  border-right: 2px solid var(--phosphor);
+}
+.bio__tabs {
+  display: none; /* solo celular (B3) */
 }
 /* cajas capa-OS: marco fósforo, fondo oscuro translúcido */
 .bio__box {
@@ -1148,129 +1217,120 @@ body.route-category .crt {
   color: var(--phosphor);
   text-shadow: 0 0 6px var(--phosphor-glow);
 }
-/* cursor de tipeo = rectángulo/barra de input sólido que parpadea; con keepCursor queda
-   parpadeando al final del texto (dentro de la caja) aun terminada la escritura. `is-typed`
-   reserva el MISMO espacio pero invisible (en vez de quitar el ::after) — quitarlo directamente
-   encogía la línea (el cursor mide 1.15em, más que el line-height del título) y descentraba el
-   texto (menos ancho) → salto perceptible hacia arriba-derecha al terminar de tipear (28/7). */
-.is-typing::after,
-.is-typed::after {
-  content: '';
-  display: inline-block;
-  width: 0.75em;
-  height: 1.15em;
-  margin-left: 0.12em;
-  transform: translateY(0.2em);
-  background: var(--phosphor);
-  box-shadow: 0 0 10px var(--phosphor-glow);
-}
-.is-typing::after {
-  animation: blink 1s steps(1, end) infinite;
-}
-.is-typed::after {
-  visibility: hidden;
-}
-
-/* ── Biografía MOBILE (30/7): interacción propia — 3 aros pulsantes sobre el esqueleto
-   (cuello=About por defecto, hombro=Habilidades, cráneo=Herramientas), UNA caja visible a la
-   vez. bio.js decide qué caja mostrar; acá solo el layout/estética. ── */
+/* ── Biografía MOBILE — B3 (Fase 4): dossier. El esqueleto ocupa la mitad de arriba con 3 puntos;
+   abajo, al alcance del pulgar, 3 pestañas y un panel (se cambia tocando o deslizando). bio.js
+   ubica los puntos y dibuja la línea del punto activo a su pestaña. ── */
 @media (max-width: 768px) {
+  .bio {
+    --scene-h: 56svh;
+    --tabs-h: 2.75rem;
+    --bio-pos-y: 55%; /* == MOBILE_POS_Y de bio.js */
+  }
   .bio__scene {
     width: 100vw;
-    height: 100svh;
+    height: var(--scene-h);
+    margin: 0;
     aspect-ratio: auto;
   }
   .bio__scene::before {
-    background: var(--bio-mobile) center / cover no-repeat;
+    background: var(--bio-mobile) center var(--bio-pos-y) / cover no-repeat;
   }
-  /* .bio__side solo ordena las cajas en columnas L/R (layout de desktop) — en mobile cada caja
-     se posiciona sola (position:fixed) y sale de ese flujo por completo */
   .bio__side {
-    display: contents;
+    display: contents; /* las columnas L/R son solo layout de desktop */
   }
-  /* Banda de cabecera RESERVADA: el breadcrumb termina en ~7% de alto y el botón Pip-Boy en ~8.5%.
-     Las cajas arrancaban en 8% → chocaban con los dos (reporte de Charlie 31/7). 11.5% las deja
-     libres con holgura, y es también donde arrancan las cajas en las 3 maquetas. */
-  .bio__box--about,
-  .bio__box--skills {
+  .bio__tabs {
     position: fixed;
-    left: 4%;
-    top: 11.5%;
-    width: auto;
-    padding: 0.9rem 1.05rem 1rem;
+    left: 3%;
+    right: 3%;
+    top: calc(var(--scene-h) - 0.6rem);
+    z-index: 3;
+    height: var(--tabs-h);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
   }
-  /* Descripción arranca 1 punto más arriba que las otras dos: es la única que baja hasta la altura
-     de la cara, y con top:11.5% su borde inferior (40.6%) se solapaba 7px con el aro de
-     Herramientas, que vive en la cuenca del ojo (1/8). Sigue holgada respecto al botón Pip-Boy,
-     que termina en ~8.5%. */
-  .bio__box--about {
-    top: 10.5%;
-    right: 4%;
+  .bio__tab {
+    padding: 0 0.3em;
+    font-family: var(--font-pixel);
+    font-variation-settings: 'wght' 500, 'ELGR' 2;
+    font-size: 1.08rem;
+    line-height: 1;
+    color: var(--phosphor);
+    background: rgba(1, 12, 5, 0.78);
+    border: 1.5px solid var(--phosphor-dim);
+    border-radius: 6px;
+    text-shadow: 0 0 8px var(--phosphor-glow);
+    transition:
+      background 0.2s ease,
+      color 0.2s ease;
   }
-  /* Habilidades (31/7): ensanchada hacia la derecha (right 22%→13%) para que cada ítem quepa en
-     UNA línea (pedido de Charlie) — el margen izquierdo se conserva (4%, igual que Descripción);
-     right:13% deja igual un carril libre de 2 puntos antes del aro del hombro (x≈89%) para el
-     tramo horizontal del cable. */
-  .bio__box--skills {
-    right: 13%;
+  .bio__tab.is-active {
+    color: var(--void);
+    background: var(--phosphor);
+    border-color: var(--phosphor);
+    text-shadow: none;
+    box-shadow: 0 0 14px var(--phosphor-glow);
   }
-  /* Herramientas (31/7): Charlie pidió MÁS espacio para la calavera y confirmó que quiere que la
-     caja se salga de la pantalla por la derecha a propósito (para que el panel de 1 columna no
-     tenga que angostar más los íconos/texto). `right` negativo la extiende más allá del 100% —
-     `body{overflow:hidden}` (regla global, tope del archivo) recorta esa parte sin generar scroll
-     horizontal, exactamente lo que pidió ("dejando escondida el resto de la caja"). `left` sube de
-     52%→62% para descubrir más cráneo; el ancho total de la caja (62% a 112%, 50 puntos) es MAYOR
-     que la porción visible (62%→100%, 38 puntos) — de ahí que los íconos/texto puedan volver a un
-     tamaño más legible sin forzar el wrap de ningún nombre. */
-  /* (1/8, 3.ª pasada) Antes tenía `top` Y `bottom` — con position:fixed eso FUERZA la altura a
-     llenar ese rango exacto sin importar cuánto mida el contenido: si los 11 íconos medían un
-     poco menos, la caja igual se estiraba hasta el `bottom`, dejando un colchón de aire ABAJO que
-     no existe arriba (el padding sí es simétrico, 0.9rem los dos lados, pero la caja entera no lo
-     era). Quitar `bottom` deja que la altura la fije el CONTENIDO — la caja "se corta" justo donde
-     termina Magnific + su padding, y libera espacio real debajo para el aro de Habilidades. */
-  .bio__box--tools {
+  .bio__tab:focus-visible {
+    outline: 2px dashed var(--phosphor);
+    outline-offset: 2px;
+  }
+  .bio__box {
     position: fixed;
-    right: -12%;
-    left: 62%;
-    top: 11.5%;
+    left: 3%;
+    right: 3%;
+    top: calc(var(--scene-h) - 0.6rem + var(--tabs-h) + 0.4rem);
+    bottom: max(1rem, env(safe-area-inset-bottom));
     width: auto;
-    padding: 0.9rem 1rem;
+    padding: 1rem 1.1rem;
     overflow-y: auto;
+    overscroll-behavior: contain;
   }
-  .bio__title,
+  .bio__box[hidden] {
+    display: none;
+  }
   .bio__box-title {
+    display: none; /* la pestaña ya nombra el panel */
+  }
+  .bio__title {
     font-size: 1.18rem;
+    text-align: left;
   }
   .bio__text,
   .bio__skills li {
-    font-size: 0.82rem;
-    line-height: 1.38;
-    white-space: nowrap; /* una línea por ítem/párrafo — el ancho de la caja ya se ajustó para esto */
-  }
-  .bio__text {
-    white-space: normal; /* la Descripción SÍ debe poder partir en varias líneas (es un párrafo largo) */
+    font-size: 0.86rem;
+    line-height: 1.45;
   }
   .bio__tools {
-    grid-template-columns: max-content; /* 1 columna: el panel lateral es angosto */
-    row-gap: 0.34rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1rem;
+    row-gap: 0.45rem;
   }
   .bio__tool-name {
-    font-size: 1.02rem;
+    font-size: 1rem;
   }
   .bio__tool-ico {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
   }
-  /* cables (31/7, "un par de pixeles más gruesas"): stroke-width en unidades del viewBox 0..100;
-     con preserveAspectRatio="none" el grosor final depende del tamaño real en pantalla — este
-     valor se ve ~2px más grueso que el de desktop en un viewport de ~390px de ancho. */
   .bio__wire {
-    stroke-width: 0.5;
+    stroke-width: 2;
+  }
+  /* en celular la mira es el aro tocable: de la capa de miras solo queda la etiqueta del activo */
+  .bio__lock svg {
+    display: none;
+  }
+  .bio__tag {
+    left: 26px;
+    font-size: 14px;
+  }
+  .bio__lock:not([data-anchor='about']) .bio__tag {
+    right: 26px;
   }
 }
-/* aros: SOLO existen visualmente en mobile (desktop no los usa). z-index por encima de las cajas
-   (30/7: la caja About las tapaba Y bloqueaba el click — con esto quedan siempre encima, visibles
-   y clickeables aunque una caja las cubra visualmente) */
+/* aros: SOLO existen en celular. z-index por encima de líneas y paneles */
 .bio__rings {
   position: absolute;
   inset: 0;
@@ -1283,19 +1343,20 @@ body.route-category .crt {
   }
 }
 /* borde BLANCO (no fósforo): el esqueleto ya es fósforo brillante — un aro fósforo se pierde
-   encima (mismo problema que el "encendido" de los letreros del Hero resuelve con blanco +
-   glow de color, ver .sign[aria-current] — mismo patrón acá). */
+   encima (mismo patrón que el "encendido" de los letreros del Hero). Centrado con margen negativo
+   (no con transform): GSAP anima su escala al aparecer. */
 .bio__ring {
   position: absolute;
-  width: 34.5px; /* -25% (1/8): 46px×0.75 */
+  width: 34.5px;
   height: 34.5px;
-  transform: translate(-50%, -50%);
+  margin: -17.25px 0 0 -17.25px;
   padding: 0;
   border: 2.5px solid #fff;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.35); /* leve fondo oscuro: se distingue aun sobre hueso brillante */
+  background: rgba(0, 0, 0, 0.35);
   cursor: pointer;
   pointer-events: auto;
+  opacity: 0;
   box-shadow:
     0 0 6px rgba(255, 255, 255, 0.6),
     0 0 12px var(--phosphor-glow);

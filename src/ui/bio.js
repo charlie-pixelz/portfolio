@@ -1,11 +1,20 @@
-// bio.js — P3.C: página Biografía en "modo rayos X" (ART_DIR §6.4 / ADENDUM §4).
-// La escena es el esqueleto verde fósforo (misma pose que el hero). Al entrar: encendido de
-// máquina de rayos X (flicker duro, en CSS) → las cajas capa-OS "salen" desde puntos del
-// esqueleto hacia afuera (con un cable conector) y el texto se escribe con efecto teclado.
-// Herramientas: cada ícono hace pop antes de aparecer su nombre. reduced-motion → todo directo.
+// bio.js — P3.C: página Biografía en "modo rayos X" (ART_DIR §6.4 / ADENDUM §4), rediseño Fase 4
+// de la revisión (25/9):
+//   B1 — una barra de escaneo recorre el cuerpo y el esqueleto aparece solo donde ya pasó (antes:
+//        flicker de tubo). ~0.8 s.
+//   B2 — cada zona tiene una mira que se FIJA cuando la barra la cruza, con etiqueta anatómica, y
+//        una línea guía (diagonal + horizontal) hasta su panel. El título se decodifica y el párrafo
+//        entra por líneas (antes: tipeo de ~4 s). Todo legible en < 2 s.
+//   B3 — celular: esqueleto arriba con 3 puntos, dossier abajo con 3 pestañas (tocar o deslizar).
+//        La línea une el punto activo con su pestaña.
+// Entrada desde la lente de rayos X del hero (B4, solo desktop): el esqueleto ya está a la vista,
+// así que la barra solo pasa para fijar las miras. reduced-motion → todo directo.
 
 import { gsap } from 'gsap'
+import { SplitText } from 'gsap/SplitText'
 import { quality } from '../core/quality.js'
+
+gsap.registerPlugin(SplitText)
 
 const iconUrls = import.meta.glob('../../assets/icons/icon_*.png', { eager: true, query: '?url', import: 'default' })
 const iconFor = (f) => Object.entries(iconUrls).find(([p]) => p.endsWith('/' + f))?.[1] || ''
@@ -39,6 +48,10 @@ const CONTENT = {
       'Diseño web y UX/UI',
       'Integración estratégica de IA generativa',
     ],
+    // B2: etiqueta anatómica de cada mira · B3: nombre corto de cada pestaña
+    tags: { tools: 'CRÁNEO', about: 'TÓRAX', skills: 'CLAVÍCULA' },
+    tabs: { about: 'Quién soy', tools: 'Herramientas', skills: 'Habilidades' },
+    tablist: 'Secciones de la biografía',
   },
   en: {
     title: 'Who is Charlie?',
@@ -53,380 +66,442 @@ const CONTENT = {
       'Web design & UX/UI',
       'Strategic integration of generative AI tools',
     ],
+    tags: { tools: 'SKULL', about: 'THORAX', skills: 'CLAVICLE' },
+    tabs: { about: 'About', tools: 'Tools', skills: 'Skills' },
+    tablist: 'Biography sections',
   },
+}
+
+// Anclas en coordenadas de la IMAGEN (0..1 desde arriba a la izquierda), no de la pantalla: así
+// sirven igual con el encuadre contain de desktop y con el cover recortado de celular. Cada una cae
+// del lado de su panel para que la línea no cruce el cuerpo (desktop: Quién soy a la izquierda,
+// Herramientas y Habilidades a la derecha; celular: el orden de las pestañas).
+const IMG = { desktop: [2400, 1465], mobile: [1581, 2810] }
+const ANCHORS = {
+  desktop: { tools: [0.545, 0.36], about: [0.41, 0.8], skills: [0.6, 0.72] },
+  mobile: { tools: [0.604, 0.415], about: [0.3, 0.8], skills: [0.87, 0.74] },
+}
+// celular: el esqueleto se encuadra en la mitad superior con `cover`; este es el background-position
+// vertical de .bio__scene::before en base.css (--bio-pos-y). Tienen que coincidir.
+const MOBILE_POS_Y = 0.55
+const ORDER = ['about', 'tools', 'skills'] // orden de las pestañas en celular
+
+const SCAN_DUR = 0.8
+const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&*+=/<>'
+
+// "decodifica" un texto: los caracteres ya resueltos quedan fijos y el resto cambia al azar
+function decode(node, text, dur) {
+  const o = { p: 0 }
+  return gsap.to(o, {
+    p: 1,
+    duration: dur,
+    ease: 'none',
+    onUpdate: () => {
+      const n = Math.floor(o.p * text.length)
+      let s = text.slice(0, n)
+      for (let i = n; i < text.length; i++) s += text[i] === ' ' ? ' ' : GLYPHS[(Math.random() * GLYPHS.length) | 0]
+      node.textContent = s
+    },
+    onComplete: () => (node.textContent = text),
+  })
 }
 
 export function initBio({ lang, isMobile = false }) {
   const el = document.querySelector('.bio')
   if (!el) return null
   const c = CONTENT[lang] || CONTENT.es
+  const layout = isMobile ? 'mobile' : 'desktop'
   const scene = el.querySelector('.bio__scene')
+  const scan = el.querySelector('.bio__scan')
   const wires = el.querySelector('.bio__wires')
+  const locksLayer = el.querySelector('.bio__locks')
   const titleEl = el.querySelector('.bio__title')
   const textEl = el.querySelector('.bio__text')
-  const toolsTitleEl = el.querySelector('.bio__box--tools .bio__box-title')
-  const skillsTitleEl = el.querySelector('.bio__box--skills .bio__box-title')
   const toolsUl = el.querySelector('.bio__tools')
   const skillsUl = el.querySelector('.bio__skills')
-  const boxes = [...el.querySelectorAll('.bio__box')]
-  const aboutBox = el.querySelector('.bio__box--about')
-  const rings = [...el.querySelectorAll('.bio__ring')]
+  const tabsEl = el.querySelector('.bio__tabs')
+  const boxOf = {}
+  el.querySelectorAll('.bio__box').forEach((b) => (boxOf[b.dataset.anchor] = b))
+  const ringOf = {}
+  el.querySelectorAll('.bio__ring').forEach((r) => (ringOf[r.dataset.anchor] = r))
 
-  // zonas del esqueleto (en % de la escena) a las que apunta cada cable. Medidas por análisis de
-  // píxeles de bio_desktop_2400w.webp (no a ojo): el cuello real está en y≈65-67% (antes 41%,
-  // que caía en plena cara); la cabeza en y≈30-35% (antes 26%, que caía por ENCIMA del cráneo,
-  // en el fondo); el hombro derecho del personaje en y≈73-75%, x≈32-40% (antes y=54%, altura de
-  // mitad de cuello, muy por encima del hombro real). Esto era la causa de que los cables
-  // "no se mostraran bien" — apuntaban a partes equivocadas del cuerpo.
-  const ANCHORS_DESKTOP = { about: [49, 66], tools: [50, 32], skills: [37, 74] }
-  // mobile: anclas medidas sobre el render REAL (bio_mobile_desktop_4602w.webp con `cover` en
-  // 100vw×100svh), no sobre la maqueta — el encuadre no es el mismo. Los aros del HTML usan estas
-  // MISMAS coordenadas.
-  // Calibrados TODOS en el viewport real de Charlie (425×767) y verificados a ojo sobre el render
-  // en vivo — no reconstruyendo la imagen aparte. El método bueno: superponer aros candidatos
-  // sobre la página real y comparar en una captura; reconstruir el `cover` en un <canvas> aparte
-  // me dio dos veces coordenadas desplazadas (el bounding-box de la máscara oscura englobaba
-  // AMBAS cuencas y el centroide caía en el puente nasal).
-  //   tools  → cuenca del ojo izquierda del cráneo.
-  //   about  → cuello, lado izquierdo.
-  //   skills → cabeza del húmero (hombro derecho). x=92% no es solo anatomía: la caja de
-  //            Habilidades termina en x=87%, así que el ancla necesita separarse lo suficiente
-  //            para que el TRAMO HORIZONTAL del cable se vea (5 puntos). Con el ancla a 87.5% el
-  //            codo medía 0.5 puntos y el cable parecía una línea recta. y=80% lo despeja de la
-  //            caja de Herramientas, que termina en 75% de alto en este viewport.
-  const ANCHORS_MOBILE = { tools: [35, 43], about: [30, 64], skills: [92, 80] }
-  const ANCHORS = isMobile ? ANCHORS_MOBILE : ANCHORS_DESKTOP
-
-  // texto estático (títulos de caja + nombres de herramientas no cambian por idioma)
-  toolsTitleEl.textContent = c.toolsTitle
-  skillsTitleEl.textContent = c.skillsTitle
+  el.querySelector('.bio__box--tools .bio__box-title').textContent = c.toolsTitle
+  el.querySelector('.bio__box--skills .bio__box-title').textContent = c.skillsTitle
   toolsUl.innerHTML = TOOLS.map(
     ([name, file]) =>
       `<li class="bio__tool"><img class="bio__tool-ico" src="${iconFor(file)}" alt="" width="40" height="40" loading="lazy"><span class="bio__tool-name">${name}</span></li>`,
   ).join('')
   skillsUl.innerHTML = c.skills.map((s) => `<li>${s}</li>`).join('')
 
-  // Los cables son líneas ORTOGONALES delgadas (sin círculo en el extremo) que apuntan a zonas
-  // concretas del esqueleto. SVG con viewBox 0..100 (x e y independientes).
-  // Cables mobile — geometría de las maquetas (31/7): SIEMPRE 2 tramos ortogonales, empezando en
-  // el ancla (el trazo nace del esqueleto) y entrando a la caja por el borde que le corresponde:
-  //   tools  (panel derecho, Mobile-03): sube por el eje del ancla → entra por el borde IZQUIERDO
-  //   skills (caja angosta arriba, Mobile-02): sube por el eje del ancla → entra por el DERECHO
-  //   about  (caja ancha arriba, Mobile-01): va en horizontal hasta un carril cerca del borde
-  //          izquierdo de la caja → sube y entra por ABAJO
-  // Antes había un tramo extra (codo doble) en tools y una entrada centrada por abajo en los otros
-  // dos: eso era lo que a Charlie "no le convencían las strings".
-  const drawWireMobile = (key) => {
-    const a = ANCHORS[key]
-    const box = el.querySelector(`.bio__box--${key}`)
-    const wire = wires.querySelector(`.bio__wire[data-for="${key}"]`)
-    if (!a || !box || !wire) return
+  // miras (B2): corchetes como los del cursor + etiqueta anatómica
+  const lockOf = {}
+  const tagOf = {}
+  const wireOf = {}
+  // desktop: numeradas en el orden en que las cruza la barra (de arriba abajo); celular: en el de
+  // las pestañas, que es como se leen ahí
+  const byScan = isMobile ? ORDER : [...ORDER].sort((p, q) => ANCHORS[layout][p][1] - ANCHORS[layout][q][1])
+  ORDER.forEach((key) => {
+    const i = byScan.indexOf(key)
+    const lock = document.createElement('div')
+    lock.className = 'bio__lock'
+    lock.dataset.anchor = key
+    lock.innerHTML =
+      '<svg viewBox="0 0 32 32"><path d="M1 9V1h8M23 1h8v8M31 23v8h-8M9 31H1v-8"/><rect x="14" y="14" width="4" height="4"/></svg>' +
+      `<span class="bio__tag"></span>`
+    locksLayer.append(lock)
+    lockOf[key] = lock
+    tagOf[key] = lock.lastChild
+    tagOf[key].dataset.text = `${String(i + 1).padStart(2, '0')} ${c.tags[key]}`
+    const wire = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
+    wire.setAttribute('class', 'bio__wire')
+    wire.setAttribute('fill', 'none')
+    wires.append(wire)
+    wireOf[key] = wire
+  })
+
+  // pestañas (B3, solo celular)
+  const tabOf = {}
+  if (isMobile && tabsEl) {
+    tabsEl.setAttribute('role', 'tablist')
+    tabsEl.setAttribute('aria-label', c.tablist)
+    ORDER.forEach((key) => {
+      const b = document.createElement('button')
+      b.type = 'button'
+      b.className = 'bio__tab'
+      b.id = `bio-tab-${key}`
+      b.dataset.anchor = key
+      b.setAttribute('role', 'tab')
+      b.setAttribute('aria-controls', `bio-panel-${key}`)
+      b.textContent = c.tabs[key]
+      tabsEl.append(b)
+      tabOf[key] = b
+      const box = boxOf[key]
+      box.id = `bio-panel-${key}`
+      box.setAttribute('role', 'tabpanel')
+      box.setAttribute('aria-labelledby', b.id)
+    })
+  }
+
+  // ── geometría: de coordenadas de imagen a px de la ventana ──
+  const pts = {} // key → { x, y } en px de la ventana
+  const sceneFrac = {} // key → altura relativa dentro de la escena (0..1), para saber cuándo la cruza la barra
+  const measure = () => {
     const sr = scene.getBoundingClientRect()
-    const br = box.getBoundingClientRect()
-    const boxTop = ((br.top - sr.top) / sr.height) * 100
-    const boxBottom = ((br.bottom - sr.top) / sr.height) * 100
-    const boxLeft = ((br.left - sr.left) / sr.width) * 100
-    const boxRight = ((br.right - sr.left) / sr.width) * 100
-    const p = (x, y) => `${x.toFixed(2)},${y.toFixed(2)}`
-    let pts
-    if (key === 'about') {
-      const laneX = boxLeft + 5 // carril vertical pegado al borde izquierdo, como en la maqueta
-      pts = `${p(a[0], a[1])} ${p(laneX, a[1])} ${p(laneX, boxBottom)}`
+    const [iw, ih] = IMG[layout]
+    const s = Math.max(sr.width / iw, sr.height / ih) // cover (en desktop la escena ya tiene el aspecto de la imagen)
+    const dw = iw * s
+    const dh = ih * s
+    const ox = (sr.width - dw) * 0.5
+    const oy = (sr.height - dh) * (isMobile ? MOBILE_POS_Y : 0.5)
+    ORDER.forEach((key) => {
+      const [ax, ay] = ANCHORS[layout][key]
+      const y = oy + ay * dh
+      pts[key] = { x: sr.left + ox + ax * dw, y: sr.top + y }
+      sceneFrac[key] = y / sr.height
+      const ring = ringOf[key]
+      if (ring) {
+        ring.style.left = `${ox + ax * dw}px`
+        ring.style.top = `${y}px`
+      }
+      lockOf[key].style.left = `${pts[key].x.toFixed(1)}px`
+      lockOf[key].style.top = `${pts[key].y.toFixed(1)}px`
+    })
+  }
+
+  // línea guía. Desktop: diagonal a 45° hacia el panel y horizontal hasta su borde. Celular: diagonal
+  // hacia la pestaña y vertical hasta su borde superior.
+  const drawWire = (key) => {
+    const a = pts[key]
+    const wire = wireOf[key]
+    if (!a) return
+    let d
+    if (isMobile) {
+      const tr = tabOf[key]?.getBoundingClientRect()
+      if (!tr) return
+      const tx = tr.left + tr.width / 2
+      const dx = tx - a.x
+      const run = Math.min(Math.abs(dx), Math.max(0, tr.top - a.y - 30))
+      const kx = a.x + Math.sign(dx) * run
+      // arranca en el borde del aro (no en su centro) y baja en vertical hasta la pestaña
+      d = [a.x, a.y + 18, a.x, tr.top - run, kx, tr.top]
     } else {
-      // entra por el lateral, a un octavo de la altura de la caja desde arriba (maquetas 02/03)
-      const entryY = boxTop + (boxBottom - boxTop) * 0.13
-      const edgeX = key === 'tools' ? boxLeft : boxRight
-      pts = `${p(a[0], a[1])} ${p(a[0], entryY)} ${p(edgeX, entryY)}`
+      const br = boxOf[key].getBoundingClientRect()
+      const left = br.left > a.x // el panel está a la derecha de la mira
+      const edge = left ? br.left : br.right
+      const gap = Math.abs(edge - a.x)
+      const ey = Math.min(Math.max(a.y - 0.1 * innerHeight, br.top + 28), br.bottom - 28)
+      const rise = Math.abs(ey - a.y)
+      const run = Math.min(rise, Math.max(0, gap - 40)) // deja siempre un tramo horizontal visible
+      const dir = left ? 1 : -1
+      const sy = Math.sign(ey - a.y) || -1
+      d = [a.x + dir * 12, a.y + sy * 12, a.x + dir * run, ey, edge, ey]
     }
-    wire.setAttribute('points', pts)
+    wire.setAttribute('points', d.map((v) => v.toFixed(1)).join(' '))
   }
 
-  const drawWires = () => {
-    wires.innerHTML = ''
-    const sr = scene.getBoundingClientRect()
-    boxes.forEach((box) => {
-      const key = box.dataset.anchor
-      const a = ANCHORS[key]
-      if (!a) return
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
-      line.setAttribute('fill', 'none')
-      line.setAttribute('class', 'bio__wire')
-      line.dataset.for = key
-      wires.append(line) // primero en el DOM (vacío) — drawWireMobile() lo necesita para medir
-
-      if (isMobile) {
-        drawWireMobile(key)
-        return
-      }
-
-      const br = box.getBoundingClientRect()
-      const boxTop = ((br.top - sr.top) / sr.height) * 100
-      const boxBottom = ((br.bottom - sr.top) / sr.height) * 100
-      const leftX = ((br.left - sr.left) / sr.width) * 100
-      const rightX = ((br.right - sr.left) / sr.width) * 100
-      const exitLeft = key !== 'about' // about mira al esqueleto por su derecha; el resto por la izquierda
-      // el trazo empieza en el ANCLA (esqueleto) y termina en la caja — se "dibuja" naciendo del
-      // centro y llegando a la caja, no al revés (pedido de Charlie 28/7)
-      let pts
-      if (a[1] < boxTop - 8) {
-        // objetivo CLARAMENTE por encima de la caja: sube y entra por ARRIBA. Umbral (-8) a
-        // propósito: si el ancla está solo un poco por encima del borde (como Habilidades, casi
-        // a la misma altura), el codo de este camino queda de 1% y no se nota — mejor que caiga
-        // al codo lateral de abajo, que siempre fuerza un tramo vertical visible.
-        const ex = exitLeft ? leftX + (rightX - leftX) * 0.16 : rightX - (rightX - leftX) * 0.16
-        pts = `${a[0]},${a[1]} ${ex.toFixed(2)},${a[1]} ${ex.toFixed(2)},${boxTop.toFixed(2)}`
-      } else {
-        // objetivo a la altura de la caja: entra por el LATERAL con un codo de 90° SIEMPRE visible
-        // (si el ancla ya cae dentro del rango vertical de la caja, un codo "a secas" colapsa y el
-        // cable queda recto). El codo se desplaza un tramo CORTO Y FIJO (8pt) desde el ancla, hacia
-        // el centro vertical de la caja — no hacia su borde superior: con cajas altas (About ahora
-        // se centra en toda la columna) entrar siempre por arriba obligaba a un rodeo larguísimo
-        // (p.ej. el cuello, y=66, subiendo hasta el techo de la caja en y=19).
-        const ex = exitLeft ? leftX : rightX
-        // dirección del codo FIJA por caja (no derivada de comparar con el centro de la caja):
-        // Herramientas/Habilidades se centran como grupo flex → su posición en px varía un poco
-        // entre ES/EN según el largo del contenido, y comparar contra su centro podía cruzar el
-        // umbral y voltear el codo de un idioma a otro (bug real: "Tools" salía al revés en EN).
-        const DIR = { about: -1, tools: -1, skills: 1 }
-        const ey = Math.min(Math.max(a[1] + DIR[key] * 8, boxTop + 5), boxBottom - 5)
-        pts = `${a[0]},${a[1]} ${a[0]},${ey.toFixed(2)} ${ex.toFixed(2)},${ey.toFixed(2)}`
-      }
-      line.setAttribute('points', pts)
-    })
+  const layoutAll = () => {
+    wires.setAttribute('viewBox', `0 0 ${innerWidth} ${innerHeight}`)
+    measure()
+    ORDER.forEach(drawWire)
   }
 
-  // efecto "escritura de teclado". keepCursor → la barra de input sigue parpadeando al terminar.
-  const typeInto = (node, text, dur, keepCursor = false) => {
-    node.textContent = ''
-    node.classList.add('is-typing')
-    const o = { n: 0 }
-    return gsap.to(o, {
-      n: text.length,
-      duration: dur,
-      ease: 'none',
-      onUpdate: () => (node.textContent = text.slice(0, Math.round(o.n))),
-      onComplete: () => {
-        node.textContent = text
-        if (!keepCursor) {
-          // 'is-typed' reserva el mismo espacio del cursor (invisible) → sin salto de layout
-          node.classList.remove('is-typing')
-          node.classList.add('is-typed')
-        }
-      },
-    })
+  // ── estado ──
+  let running = [] // animaciones vivas: se matan al preparar/salir
+  let split = null
+  let active = null
+  const track = (a) => (running.push(a), a)
+
+  const wireLen = (w) => (w.getTotalLength ? w.getTotalLength() : 200)
+  const hideWire = (w) => {
+    const len = wireLen(w)
+    w.style.strokeDasharray = len
+    w.style.strokeDashoffset = len
+  }
+  const showWire = (w, dur) => {
+    hideWire(w)
+    gsap.set(w, { opacity: 1 })
+    return dur ? gsap.to(w, { strokeDashoffset: 0, duration: dur, ease: 'power2.inOut' }) : (w.style.strokeDashoffset = 0)
   }
 
   // deja todo en el estado "apagado" (lo llama el router antes de entrar)
   const prepare = () => {
-    titleEl.textContent = ''
-    textEl.textContent = ''
-    titleEl.classList.remove('is-typing', 'is-typed')
-    textEl.classList.remove('is-typing', 'is-typed')
-    gsap.set(boxes, { opacity: 0 })
-    gsap.set(el.querySelectorAll('.bio__tool'), { opacity: 0 })
-    gsap.set(el.querySelectorAll('.bio__skills li'), { opacity: 0 })
-    const w = wires ? [...wires.children] : []
-    if (w.length) gsap.set(w, { opacity: 0 })
-    if (aboutBox) aboutBox.style.minHeight = ''
-    scene?.classList.remove('is-on', 'is-off')
-    activeKey = null
-    gsap.set(rings, { opacity: 1 }) // leave() los apaga; reset acá para la próxima entrada
-    rings.forEach((r) => {
-      r.classList.remove('is-active')
-      r.setAttribute('aria-pressed', 'false')
-    })
+    running.forEach((a) => a.kill())
+    running = []
+    split?.revert()
+    split = null
+    titleEl.textContent = c.title
+    textEl.textContent = c.about
+    gsap.set(Object.values(boxOf), { opacity: 0, x: 0 })
+    gsap.set([...el.querySelectorAll('.bio__tool, .bio__skills li')], { opacity: 0 })
+    gsap.set(Object.values(lockOf), { opacity: 0 })
+    gsap.set(Object.values(tagOf), { opacity: 0 })
+    gsap.set(Object.values(wireOf), { opacity: 0 })
+    gsap.set(Object.values(ringOf), { opacity: 0, scale: 1 })
+    if (tabsEl) gsap.set(tabsEl, { opacity: 0, y: 0 })
+    scene.classList.remove('is-on')
+    scene.style.setProperty('--scan', '0%')
+    gsap.set(scan, { opacity: 0, top: '0%' })
+    active = null
+    Object.values(lockOf).forEach((l) => l.classList.remove('is-active'))
   }
 
-  // ── MOBILE: una caja visible a la vez, activada por los aros (no por timeline automático) ──
-  let activeKey = null
-
-  const setRingActive = (key) => {
-    rings.forEach((r) => {
-      const on = r.dataset.anchor === key
-      r.classList.toggle('is-active', on)
-      r.setAttribute('aria-pressed', String(on))
-    })
-  }
-
-  const childrenFor = (key) =>
-    key === 'tools' ? el.querySelectorAll('.bio__tool') : key === 'skills' ? el.querySelectorAll('.bio__skills li') : []
-
-  const showBoxMobile = (key, instant = false) => {
-    const box = el.querySelector(`.bio__box--${key}`)
-    if (!box) return
-    gsap.set(childrenFor(key), { opacity: 1, x: 0 }) // aparecen JUNTO con la caja (sin stagger)
-    const wire = wires.querySelector(`.bio__wire[data-for="${key}"]`)
+  // ── contenido de cada panel ──
+  const fillBox = (key, instant) => {
+    const box = boxOf[key]
+    const kids = key === 'tools' ? el.querySelectorAll('.bio__tool') : key === 'skills' ? el.querySelectorAll('.bio__skills li') : []
     if (instant || quality.reducedMotion) {
-      gsap.set(box, { opacity: 1, scale: 1 })
-      if (wire) {
-        wire.style.strokeDasharray = 'none'
-        gsap.set(wire, { opacity: 1 })
-      }
+      gsap.set(box, { opacity: 1 })
+      gsap.set(kids, { opacity: 1 })
       return
     }
-    gsap.set(box, { opacity: 0, scale: 0.4 })
-    if (wire) {
-      const len = wire.getTotalLength ? wire.getTotalLength() : 60
-      wire.style.strokeDasharray = len
-      wire.style.strokeDashoffset = len
-      wire.style.opacity = 1
-      gsap
-        .timeline()
-        .to(wire, { strokeDashoffset: 0, duration: 0.32, ease: 'power1.in' })
-        .to(box, { opacity: 1, scale: 1, duration: 0.24, ease: 'back.out(1.6)' })
+    const tl = gsap.timeline()
+    // encendido de monitor: 3 escalones rápidos, no un fundido (lento e irregular = WCAG ok)
+    tl.fromTo(box, { opacity: 0 }, { keyframes: [{ opacity: 0.7, duration: 0.04 }, { opacity: 0.2, duration: 0.04 }, { opacity: 1, duration: 0.06 }] })
+    if (key === 'about') {
+      tl.add(decode(titleEl, c.title, 0.3), 0.04)
+      split?.revert()
+      split = SplitText.create(textEl, { type: 'lines', mask: 'lines' })
+      tl.from(split.lines, { yPercent: 100, duration: 0.32, stagger: 0.035, ease: 'power3.out' }, 0.12)
     } else {
-      gsap.to(box, { opacity: 1, scale: 1, duration: 0.24, ease: 'back.out(1.6)' })
+      const title = box.querySelector('.bio__box-title')
+      tl.add(decode(title, title.textContent, 0.28), 0.04)
+      if (key === 'tools') tl.fromTo(kids, { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.2, stagger: 0.022, ease: 'back.out(2)' }, 0.1)
+      else tl.fromTo(kids, { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.22, stagger: 0.045 }, 0.1)
     }
+    return track(tl)
   }
 
-  const hideBoxMobile = (key) => {
-    const box = el.querySelector(`.bio__box--${key}`)
-    const wire = wires.querySelector(`.bio__wire[data-for="${key}"]`)
-    const targets = [box, wire].filter(Boolean)
-    if (targets.length) gsap.to(targets, { opacity: 0, duration: 0.16, ease: 'power2.in' })
+  // ── DESKTOP: mira que se fija → línea → panel ──
+  const lockOn = (key) => {
+    const lock = lockOf[key]
+    const tag = tagOf[key]
+    const tl = gsap.timeline()
+    tl.set(lock, { opacity: 1 })
+      .fromTo(lock.firstChild, { opacity: 0, scale: 2.4 }, { opacity: 1, scale: 1, duration: 0.2, ease: 'power3.out' }, 0)
+      .set(tag, { opacity: 1 }, 0.08)
+      .add(decode(tag, tag.dataset.text, 0.22), 0.08)
+      .add(showWire(wireOf[key], 0.22), 0.1)
+      .add(fillBox(key), 0.28)
+    return track(tl)
   }
 
-  // caja activa por defecto = About ("¿Quién es Charlie?"), pedido explícito de Charlie (30/7)
-  const activateAnchor = (key, instant = false) => {
-    if (key === activeKey) return
-    if (activeKey) hideBoxMobile(activeKey)
-    activeKey = key
-    setRingActive(key)
-    showBoxMobile(key, instant)
-  }
-  rings.forEach((ring) => ring.addEventListener('click', () => activateAnchor(ring.dataset.anchor)))
-
-  const revealMobile = () => {
-    // contenido completo desde el inicio: la interacción se repite en cada tap, tipear de nuevo
-    // cada vez se sentiría lento — el patrón "línea → caja" (pedido de Charlie) ya aporta el ritmo.
-    titleEl.textContent = c.title
-    textEl.textContent = c.about
-    drawWires()
-    gsap.set(boxes, { opacity: 0, scale: 1, x: 0, y: 0 })
-    scene?.classList.remove('is-on', 'is-off')
-    if (quality.reducedMotion) {
-      scene?.classList.add('is-on')
-      activateAnchor('about', true)
-      return
-    }
-    void scene?.offsetWidth
-    scene?.classList.add('is-on')
-    gsap.delayedCall(0.56, () => activateAnchor('about')) // arranca al asentarse el flicker
-  }
-
-  // secuencia completa de encendido + cajas + tipeo (DESKTOP)
-  const reveal = () => {
-    if (isMobile) return revealMobile()
-    // rellena el texto para medir la altura REAL de las cajas (la de About crece con el párrafo)
-    // y dibujar los cables al punto correcto → luego se vacía para el tipeo.
-    titleEl.textContent = c.title
-    textEl.textContent = c.about
-    drawWires()
-    // fija la altura FINAL de la caja About (con el párrafo completo) como mínimo antes de vaciar
-    // el texto para el tipeo — si no, la caja "colapsa" a casi nada (solo el título vacío) durante
-    // el pop y luego crece de golpe a medida que se tipea, dando el efecto de "aparece arriba,
-    // lejos de donde empieza la caja real" que reportó Charlie.
-    if (aboutBox) aboutBox.style.minHeight = aboutBox.getBoundingClientRect().height + 'px'
-    const wireEls = [...wires.querySelectorAll('.bio__wire')]
-    if (quality.reducedMotion) {
-      gsap.set(boxes, { opacity: 1, x: 0, y: 0, scale: 1 })
-      gsap.set(['.bio__tool', '.bio__skills li'], { opacity: 1 })
-      wireEls.forEach((w) => (w.style.strokeDasharray = 'none'))
-      gsap.set(wireEls, { opacity: 1 })
-      return
-    }
-    titleEl.textContent = ''
-    textEl.textContent = ''
-    // encendido de la máquina de rayos X (flicker CSS)
-    scene?.classList.remove('is-on', 'is-off')
-    void scene?.offsetWidth
-    scene?.classList.add('is-on')
-
-    // prepara el "trazo" de cada cable: dasharray = longitud → se dibuja animando el offset a 0.
-    // el punto de partida del path es el ANCLA (drawWires ya lo deja así) → el trazo nace del
-    // esqueleto y avanza hacia la caja.
-    wireEls.forEach((w) => {
-      const len = w.getTotalLength ? w.getTotalLength() : 60
-      w.style.strokeDasharray = len
-      w.style.strokeDashoffset = len
-      w.style.opacity = 1
+  // ── CELULAR: un panel a la vez ──
+  const setActive = (key, instant = false) => {
+    if (key === active) return
+    const prev = active
+    active = key
+    ORDER.forEach((k) => {
+      const on = k === key
+      tabOf[k]?.setAttribute('aria-selected', String(on))
+      tabOf[k]?.setAttribute('tabindex', on ? '0' : '-1')
+      tabOf[k]?.classList.toggle('is-active', on)
+      ringOf[k]?.classList.toggle('is-active', on)
+      ringOf[k]?.setAttribute('aria-pressed', String(on))
+      lockOf[k].classList.toggle('is-active', on)
+      boxOf[k].hidden = !on
     })
-    gsap.set(boxes, { opacity: 0, scale: 0.4, x: 0, y: 0 })
+    ORDER.forEach((k) => k !== key && gsap.set(wireOf[k], { opacity: 0 }))
+    const tag = tagOf[key]
+    gsap.set(Object.values(tagOf), { opacity: 0 })
+    gsap.set([lockOf[key], tag], { opacity: 1 })
+    if (instant || quality.reducedMotion) {
+      tag.textContent = tag.dataset.text
+      showWire(wireOf[key], 0)
+      fillBox(key, true)
+      return
+    }
+    track(decode(tag, tag.dataset.text, 0.22))
+    track(showWire(wireOf[key], 0.26))
+    // el panel entra desde el lado hacia el que se avanzó (como al deslizar)
+    const dir = prev ? Math.sign(ORDER.indexOf(key) - ORDER.indexOf(prev)) : 0
+    const box = boxOf[key]
+    if (dir) track(gsap.fromTo(box, { x: dir * 28 }, { x: 0, duration: 0.26, ease: 'power3.out' }))
+    fillBox(key)
+  }
+  if (isMobile) {
+    Object.values(ringOf).forEach((r) => r.addEventListener('click', () => setActive(r.dataset.anchor)))
+    Object.values(tabOf).forEach((t) => t.addEventListener('click', () => setActive(t.dataset.anchor)))
+    // teclado en el tablist: flechas izquierda/derecha (patrón ARIA de pestañas)
+    tabsEl?.addEventListener('keydown', (e) => {
+      const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0
+      if (!step) return
+      const next = ORDER[(ORDER.indexOf(active) + step + ORDER.length) % ORDER.length]
+      setActive(next)
+      tabOf[next].focus()
+    })
+    // deslizar sobre el panel cambia de pestaña
+    let sx = 0
+    let sy = 0
+    el.addEventListener('touchstart', (e) => ([sx, sy] = [e.touches[0].clientX, e.touches[0].clientY]), { passive: true })
+    el.addEventListener(
+      'touchend',
+      (e) => {
+        if (!e.target.closest('.bio__box')) return
+        const dx = e.changedTouches[0].clientX - sx
+        const dy = e.changedTouches[0].clientY - sy
+        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+        const i = ORDER.indexOf(active) + (dx < 0 ? 1 : -1)
+        if (i >= 0 && i < ORDER.length) setActive(ORDER[i])
+      },
+      { passive: true },
+    )
+  }
 
-    // las 3 cajas aparecen UNA DESPUÉS DE OTRA (cable + caja + contenido completo) — no en
-    // paralelo. Charlie aclaró (29/7) que "se centran como grupo" era solo sobre los márgenes
-    // exteriores (arriba de Herramientas == abajo de Habilidades), no sobre el orden de aparición.
-    const WIRE_DUR = 0.32
-    const POP_DUR = 0.24
-    const GAP = 0.25 // pausa entre el fin de una caja y el inicio de la siguiente
-    const TITLE_DUR = 0.96
-    const TITLE_TO_TEXT_GAP = 0.14
-    const TEXT_DUR = 3.04
-    const TOOLS_STAGGER = 0.048
-    const TOOLS_DUR = 0.256
-    const SKILLS_STAGGER = 0.072
-    const SKILLS_DUR = 0.24
+  // ── B1: barra de escaneo ──
+  // xray = true → llega desde la lente del hero: el esqueleto ya se ve completo y la barra solo fija
+  // las miras.
+  const runScan = (onCross, xray) => {
+    const o = { p: 0 }
+    const crossed = new Set()
+    gsap.set(scan, { opacity: 1 })
+    return track(
+      gsap.to(o, {
+        p: 1,
+        duration: SCAN_DUR,
+        ease: 'none',
+        onUpdate: () => {
+          const pct = `${(o.p * 100).toFixed(2)}%`
+          if (!xray) scene.style.setProperty('--scan', pct)
+          scan.style.top = pct
+          ORDER.forEach((k) => {
+            if (!crossed.has(k) && o.p >= sceneFrac[k]) {
+              crossed.add(k)
+              onCross(k)
+            }
+          })
+        },
+        onComplete: () => {
+          scene.style.setProperty('--scan', '100%')
+          ORDER.forEach((k) => !crossed.has(k) && onCross(k)) // por si una mira quedó fuera de la escena
+          track(gsap.to(scan, { opacity: 0, duration: 0.2 }))
+        },
+      }),
+    )
+  }
 
-    const tl = gsap.timeline({ delay: 0.56 }) // arranca al asentarse el flicker
-    let t = 0
-    boxes.forEach((box) => {
-      const key = box.dataset.anchor
-      const wire = wires.querySelector(`.bio__wire[data-for="${key}"]`)
-      if (wire) tl.to(wire, { strokeDashoffset: 0, duration: WIRE_DUR, ease: 'power1.in' }, t)
-      tl.to(box, { opacity: 1, scale: 1, duration: POP_DUR, ease: 'back.out(1.6)' }, t + WIRE_DUR)
-      t += WIRE_DUR + POP_DUR
-      if (key === 'about') {
-        tl.add(() => typeInto(titleEl, c.title, TITLE_DUR), t)
-        t += TITLE_DUR + TITLE_TO_TEXT_GAP
-        tl.add(() => typeInto(textEl, c.about, TEXT_DUR, true), t)
-        t += TEXT_DUR
-      } else if (key === 'tools') {
-        tl.to(
-          '.bio__tool',
-          { opacity: 1, scale: 1, duration: TOOLS_DUR, ease: 'back.out(2)', stagger: TOOLS_STAGGER, startAt: { scale: 0.3 } },
-          t,
-        )
-        t += (TOOLS.length - 1) * TOOLS_STAGGER + TOOLS_DUR
-      } else if (key === 'skills') {
-        tl.to('.bio__skills li', { opacity: 1, x: 0, duration: SKILLS_DUR, stagger: SKILLS_STAGGER, startAt: { x: -12 } }, t)
-        t += (c.skills.length - 1) * SKILLS_STAGGER + SKILLS_DUR
+  const reveal = ({ xray = false } = {}) => {
+    layoutAll()
+    scene.classList.add('is-on')
+    if (quality.reducedMotion) {
+      scene.style.setProperty('--scan', '100%')
+      if (isMobile) {
+        gsap.set(Object.values(ringOf), { opacity: 1 })
+        gsap.set(tabsEl, { opacity: 1 })
+        setActive('about', true)
+      } else {
+        ORDER.forEach((k) => {
+          gsap.set([lockOf[k], tagOf[k]], { opacity: 1 })
+          tagOf[k].textContent = tagOf[k].dataset.text
+          showWire(wireOf[k], 0)
+          fillBox(k, true)
+        })
       }
-      t += GAP
-    })
+      return
+    }
+    if (xray) scene.style.setProperty('--scan', '100%')
+    if (!isMobile) return runScan(lockOn, xray)
+    // celular: los puntos aparecen al pasar la barra; al terminar sube el dossier con "Quién soy"
+    ORDER.forEach((k) => (boxOf[k].hidden = true))
+    runScan((k) => track(gsap.fromTo(ringOf[k], { opacity: 0, scale: 2 }, { opacity: 1, scale: 1, duration: 0.22, ease: 'power3.out' })))
+    track(
+      gsap.fromTo(
+        tabsEl,
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.3, ease: 'power3.out', delay: SCAN_DUR * 0.75, onStart: () => setActive('about') },
+      ),
+    )
   }
 
-  // apagado: primero se van las cajas/cables (rápido), y RECIÉN AHÍ parpadea el esqueleto SOLO
-  // (antes se desvanecía todo junto con bio.el y el parpadeo casi no se veía). onDone se llama
-  // cuando el flicker de apagado (CSS, ~0.95s) termina — el router oculta bio.el ahí.
-  const leave = (onDone) => {
+  // salida: se apagan paneles, líneas y miras; después la barra sube borrando el esqueleto. Con
+  // lens = true (vuelta a Inicio por la lente del hero, desktop) el esqueleto se queda: la lente lo
+  // cierra en el shader.
+  const leave = (onDone, { lens = false } = {}) => {
+    running.forEach((a) => a.kill())
+    running = []
     if (quality.reducedMotion) {
-      scene?.classList.remove('is-on', 'is-off')
       onDone?.()
       return
     }
-    const wireEls = [...wires.querySelectorAll('.bio__wire')]
-    // los aros (mobile) se apagan JUNTO con cajas/cables — antes se quedaban encendidos durante
-    // TODO el flicker de apagado del esqueleto (950ms) y recién desaparecían de golpe al ocultar
-    // .bio entero: se veían "flotando" sobre un esqueleto que ya se estaba yendo (Charlie 1/8).
-    gsap.to([...boxes, ...wireEls, ...rings], {
+    const parts = [...Object.values(boxOf), ...Object.values(lockOf), ...Object.values(wireOf), ...Object.values(ringOf), tabsEl].filter(Boolean)
+    gsap.to(parts, {
       opacity: 0,
-      duration: 0.22,
+      duration: 0.18,
       ease: 'power2.in',
       onComplete: () => {
-        scene?.classList.remove('is-on')
-        void scene?.offsetWidth
-        scene?.classList.add('is-off')
-        setTimeout(() => onDone?.(), 950) // dura lo mismo que la animación bioXrayOff (CSS)
+        if (lens) return onDone?.()
+        const o = { p: 1 }
+        gsap.set(scan, { opacity: 1 })
+        gsap.to(o, {
+          p: 0,
+          duration: 0.45,
+          ease: 'power1.in',
+          onUpdate: () => {
+            const pct = `${(o.p * 100).toFixed(2)}%`
+            scene.style.setProperty('--scan', pct)
+            scan.style.top = pct
+          },
+          onComplete: () => onDone?.(),
+        })
       },
     })
   }
 
-  // redibuja los cables al redimensionar (las cajas se mueven con la escena)
+  // al redimensionar: reubica miras/líneas (sin animar) y el párrafo vuelve a partir líneas solo
   let rt
-  addEventListener('resize', () => {
-    clearTimeout(rt)
-    rt = setTimeout(() => { if (!el.hidden) drawWires() }, 150)
-  }, { passive: true })
+  addEventListener(
+    'resize',
+    () => {
+      clearTimeout(rt)
+      rt = setTimeout(() => {
+        if (el.hidden) return
+        split?.revert()
+        split = null
+        layoutAll()
+        ORDER.forEach((k) => (wireOf[k].style.strokeDasharray = 'none'))
+      }, 150)
+    },
+    { passive: true },
+  )
 
   return { el, prepare, reveal, leave }
 }

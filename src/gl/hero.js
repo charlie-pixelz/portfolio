@@ -5,6 +5,7 @@
 // Fallback: reduced-motion / tier low → strengths 0 (estático). Sin WebGL → clase CSS.
 
 import { Program, Mesh, Plane, Texture } from 'ogl'
+import { gsap } from 'gsap'
 import { stage } from './stage.js'
 import { pointer } from '../core/pointer.js'
 import { quality } from '../core/quality.js'
@@ -36,6 +37,14 @@ const fragment = /* glsl */ `
                                 // borde real de la textura (H1: recorte 4-6%)
   uniform float uTime;
   uniform float uGlitch; // 0 = limpio · 1 = glitch máximo (transición de entrada)
+  uniform float uDrift;  // 1 = deriva ambiental normal · 0 = quieto (la lente de rayos X lo apaga al expandirse)
+  // B4 — lente de rayos X: muestra la radiografía (alineada al píxel con el hero, ADENDUM §4) dentro
+  // de un círculo. uLens = centro en coordenadas de la imagen (y hacia arriba), uLensR = radio en
+  // altos de imagen, uLensFill = 0..1 cuánto se completó la expansión a pantalla completa.
+  uniform sampler2D uXray;
+  uniform vec2 uLens;
+  uniform float uLensR;
+  uniform float uLensFill;
   varying vec2 vUv;
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(41.31, 289.17))) * 43758.5453); }
@@ -58,7 +67,9 @@ const fragment = /* glsl */ `
   void main() {
     // contain: la ilustración se ve completa (aspect-lock). Barras --void donde sobra,
     // para que la nav diegética caiga exacta sobre los edificios (ADENDUM §1).
-    vec3 voidc = vec3(0.0, 0.0039, 0.0824); // #000115
+    // al completarse la lente, las barras toman el fondo de Biografía (#000206): el cambio a esa
+    // página no se nota
+    vec3 voidc = mix(vec3(0.0, 0.0039, 0.0824), vec3(0.0, 0.0078, 0.0235), uLensFill); // #000115 → #000206
     float ra = uResolution.x / uResolution.y;
     float ia = uImageSize.x / uImageSize.y;
     vec2 scale = ra > ia ? vec2(ia / ra, 1.0) : vec2(1.0, ra / ia);
@@ -82,7 +93,7 @@ const fragment = /* glsl */ `
     vec2 suv = (cuv - 0.5) / uZoom + 0.5;
 
     vec2 drift = vec2(sin(uTime * 0.25), cos(uTime * 0.2)) * 0.18;
-    vec2 look = uMouse + drift;
+    vec2 look = uMouse + drift * uDrift;
 
     vec3 comp;
     if (g > 0.001) {
@@ -94,6 +105,20 @@ const fragment = /* glsl */ `
       comp += (st - 0.5) * 0.35 * g;
     } else {
       comp = scene(suv, look);
+    }
+
+    if (uLensR > 0.0005) {
+      vec2 d = (cuv - uLens) * vec2(ia, 1.0);
+      float dist = length(d);
+      float px = 1.0 / (uResolution.y * scale.y); // un píxel de pantalla, en altos de imagen
+      float inside = 1.0 - smoothstep(uLensR - px * 1.5, uLensR, dist);
+      // la radiografía se mueve con el PERSONAJE (el esqueleto va debajo de él)
+      vec3 xr = texture2D(uXray, suv + look * uStrengthChar).rgb;
+      comp = mix(comp, xr, inside);
+      // aro fósforo de ~2 px con un halo corto; se apaga al completarse la expansión
+      float e = abs(dist - uLensR);
+      float ring = (1.0 - smoothstep(px, px * 2.5, e)) + exp(-e / (px * 9.0)) * 0.3;
+      comp += vec3(0.2, 1.0, 0.4) * ring * (1.0 - uLensFill);
     }
 
     // difuminar bordes hacia --void: disuelve la costura de las barras (aspect-lock)
@@ -113,7 +138,15 @@ const SIGN_DEPTH = {
   mobile: { home: 1.09, projects: 0.6, bio: 0.91, contacto: 1.4 },
 }
 
-export function initHero(bgUrl, charUrl, depthUrl) {
+// B4 — lente de rayos X (solo desktop). El router la usa como transición Inicio ↔ Biografía cuando
+// está lista; si no (celular, movimiento reducido, textura sin bajar), sigue con el fundido.
+export const heroLens = { ready: false, expand: (done) => done(), contract: (done) => done() }
+// centro del cráneo en la imagen (x desde la izquierda, y desde ABAJO), medido sobre bio_desktop_2400w
+const HEAD = [0.495, 0.574]
+const LENS_R = 0.15 // radio de la lente al pasar por el letrero, en altos de imagen
+const LENS_FULL = 1.15 // radio que cubre todo el encuadre desde el cráneo (esquina más lejana ≈ 1.0)
+
+export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
   const renderer = stage.renderer
   if (!renderer) {
     document.body.classList.add('no-webgl') // fallback CSS
@@ -125,6 +158,7 @@ export function initHero(bgUrl, charUrl, depthUrl) {
   const uBg = new Texture(gl, texOpts)
   const uChar = new Texture(gl, texOpts)
   const uDepth = new Texture(gl, texOpts)
+  const uXray = new Texture(gl, texOpts)
 
   const isMobileLayout = document.documentElement.classList.contains('is-mobile')
 
@@ -169,6 +203,11 @@ export function initHero(bgUrl, charUrl, depthUrl) {
       uZoom: { value: 1.05 }, // overscan 5% (H1: rango pedido 4-6%)
       uTime: { value: 0 },
       uGlitch: { value: still ? 0 : 1 }, // entra glitcheado y se resuelve (continúa la transición del preloader)
+      uDrift: { value: 1 },
+      uXray: { value: uXray },
+      uLens: { value: [...HEAD] },
+      uLensR: { value: 0 },
+      uLensFill: { value: 0 },
     },
   })
   const mesh = new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program })
@@ -231,6 +270,82 @@ export function initHero(bgUrl, charUrl, depthUrl) {
     { passive: true },
   )
 
+  // ── B4: lente de rayos X ──
+  // Al pasar el cursor por el letrero "Biografía" se abre una lente sobre el cráneo del personaje (el
+  // letrero está sobre la calle, no sobre él: una lente bajo el cursor mostraría solo la calle en
+  // radiografía). Mover el cursor dentro del letrero la corre un poco, como un visor. Al hacer clic,
+  // la lente se expande a toda la pantalla y esa es la transición a Biografía.
+  const lensable = !!xrayUrl && !isMobileLayout && !quality.isTouch && !still
+  const L = { r: 0, fill: 0, x: HEAD[0], y: HEAD[1] }
+  const off = { x: 0, y: 0 }
+  let hover = false
+  let transit = false
+  if (lensable) {
+    let loading = false
+    const loadXray = () => {
+      if (loading) return
+      loading = true
+      const img = new Image()
+      img.onload = () => {
+        uXray.image = img
+        heroLens.ready = true
+      }
+      img.src = xrayUrl
+    }
+    // se baja con la primera señal de intención hacia Biografía (letrero o menú), no con la carga
+    const intent = (e) => e.target.closest?.('[data-route="bio"]') && loadXray()
+    document.addEventListener('pointerover', intent, { passive: true })
+    document.addEventListener('focusin', intent)
+    const bioSign = document.querySelector('.sign[data-route="bio"]')
+    bioSign?.addEventListener('pointerenter', () => (hover = true))
+    bioSign?.addEventListener('pointerleave', () => (hover = false))
+    bioSign?.addEventListener('pointermove', (e) => {
+      const r = bioSign.getBoundingClientRect()
+      off.x = ((e.clientX - r.left) / r.width - 0.5) * 2
+      off.y = -((e.clientY - r.top) / r.height - 0.5) * 2
+    })
+    const U = program.uniforms
+    heroLens.expand = (done) => {
+      transit = true
+      gsap.to(L, { r: LENS_FULL, duration: 0.62, ease: 'power2.in' })
+      gsap.to(L, { fill: 1, duration: 0.25, delay: 0.37, ease: 'none' })
+      // al terminar, encuadre idéntico al de la página de Biografía: sin overscan ni deriva
+      gsap.to(U.uZoom, { value: 1, duration: 0.62, ease: 'power2.inOut' })
+      gsap.to(U.uDrift, {
+        value: 0,
+        duration: 0.62,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          hover = false
+          done()
+        },
+      })
+    }
+    // vuelta: arranca con la lente completa (misma imagen que la página que se va) y la cierra
+    heroLens.contract = (done) => {
+      transit = true
+      gsap.to(L, { fill: 0, duration: 0.2, ease: 'none' })
+      gsap.to(L, { r: 0, duration: 0.6, ease: 'power2.out' })
+      gsap.to(U.uZoom, { value: 1.05, duration: 0.6, ease: 'power2.inOut' })
+      gsap.to(U.uDrift, {
+        value: 1,
+        duration: 0.6,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          transit = false
+          done()
+        },
+      })
+    }
+    heroLens.full = () => {
+      gsap.killTweensOf([L, U.uZoom, U.uDrift])
+      Object.assign(L, { r: LENS_FULL, fill: 1, x: HEAD[0], y: HEAD[1] })
+      U.uZoom.value = 1
+      U.uDrift.value = 0
+      transit = true
+    }
+  }
+
   // El router "asienta" el hero al salir a Biografía (recentra el personaje, sin parallax del
   // mouse) y lo reactiva al volver. Lerp hacia el objetivo para que la vuelta al centro no salte.
   let settled = false
@@ -251,6 +366,18 @@ export function initHero(bgUrl, charUrl, depthUrl) {
     hm.x += (tx - hm.x) * 0.12
     hm.y += (ty - hm.y) * 0.12
     program.uniforms.uMouse.value = [hm.x, hm.y]
+    if (lensable) {
+      if (!transit) {
+        const k = 1 - Math.exp(-dt * 12)
+        L.r += ((hover && heroLens.ready ? LENS_R : 0) - L.r) * k
+        const kp = 1 - Math.exp(-dt * 8)
+        L.x += (HEAD[0] + (hover ? off.x * 0.05 : 0) - L.x) * kp
+        L.y += (HEAD[1] + (hover ? off.y * 0.04 : 0) - L.y) * kp
+      }
+      program.uniforms.uLensR.value = L.r < 0.001 ? 0 : L.r
+      program.uniforms.uLensFill.value = L.fill
+      program.uniforms.uLens.value = [L.x, L.y]
+    }
     if (entering) {
       const g = Math.max(0, program.uniforms.uGlitch.value - dt / ENTER)
       program.uniforms.uGlitch.value = g

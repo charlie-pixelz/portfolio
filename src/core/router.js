@@ -20,6 +20,7 @@
 import { gsap } from 'gsap'
 import { quality } from './quality.js'
 import { flattenScreen } from '../ui/screens.js'
+import { heroLens } from '../gl/hero.js'
 
 const SEG = { es: 'proyectos', en: 'projects' }
 const BIO = { es: 'biografia', en: 'biography' }
@@ -527,6 +528,21 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
   const homeToBio = (done) => {
     // recentra el personaje del hero (sin parallax del mouse) antes de fundir a la escena
     dispatchEvent(new Event('cp:hero-settle'))
+    // B4 (desktop): la lente de rayos X se expande desde el cráneo hasta llenar la pantalla; al
+    // terminar, el canvas muestra EXACTAMENTE la escena de Biografía y el cambio es invisible.
+    if (heroLens.ready && !isMobile) {
+      gsap.to(hero, { opacity: 0, duration: 0.3, ease: 'power2.in' }) // letreros y logo se retiran
+      heroLens.expand(() => {
+        bio.el.hidden = false
+        bio.prepare()
+        gsap.set(bio.el, { opacity: 1 })
+        bio.reveal({ xray: true })
+        hero.hidden = true
+        gsap.set(hero, { clearProps: 'opacity' })
+        done()
+      })
+      return
+    }
     bio.el.hidden = false
     bio.prepare()
     gsap.set(bio.el, { opacity: 0 })
@@ -545,6 +561,25 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
 
   // Parte: bio visible. Llega a: hero visible, bio oculto.
   const bioToHome = (done) => {
+    // B4 (desktop): el hero vuelve DEBAJO de Biografía con la lente completa (misma imagen), se
+    // apagan paneles y miras, y la lente se cierra sobre el cráneo
+    if (heroLens.ready && !isMobile) {
+      heroLens.full()
+      gsap.set(hero, { opacity: 0 })
+      hero.hidden = false
+      bio.leave(
+        () => {
+          bio.el.hidden = true
+          bio.prepare()
+          dispatchEvent(new Event('cp:hero-resume'))
+          dispatchEvent(new Event('cp:refit-signs'))
+          gsap.to(hero, { opacity: 1, duration: 0.35, delay: 0.25, ease: 'power2.out', clearProps: 'opacity' })
+          heroLens.contract(done)
+        },
+        { lens: true },
+      )
+      return
+    }
     hero.hidden = false
     dispatchEvent(new Event('cp:hero-resume'))
     bio.leave?.(() => {

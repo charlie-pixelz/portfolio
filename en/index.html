@@ -119,14 +119,18 @@
     </section>
     <section class="bio" hidden aria-label="Biography">
       <div class="bio__scene">
-        <svg class="bio__wires" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
-        <!-- Mobile: green rings over the skeleton — tapping one activates that box (one at a time). -->
+        <!-- B1: barra de escaneo. El esqueleto se ve solo por encima de ella (--scan, ver bio.js). -->
+        <div class="bio__scan" aria-hidden="true"></div>
+        <!-- Mobile: points on the skeleton — tapping one opens its tab. Placed by bio.js. -->
         <div class="bio__rings">
-          <button class="bio__ring" type="button" data-anchor="tools" style="left: 35%; top: 43%" aria-label="Tools"></button>
-          <button class="bio__ring" type="button" data-anchor="about" style="left: 30%; top: 64%" aria-label="Who is Charlie?"></button>
-          <button class="bio__ring" type="button" data-anchor="skills" style="left: 92%; top: 80%" aria-label="Skills"></button>
+          <button class="bio__ring" type="button" data-anchor="tools" aria-label="Tools"></button>
+          <button class="bio__ring" type="button" data-anchor="about" aria-label="Who is Charlie?"></button>
+          <button class="bio__ring" type="button" data-anchor="skills" aria-label="Skills"></button>
         </div>
       </div>
+      <!-- B2: líneas guía y miras, en px de la ventana (las crea bio.js) -->
+      <svg class="bio__wires" aria-hidden="true"></svg>
+      <div class="bio__locks" aria-hidden="true"></div>
       <!-- Las cajas van FUERA de .bio__scene a propósito: la escena está bloqueada al aspecto de
            la radiografía (2400/1465) y queda apaisada con ~10% de espacio muerto a cada lado. Si
            las cajas vivieran dentro, jamás podrían usar ese margen (por eso "no se movían"). Aquí
@@ -147,6 +151,8 @@
           <ul class="bio__skills"></ul>
         </aside>
       </div>
+      <!-- B3: pestañas del dossier (solo celular; las crea bio.js) -->
+      <div class="bio__tabs"></div>
       <div class="bio__crumb">
         <button class="bio__back" data-route="home" aria-label="Back to Home">‹ Home</button>
         <span class="bio__name">Biography</span>

@@ -145,7 +145,7 @@ if (lang) {
     initHero(heroMobileBgUrl, heroMobileCharUrl, heroMobileDepthUrl) // mismo shader multi-capa que desktop
     applyMobileSignLayout()
   } else {
-    initHero(heroBgUrl, heroCharUrl, heroDepthUrl) // hero multi-capa (shader de profundidad) en desktop
+    initHero(heroBgUrl, heroCharUrl, heroDepthUrl, bioUrl) // hero multi-capa (shader de profundidad) en desktop; bioUrl = radiografía para la lente (B4)
   }
   initSigns() // iguala el ancho de las sílabas de los letreros (no-op si el nav está oculto)
   initCharlie() // glitch/swap por carácter del lockup al hover (P2.B)
