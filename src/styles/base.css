@@ -1795,6 +1795,85 @@ body.route-category .crt {
   }
 }
 
+/* H3 — cursor retícula (capa OS). Nunca reemplaza al cursor del sistema: va encima, sin eventos. */
+.reticle {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 70; /* sobre el glitch de cambio de canal (z60): es capa OS, se ve en las transiciones */
+  pointer-events: none;
+  color: var(--phosphor);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  will-change: transform;
+}
+.reticle.is-on {
+  opacity: 1;
+}
+.reticle.is-down {
+  opacity: 0.6;
+}
+.reticle__ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 4px var(--phosphor-glow));
+  transition:
+    width 0.18s ease,
+    height 0.18s ease;
+}
+.reticle__ring path {
+  vector-effect: non-scaling-stroke;
+}
+.reticle__ring rect {
+  fill: currentColor;
+  stroke: none;
+}
+.reticle[data-state='link'] .reticle__ring {
+  width: 32px;
+  height: 32px;
+}
+.reticle[data-state='entrar'] .reticle__ring,
+.reticle[data-state='ver'] .reticle__ring {
+  width: 40px;
+  height: 40px;
+}
+.reticle__label {
+  position: absolute;
+  left: 30px;
+  top: 0;
+  font-family: var(--font-pixel);
+  font-variation-settings:
+    'wght' 600,
+    'ELGR' 2;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: 0 0 6px var(--phosphor-glow);
+  opacity: 0;
+  transform: translate(-4px, -50%);
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.reticle[data-state='entrar'] .reticle__label,
+.reticle[data-state='ver'] .reticle__label {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+@media (hover: none) {
+  .reticle {
+    display: none;
+  }
+}
 /* ── Menú "Pip-Boy": botón fijo (esq. sup. der.) + panel .os-frame desplegable (nav + idioma) ── */
 .pipboy {
   position: fixed;

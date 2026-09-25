@@ -59,6 +59,7 @@ import { initBio } from './ui/bio.js'
 import { initContacto } from './ui/contacto.js'
 import { initMenu } from './ui/menu.js'
 import { initCharlie } from './ui/charlie.js'
+import { initCursor } from './ui/cursor.js'
 import { initRouter } from './core/router.js'
 import { initDebug } from './core/debug.js'
 
@@ -251,6 +252,7 @@ if (lang) {
       : { sceneUrl: heroCleanUrl, preloadUrls: [heroBgUrl, heroCharUrl] },
   )
 }
+initCursor({ lang: lang || 'es' }) // retícula (H3): capa OS sobre el cursor del sistema, solo mouse
 initDebug()
 ticker.add((t, dt) => stage.render(dt)) // render AL FINAL del frame, tras las actualizaciones
 ticker.start()
