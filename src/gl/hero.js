@@ -398,7 +398,8 @@ export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
   // 8 cuadros/s se ve igual que a 60. Ahí se dibuja 1 de cada ~8 cuadros: menos trabajo del
   // procesador por cuadro (letreros + shader), menos batería, y menos "Total Blocking Time" en
   // PageSpeed (60 → objetivo 85). Cualquier movimiento vuelve al ritmo completo en el acto.
-  const IDLE_MS = 125
+  // sin GPU (stage.software) cada cuadro cuesta mucho más: en reposo, 4 por segundo
+  const IDLE_MS = stage.software ? 250 : 125
   let lastDraw = 0
 
   ticker.add((t, dt) => {
@@ -413,6 +414,7 @@ export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
     const busy =
       Math.abs(tx - hm.x) + Math.abs(ty - hm.y) > 0.0005 ||
       entering ||
+      program.uniforms.uGlitch.value > 0.001 || // glitch de llegada: a 8 fps sus bandas "pestañeaban"
       transit ||
       hover ||
       L.r > 0.001 ||

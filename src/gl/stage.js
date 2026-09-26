@@ -8,6 +8,7 @@ import { quality } from '../core/quality.js'
 let renderer
 let scene
 let idle = false // true = el último frame ya limpió el canvas y no hay nada visible que dibujar
+let drew = false // el cuadro anterior se dibujó (en reposo, el siguiente tick mide cuánto costó)
 
 // Resolución dinámica: si el dispositivo no sostiene ~45 fps con el shader a pantalla completa,
 // se baja la densidad de píxeles del canvas por pasos (el CRT/grano disimula la pérdida de nitidez)
@@ -51,6 +52,19 @@ export const stage = {
     }
     gl.clearColor(0, 0, 0, 0) // transparente hasta que una escena lo llene
 
+    // Sin aceleración por hardware (el navegador dibuja WebGL con el procesador: SwiftShader,
+    // llvmpipe…; pasa en máquinas virtuales, GPUs bloqueadas y en el entorno de PageSpeed) cada
+    // cuadro del shader a pantalla completa cuesta decenas de ms de CPU. Ahí se arranca a la
+    // densidad mínima en vez de esperar a que adapt() la baje paso a paso.
+    try {
+      const info = gl.getExtension('WEBGL_debug_renderer_info')
+      const name = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER))
+      if (/swiftshader|llvmpipe|softpipe|software|basic render/i.test(name)) {
+        stage.software = true
+        renderer.dpr = 0.5
+      }
+    } catch {}
+
     const canvas = gl.canvas
     canvas.id = 'gl'
     canvas.setAttribute('aria-hidden', 'true')
@@ -68,14 +82,23 @@ export const stage = {
   // que el intervalo entre cuadros no dice nada del rendimiento del equipo (no se mide)
   hold: false,
   calm: false,
+  software: false,
   render(dt = 0) {
-    if (!renderer || this.hold) return
+    if (!renderer) return
+    if (this.hold) {
+      // reposo: este tick no dibuja, pero su dt es lo que tardó el cuadro anterior → sí se mide
+      // (sin esto la resolución nunca bajaba en reposo y cada cuadro salía carísimo)
+      if (drew && !document.hidden) adapt(dt)
+      drew = false
+      return
+    }
     // sin nada visible (p.ej. el hero oculto en otra sección): se dibuja UNA vez más para limpiar
     // el canvas y después se deja de renderizar hasta que algo vuelva a ser visible
     const active = scene.children.some((c) => c.visible)
     if (!active && idle) return
     idle = !active
     renderer.render({ scene })
+    drew = active
     if (active && !this.calm) adapt(dt)
   },
   get renderer() {

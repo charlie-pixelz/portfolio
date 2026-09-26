@@ -22,7 +22,6 @@ const CONTENT = {
     copied: 'Copiado',
     copiedSr: 'Email copiado al portapapeles',
     cv: 'Descargar PDF',
-    cvAlt: { label: 'EN', aria: 'Descargar CV en inglés' },
   },
   en: {
     tagline: 'Shall we create something amazing?', // va en 2 líneas (caja más alta)
@@ -32,11 +31,11 @@ const CONTENT = {
     copied: 'Copied',
     copiedSr: 'Email copied to clipboard',
     cv: 'Download PDF',
-    cvAlt: { label: 'ES', aria: 'Download CV in Spanish' },
   },
 }
 const EMAIL = 'c.perez.grafica@gmail.com'
-// C1: el PDF del idioma de la página + un acceso chico al otro (servidos desde public/cv/)
+// C1: solo el PDF del idioma de la página (public/cv/). Charlie (26/9) quitó el acceso al otro
+// idioma: daba la impresión de que solo ese se podía descargar
 const CV = { es: '/cv/CV_Carlos_Perez_2026_ES.pdf', en: '/cv/CV_Carlos_Perez_2026_EN.pdf' }
 // links reales (los abre el usuario con su clic; wa.me/linkedin en pestaña nueva)
 const LINKS = [
@@ -49,7 +48,6 @@ export function initContacto({ lang, isMobile = false }) {
   const el = document.querySelector('.contacto')
   if (!el) return null
   const c = CONTENT[lang] || CONTENT.es
-  const other = lang === 'en' ? 'es' : 'en'
   const video = el.querySelector('.contacto__video')
   const taglineEl = el.querySelector('.contacto__tagline')
   const linksUl = el.querySelector('.contacto__links')
@@ -88,7 +86,6 @@ export function initContacto({ lang, isMobile = false }) {
         `<span class="contacto__link-value">${l.value}</span></a>` +
         // C2: copiar el email sin depender de un cliente de correo configurado
         (l.copy ? `<button class="contacto__chip" type="button" data-copy>${c.copy}</button>` : '') +
-        (l.download ? `<a class="contacto__chip" href="${CV[other]}" download data-ev="cv-${other}" hreflang="${other}" aria-label="${c.cvAlt.aria}">${c.cvAlt.label}</a>` : '') +
         `</li>`,
     )
     .join('')
