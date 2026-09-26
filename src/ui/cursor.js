@@ -3,7 +3,7 @@
 // agrega los corchetes y la etiqueta, que se cierran con inercia alrededor de ese punto al entrar a
 // algo clickeable y se estiran con la velocidad. No existe en touch ni con movimiento reducido (ahí
 // el CSS usa una retícula estática como cursor nativo).
-// Estados por `data-cursor`: 'entrar' / 'ver' muestran etiqueta; otro link o botón, solo corchetes.
+// Estados por `data-cursor`: 'entrar' / 'ver' / 'ampliar' muestran etiqueta; otro link o botón, solo corchetes.
 
 import { ticker } from '../core/ticker.js'
 import { damp } from '../core/math.js'
@@ -11,14 +11,15 @@ import { pointer } from '../core/pointer.js'
 import { quality } from '../core/quality.js'
 
 const LABELS = {
-  es: { entrar: 'ENTRAR', ver: 'VER' },
-  en: { entrar: 'ENTER', ver: 'VIEW' },
+  es: { entrar: 'ENTRAR', ver: 'VER', ampliar: 'AMPLIAR' },
+  en: { entrar: 'ENTER', ver: 'VIEW', ampliar: 'ZOOM' },
 }
 
 // quién declara qué estado: se asigna acá para no ensuciar el HTML de las dos rutas de idioma
 const STATES = [
   ['.sign', 'entrar'],
   ['.screen[data-cat]', 'ver'],
+  ['.cat__canvas', 'ampliar'], // G1: la obra se abre en el visor
 ]
 // sin retícula: texto que los corchetes tapaban y que ya tiene hover propio (espejo del CSS)
 const NO_RETICLE = '.pipboy__panel, .contacto__links'

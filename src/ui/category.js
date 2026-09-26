@@ -5,6 +5,7 @@
 import { gsap } from 'gsap'
 import { quality } from '../core/quality.js'
 import casos from '../../files/proyectos/casos.json'
+import { createViewer } from './viewer.js'
 
 // Media OPTIMIZADA (la genera `npm run media`; los originales viven en _src/, fuera del bundle).
 // Se indexa por id ("ia-3") con todas sus variantes: avif/webp (+ jpg/png del máster como último
@@ -24,6 +25,11 @@ for (const [path, url] of Object.entries(files)) {
 }
 const idOf = (file) => file.replace(/\.\w+$/, '')
 const srcOf = (it) => media[idOf(it.media)] || {}
+
+const UI = {
+  es: { works: 'Obras', work: (n, t) => `Obra ${n}: ${t}`, zoom: (t) => `Ampliar: ${t}` },
+  en: { works: 'Works', work: (n, t) => `Work ${n}: ${t}`, zoom: (t) => `Enlarge: ${t}` },
+}
 
 const CAT_TITLE = {
   ilustracion: { es: 'Ilustraciones', en: 'Illustrations' },
@@ -46,6 +52,62 @@ export function initCategory({ lang }) {
   const prevBtn = el.querySelector('.cat__arrow--prev')
   const nextBtn = el.querySelector('.cat__arrow--next')
   const reveal = [...el.querySelectorAll('.cat__reveal')] // flechas, caja, volver → aparecen tras el encendido
+  const ui = UI[lang] || UI.es
+
+  // G2: índice de obras (marcas pixeladas clickeables) en lugar del "1 / 4"
+  const indexEl = document.createElement('div')
+  indexEl.className = 'cat__index'
+  indexEl.setAttribute('role', 'group')
+  indexEl.setAttribute('aria-label', ui.works)
+  counterEl?.replaceWith(indexEl)
+  indexEl.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-i]')
+    if (b) move(Number(b.dataset.i) - idx)
+  })
+  const buildIndex = () => {
+    indexEl.innerHTML = items.length > 1 ? items.map((it, i) => `<button type="button" data-i="${i}" aria-label="${ui.work(i + 1, it.title[lang])}" title="${it.title[lang]}"></button>`).join('') : ''
+  }
+
+  // G1: la obra se amplía al hacer clic (o Enter/Espacio con el foco en el lienzo)
+  canvas.setAttribute('role', 'button')
+  canvas.tabIndex = 0
+  let mainNode = null
+  let mainMedia = null
+  const meta = () => ({ title: items[idx]?.title[lang] || '', index: idx, count: items.length })
+  const giveBack = (n) => n && canvas.append(n)
+  const viewer = createViewer({
+    lang,
+    onNav: (d) => move(d),
+    onClose: () => viewer.close(canvas.getBoundingClientRect(), giveBack),
+  })
+  const openViewer = () => {
+    if (!mainNode || viewer.isOpen()) return
+    viewer.open(mainMedia, mainNode, meta(), canvas.getBoundingClientRect(), canvas)
+    count(items[idx], 'ampliar', 0)
+  }
+  canvas.addEventListener('click', openViewer)
+  canvas.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return
+    e.preventDefault()
+    openViewer()
+  })
+
+  // G5: un evento de GoatCounter por obra vista (tras 1.5 s en pantalla, una vez por sesión) y otro
+  // por obra ampliada: al mandar el link a una empresa se sabe qué proyectos abrió (objetivo de F1)
+  const counted = new Set()
+  let dwell
+  const count = (it, kind = 'obra', delay = 1500) => {
+    if (!it) return
+    const id = `${kind}-${idOf(it.media)}`
+    const send = () => {
+      if (el.hidden || counted.has(id)) return
+      counted.add(id)
+      window.goatcounter?.count?.({ path: id, title: it.title.es, event: true })
+    }
+    if (!delay) return send()
+    clearTimeout(dwell)
+    dwell = setTimeout(send, delay)
+  }
 
   // botón de audio (solo obras con sonido). Se crea una vez; render() lo muestra/oculta.
   const muteBtn = document.createElement('button')
@@ -132,20 +194,31 @@ export function initCategory({ lang }) {
     const it = items[idx]
     if (!it) return
     canvas.querySelectorAll('video').forEach((v) => v.pause())
+    mainMedia?.pause?.() // si estaba prestada al visor, no vive en el lienzo
     canvas.textContent = ''
 
     // relleno de las zonas vacías (obras que no calzan con el lienzo horizontal, p. ej. verticales):
     // copia del mismo medio en "cover" borroso ("relleno de la obra"), o un color fijo (it.bg).
-    const heavy = quality.tier !== 'low'
+    // G3: en videos el relleno es su poster (una imagen quieta): antes era una segunda copia del
+    // video, que el navegador decodificaba y desenfocaba en cada cuadro
+    const poster = it.type === 'video' && srcOf(it).poster
     if (it.bg) {
       const fill = document.createElement('div')
       fill.className = 'cat__fill'
       fill.style.background = it.bg
       canvas.appendChild(fill)
-    } else if (it.type === 'image' || heavy) {
+    } else if (it.type === 'image') {
       const fill = makeMedia(it, true)
       fill.el.className = 'cat__fill cat__fill--media'
       canvas.appendChild(fill.node)
+    } else if (poster) {
+      const fill = document.createElement('img')
+      fill.className = 'cat__fill cat__fill--media'
+      fill.alt = ''
+      fill.setAttribute('aria-hidden', 'true')
+      fill.decoding = 'async'
+      fill.src = poster
+      canvas.appendChild(fill)
     } else {
       const fill = document.createElement('div')
       fill.className = 'cat__fill' // fallback oscuro (CSS) en tier bajo con video
@@ -158,7 +231,12 @@ export function initCategory({ lang }) {
     if (it.fit === 'cover') media.classList.add('cat__media--cover')
     canvas.appendChild(node)
     currentMedia = it.type === 'video' ? media : null
+    mainNode = node
+    mainMedia = media
     preloaded.add(it.media)
+    canvas.setAttribute('aria-label', ui.zoom(it.title[lang]))
+    // con el visor abierto, la obra nueva pasa directo a él
+    if (viewer.isOpen()) viewer.update(media, node, meta())
 
     // botón de audio solo si la obra tiene sonido (it.sound)
     if (it.type === 'video' && it.sound) {
@@ -171,7 +249,8 @@ export function initCategory({ lang }) {
     titleEl.textContent = it.title[lang]
     descEl.textContent = it.desc[lang]
     tagsEl.innerHTML = it.tags.map((t) => `<li>${t}</li>`).join('')
-    if (counterEl) counterEl.textContent = `${idx + 1} / ${items.length}`
+    indexEl.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-current', String(i === idx)))
+    count(it)
     if (linkEl) {
       if (it.link) {
         linkEl.href = it.link
@@ -199,7 +278,7 @@ export function initCategory({ lang }) {
   })
   // teclado (← →) y swipe horizontal en touch: lo esperable en un carrusel, sin tocar la UI
   document.addEventListener('keydown', (e) => {
-    if (el.hidden || e.altKey || e.metaKey || e.ctrlKey || /input|textarea|select/i.test(e.target.tagName)) return
+    if (el.hidden || viewer.isOpen() || e.altKey || e.metaKey || e.ctrlKey || /input|textarea|select/i.test(e.target.tagName)) return
     if (e.key === 'ArrowRight') move(1)
     else if (e.key === 'ArrowLeft') move(-1)
   })
@@ -219,8 +298,10 @@ export function initCategory({ lang }) {
 
   // poblar SIN encender (lámparas apagadas, chrome oculto) — lo llama el router antes del zoom
   const prepare = (cat) => {
+    viewer.close(null, giveBack, true)
     items = casos[cat] || []
     idx = 0
+    buildIndex()
     if (nameEl) nameEl.textContent = CAT_TITLE[cat]?.[lang] || ''
     render()
     preloadNeighbors()
@@ -246,6 +327,8 @@ export function initCategory({ lang }) {
   }
 
   const reset = () => {
+    viewer.close(null, giveBack, true) // se sale de la categoría con el visor abierto
+    clearTimeout(dwell)
     canvas.querySelectorAll('video').forEach((v) => v.pause())
   }
 

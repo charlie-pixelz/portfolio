@@ -691,11 +691,42 @@ body.route-room .crt {
   text-shadow: 0 0 10px var(--phosphor-glow);
   line-height: 1.05;
 }
-.cat__counter {
+/* G2: índice de obras — marcas pixeladas clickeables en lugar del "1 / 4" */
+.cat__index {
   flex: none;
-  font-family: var(--font-pixel);
-  font-size: clamp(0.6rem, 1.5cqw, 1rem);
-  color: var(--phosphor-dim);
+  display: flex;
+  align-items: center;
+}
+.cat__index button {
+  position: relative;
+  width: clamp(22px, 2.2cqw, 30px);
+  height: clamp(22px, 2.2cqw, 30px);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.cat__index button::before {
+  content: '';
+  position: absolute;
+  inset: 32%;
+  border: 1.5px solid var(--phosphor-dim);
+  background: rgba(1, 12, 5, 0.4);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.cat__index button:hover::before {
+  border-color: var(--phosphor);
+}
+.cat__index button[aria-current='true']::before {
+  background: var(--phosphor);
+  border-color: var(--phosphor);
+  box-shadow: 0 0 8px var(--phosphor-glow);
+}
+.cat__index button:focus-visible {
+  outline: 2px dashed var(--phosphor);
+  outline-offset: -2px;
 }
 .cat__desc {
   font-size: clamp(0.68rem, 1.42cqw, 1rem);
@@ -1021,9 +1052,6 @@ body.route-category .crt {
   .cat__title {
     font-size: clamp(1.15rem, 5.5cqw, 1.7rem);
   }
-  .cat__counter {
-    font-size: clamp(0.75rem, 3cqw, 1rem);
-  }
   .cat__desc {
     font-size: clamp(0.8rem, 3cqw, 0.95rem); /* -1 punto: pedido de Charlie, límite antes de ilegible */
   }
@@ -1044,6 +1072,155 @@ body.route-category .crt {
   .projects-menu {
     display: none !important;
   }
+}
+
+/* ── G1 (revisión 25/9): visor a pantalla completa ──
+   Por encima del CRT (z2) y del menú (z40): acá se evalúa el detalle de la obra, sin scanlines.
+   Bajo el glitch de canal (z60) y la retícula del cursor (z70). viewer.js lo arma y lo anima. */
+.cat__canvas {
+  cursor: zoom-in; /* respaldo sin la retícula (touch no lo usa; con mouse el CSS del cursor manda) */
+}
+.cat__canvas:focus-visible {
+  outline: 2px dashed var(--phosphor);
+  outline-offset: 4px;
+}
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  touch-action: none; /* el pellizco y el arrastre los maneja viewer.js, no el zoom del navegador */
+  outline: none;
+}
+.viewer[hidden] {
+  display: none;
+}
+.viewer__bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(1, 1, 30, 0.97); /* --void casi opaco */
+}
+.viewer__box {
+  position: absolute; /* left/top/width/height: encaje contain de la obra (viewer.js) */
+  will-change: transform;
+}
+.viewer__zoom {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+.viewer picture {
+  display: contents;
+}
+.viewer .cat__media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none; /* sin el "arrastrar imagen" nativo del navegador */
+  user-select: none;
+}
+.viewer.is-zoomed .viewer__box {
+  cursor: grab;
+}
+.viewer.is-zoomed:active .viewer__box {
+  cursor: grabbing;
+}
+.viewer__close {
+  position: absolute;
+  top: max(1rem, env(safe-area-inset-top));
+  right: 1rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  font-family: var(--font-pixel);
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--phosphor);
+  background: rgba(1, 12, 5, 0.6);
+  border: 1.5px solid var(--phosphor-dim);
+  border-radius: 8px;
+  cursor: pointer;
+  text-shadow: 0 0 8px var(--phosphor-glow);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+.viewer__close:hover,
+.viewer__close:focus-visible {
+  color: var(--void);
+  background: var(--phosphor);
+  box-shadow: 0 0 16px var(--phosphor-glow);
+  outline: none;
+}
+.viewer__arrow {
+  position: absolute;
+  top: 50%;
+  width: 3rem;
+  height: 3rem;
+  margin-top: -1.5rem;
+  padding: 0;
+  border: 0;
+  background: center / contain no-repeat;
+  cursor: pointer;
+  filter: drop-shadow(0 0 6px var(--phosphor-glow));
+}
+.viewer__arrow[hidden] {
+  display: none;
+}
+.viewer__arrow:hover,
+.viewer__arrow:focus-visible {
+  filter: drop-shadow(0 0 12px var(--phosphor-glow)) brightness(1.2);
+  outline: none;
+}
+.viewer__arrow--prev {
+  left: 1rem;
+  background-image: url('../../assets/icons/icon_arrow-left.png');
+}
+.viewer__arrow--next {
+  right: 1rem;
+  background-image: url('../../assets/icons/icon_arrow-right.png');
+}
+.viewer__caption {
+  position: absolute;
+  left: 4rem;
+  right: 4rem;
+  bottom: max(0.85rem, env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  gap: 1em;
+  margin: 0;
+  font-family: var(--font-pixel);
+  font-variation-settings: 'wght' 500, 'ELGR' 2;
+  font-size: 1.2rem;
+  line-height: 1.1;
+  color: var(--phosphor);
+  text-align: center;
+  text-shadow: 0 0 8px var(--phosphor-glow);
+  pointer-events: none;
+}
+.viewer__count {
+  flex: none;
+  color: var(--phosphor-dim);
+}
+.viewer__hint {
+  position: absolute;
+  top: max(1.3rem, env(safe-area-inset-top));
+  left: 50%;
+  max-width: calc(100vw - 8rem);
+  margin: 0;
+  padding: 0.35em 0.8em;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  color: var(--phosphor);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgba(1, 12, 5, 0.75);
+  border: 1px solid var(--phosphor-dim);
+  pointer-events: none;
 }
 
 /* ── P3.C: Biografía (modo rayos X, capa OS fósforo) ── */
@@ -2011,7 +2188,7 @@ body.route-category .crt {
   transition: opacity 0.2s ease;
   will-change: transform;
 }
-.reticle.is-on:is([data-state='link'], [data-state='entrar'], [data-state='ver']) {
+.reticle.is-on:is([data-state='link'], [data-state='entrar'], [data-state='ver'], [data-state='ampliar']) {
   opacity: 1;
 }
 .reticle.is-down[data-state] .reticle__ring {
@@ -2045,7 +2222,8 @@ body.route-category .crt {
   height: 32px;
 }
 .reticle[data-state='entrar'] .reticle__ring,
-.reticle[data-state='ver'] .reticle__ring {
+.reticle[data-state='ver'] .reticle__ring,
+.reticle[data-state='ampliar'] .reticle__ring {
   width: 40px;
   height: 40px;
 }
@@ -2069,7 +2247,8 @@ body.route-category .crt {
     transform 0.15s ease;
 }
 .reticle[data-state='entrar'] .reticle__label,
-.reticle[data-state='ver'] .reticle__label {
+.reticle[data-state='ver'] .reticle__label,
+.reticle[data-state='ampliar'] .reticle__label {
   opacity: 1;
   transform: translate(0, -50%);
 }
