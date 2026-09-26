@@ -18,23 +18,21 @@ export function initMenu() {
   toggle.style.setProperty('--menu-off', `url(${menuOff})`)
   toggle.style.setProperty('--menu-on', `url(${menuOn})`)
 
-  // H4: interruptor de sonido al pie del panel (apagado por defecto; sound.js)
+  // H4: parlante siempre visible bajo el botón del menú (Charlie, 26/9: no escondido en el panel)
   if (sound.available) {
     const en = document.documentElement.lang === 'en'
     const btn = document.createElement('button')
     btn.type = 'button'
-    btn.className = 'pipboy__sound'
-    btn.setAttribute('role', 'menuitemcheckbox')
-    btn.innerHTML = `<span>${en ? 'SOUND' : 'SONIDO'}</span><span class="pipboy__sound-state"></span>`
-    const state = btn.lastChild
+    btn.className = 'sound-toggle'
+    btn.setAttribute('aria-label', en ? 'Sound' : 'Sonido')
     const sync = (v) => {
-      btn.setAttribute('aria-checked', String(v))
-      state.textContent = v ? 'ON' : 'OFF'
+      btn.setAttribute('aria-pressed', String(v))
+      btn.title = en ? (v ? 'Sound on' : 'Sound off') : v ? 'Sonido activado' : 'Sonido desactivado'
     }
     sync(sound.on)
     sound.onChange(sync)
     btn.addEventListener('click', () => sound.toggle())
-    panel.appendChild(btn)
+    nav.after(btn)
   }
 
   let open = false

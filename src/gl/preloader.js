@@ -119,6 +119,17 @@ export function initPreloader({ sceneUrl, preloadUrls = [], isMobile = false }) 
 
   // ambas opciones "apagadas" por defecto (sin preselección lit); Charlie elige.
 
+  // H4 (Charlie, 26/9): el sonido se elige acá, a la vista, ANTES de que suene nada. Viene
+  // marcado; se guarda al elegir idioma y la página de destino lo arranca con el primer clic
+  // (el navegador no deja sonar sin un gesto en esa página).
+  const soundBtn = document.getElementById('soundChoice')
+  let withSound = true
+  soundBtn?.addEventListener('click', () => {
+    withSound = !withSound
+    soundBtn.setAttribute('aria-pressed', String(withSound))
+    soundBtn.querySelector('.sound-choice__state').textContent = withSound ? 'ON' : 'OFF'
+  })
+
   const EXIT = 0.42 // duración del glitch de salida (≈500 ms con el margen de navegación)
   let exiting = false // ya se eligió idioma (evita doble click mientras iOS pide permiso)
   let glitching = false // glitch de salida en curso (lo avanza el ticker)
@@ -129,6 +140,7 @@ export function initPreloader({ sceneUrl, preloadUrls = [], isMobile = false }) 
       e.preventDefault()
       try {
         localStorage.setItem('cp-lang', a.dataset.lang)
+        sessionStorage.setItem('cp-sound', withSound ? '1' : '0')
       } catch {}
       if (exiting) return
       exiting = true
