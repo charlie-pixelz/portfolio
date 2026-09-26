@@ -31,8 +31,14 @@ function boot() {
   ctx = new AC()
   master = ctx.createGain()
   master.gain.value = 0
-  // compresor suave: si coinciden glitch + whoosh + encendido, no saturan
+  // limitador: solo actúa si coinciden varios cues fuertes (glitch + whoosh + encendido). Con los
+  // valores por defecto (umbral -24 dB, 12:1) el zumbido de fondo ya lo activaba y aplastaba cada
+  // efecto al mismo volumen que el zumbido → no se oían (Charlie, 26/9)
   const comp = ctx.createDynamicsCompressor()
+  comp.threshold.value = -8
+  comp.knee.value = 6
+  comp.ratio.value = 4
+  comp.release.value = 0.15
   master.connect(comp).connect(ctx.destination)
   noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate)
   const d = noiseBuf.getChannelData(0)
@@ -74,7 +80,7 @@ const env = (param, t, peak, attack, release) => {
   param.exponentialRampToValueAtTime(0.0001, t + attack + release)
 }
 // ráfaga corta de ruido agudo: la "chispa" de un tubo de neón o de un relé
-const crackle = (t, peak = 0.12) => {
+const crackle = (t, peak = 0.25) => {
   const g = gainNode()
   noise(t, 0.03).connect(filter('highpass', 3200)).connect(g).connect(master)
   env(g.gain, t, peak, 0.002, 0.018)
@@ -83,7 +89,7 @@ const crackle = (t, peak = 0.12) => {
 function startHum() {
   if (humOn) return
   humOn = true
-  const bed = gainNode(0.045)
+  const bed = gainNode(0.014) // fondo apenas perceptible: los efectos tienen que destacar
   bed.connect(master)
   const o1 = osc('sine', 50)
   const o2 = osc('triangle', 100)
@@ -97,7 +103,7 @@ function startHum() {
   n.connect(filter('lowpass', 260)).connect(hiss).connect(bed)
   // respiración lenta del zumbido (0.2 Hz): que no se sienta un tono fijo
   const lfo = osc('sine', 0.2)
-  const depth = gainNode(0.012)
+  const depth = gainNode(0.004)
   lfo.connect(depth).connect(bed.gain)
   ;[o1, o2, n, lfo].forEach((s) => s.start())
 }
@@ -112,7 +118,7 @@ const CUES = {
     const g = gainNode()
     noise(t, dur + 0.05).connect(f).connect(g).connect(master)
     g.gain.setValueAtTime(0.0001, t)
-    g.gain.exponentialRampToValueAtTime(0.28, t + dur * 0.55)
+    g.gain.exponentialRampToValueAtTime(0.55, t + dur * 0.55)
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
   },
   static() {
@@ -120,7 +126,7 @@ const CUES = {
     const g = gainNode()
     noise(t, 0.36).connect(filter('bandpass', 2400, 0.5)).connect(g).connect(master)
     // escalones duros, como el corte de canal de la imagen (0.34 s)
-    const steps = [0.16, 0.05, 0.13, 0.02, 0.1, 0.0001]
+    const steps = [0.34, 0.1, 0.28, 0.05, 0.22, 0.0001]
     steps.forEach((v, i) => g.gain.setValueAtTime(v, t + i * 0.06))
   },
   power() {
@@ -130,47 +136,47 @@ const CUES = {
     thump.frequency.exponentialRampToValueAtTime(38, t + 0.14)
     const g = gainNode()
     thump.connect(g).connect(master)
-    env(g.gain, t, 0.22, 0.005, 0.16)
+    env(g.gain, t, 0.45, 0.005, 0.16)
     const whine = osc('sine', 900)
     whine.frequency.exponentialRampToValueAtTime(3400, t + 0.22)
     const gw = gainNode()
     whine.connect(gw).connect(master)
-    env(gw.gain, t, 0.018, 0.04, 0.2)
+    env(gw.gain, t, 0.04, 0.04, 0.2)
     ;[thump, whine].forEach((o) => {
       o.start(t)
       o.stop(t + 0.3)
     })
-    crackle(t, 0.06)
+    crackle(t, 0.14)
   },
   neon() {
     const t = ctx.currentTime
     // zumbido de balasto con el mismo titileo suave de las lámparas (category.js lightOn)
     const o = osc('sawtooth', 100)
     const g = gainNode(0)
-    o.connect(filter('lowpass', 1100)).connect(g).connect(master)
+    o.connect(filter('lowpass', 1800)).connect(g).connect(master)
     const pattern = [
       [0, 0.0001],
-      [0.02, 0.07],
-      [0.2, 0.03],
-      [0.3, 0.075],
-      [0.5, 0.04],
+      [0.02, 0.16],
+      [0.2, 0.07],
+      [0.3, 0.17],
+      [0.5, 0.09],
     ]
     pattern.forEach(([dt, v]) => g.gain.setValueAtTime(v, t + dt))
     g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1)
     o.start(t)
     o.stop(t + 1.15)
-    crackle(t + 0.01, 0.14)
-    crackle(t + 0.3, 0.1)
+    crackle(t + 0.01, 0.3)
+    crackle(t + 0.3, 0.22)
   },
   buzz() {
     const t = ctx.currentTime
     const o = osc('sawtooth', 120)
     const g = gainNode()
-    o.connect(filter('lowpass', 900)).connect(g).connect(master)
-    env(g.gain, t, 0.035, 0.02, 0.28)
+    o.connect(filter('lowpass', 1500)).connect(g).connect(master)
+    env(g.gain, t, 0.09, 0.02, 0.28)
     o.start(t)
     o.stop(t + 0.32)
-    crackle(t, 0.05)
+    crackle(t, 0.12)
   },
   decode({ dur = 0.3 } = {}) {
     const t = ctx.currentTime
@@ -183,7 +189,7 @@ const CUES = {
       const o = osc('square', 520 + Math.floor(Math.random() * 8) * 160)
       const g = gainNode()
       o.connect(g).connect(lp)
-      env(g.gain, at, 0.022, 0.003, 0.02)
+      env(g.gain, at, 0.06, 0.003, 0.02)
       o.start(at)
       o.stop(at + 0.03)
     }
@@ -195,8 +201,8 @@ const CUES = {
     const g = gainNode()
     o.connect(filter('lowpass', 1400)).connect(g).connect(master)
     g.gain.setValueAtTime(0.0001, t)
-    g.gain.exponentialRampToValueAtTime(0.05, t + 0.08)
-    g.gain.setValueAtTime(0.05, t + dur - 0.1)
+    g.gain.exponentialRampToValueAtTime(0.12, t + 0.08)
+    g.gain.setValueAtTime(0.12, t + dur - 0.1)
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
     o.start(t)
     o.stop(t + dur + 0.02)
@@ -206,7 +212,7 @@ const CUES = {
     const o = osc('square', 1250)
     const g = gainNode()
     o.connect(filter('lowpass', 2800)).connect(g).connect(master)
-    env(g.gain, t, 0.03, 0.002, 0.03)
+    env(g.gain, t, 0.08, 0.002, 0.03)
     o.start(t)
     o.stop(t + 0.04)
   },
@@ -217,7 +223,7 @@ const CUES = {
       const o = osc('square', f)
       const g = gainNode()
       o.connect(filter('lowpass', 2600)).connect(g).connect(master)
-      env(g.gain, at, 0.03, 0.003, 0.06)
+      env(g.gain, at, 0.08, 0.003, 0.06)
       o.start(at)
       o.stop(at + 0.08)
     })
