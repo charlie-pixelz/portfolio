@@ -10,3 +10,4 @@ Las 5 familias del sitio (ART_DIRECTION §3) son SIL Open Font License 1.1.
 | Handjet | `Handjet-OFL.txt` |
 | Rubik Glitch | `RubikGlitch-OFL.txt` |
 | Press Start 2P | `PressStart2P-OFL.txt` |
+| Chakra Petch (a prueba, P6) | `ChakraPetch-OFL.txt` |

@@ -9,6 +9,32 @@
   font-weight: 300 700;
   font-display: swap;
 }
+/* P6 (revisión 25/9): candidata a fuente de lectura, a prueba con ?font=chakra (main.js). Solo
+   se descarga si se usa: mientras nadie la pida, no pesa nada. 4 pesos estáticos, ~8 KB c/u. */
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('../fonts/ChakraPetch-Regular-subset.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('../fonts/ChakraPetch-Medium-subset.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('../fonts/ChakraPetch-SemiBold-subset.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Chakra Petch';
+  src: url('../fonts/ChakraPetch-Bold-subset.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
 @font-face {
   /* /fonts/ (public, sin hash de Vite) a propósito: la URL tiene que ser predecible para poder
      precargarla con <link rel=preload> desde el <head> — ver es/en/index.html. Handjet abajo,
@@ -83,4 +109,10 @@
   --font-pixel: 'Handjet', 'Doto', monospace;
 
   --space: clamp(1rem, 2.5vw, 2rem);
+}
+
+/* P6: antes/después de la fuente de lectura. ?font=chakra la activa (queda en la sesión);
+   ?font=grotesk vuelve a la actual. Pendiente de la decisión de Charlie. */
+:root[data-font='chakra'] {
+  --font-body: 'Chakra Petch', 'Space Grotesk', system-ui, sans-serif;
 }
