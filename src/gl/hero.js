@@ -393,16 +393,38 @@ export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
   addEventListener('cp:hero-settle', () => (settled = true))
   addEventListener('cp:hero-resume', () => (settled = false))
 
+  // Reposo (revisión de rendimiento, 26/9): sin nadie moviendo el mouse/teléfono y sin transición
+  // en curso, lo único que se mueve es la deriva ambiental — tan lenta (≈0.2 px por paso) que a
+  // 8 cuadros/s se ve igual que a 60. Ahí se dibuja 1 de cada ~8 cuadros: menos trabajo del
+  // procesador por cuadro (letreros + shader), menos batería, y menos "Total Blocking Time" en
+  // PageSpeed (60 → objetivo 85). Cualquier movimiento vuelve al ritmo completo en el acto.
+  const IDLE_MS = 125
+  let lastDraw = 0
+
   ticker.add((t, dt) => {
     // fuera de Inicio (galería, Biografía, Contacto) el hero está tapado/oculto: sin esto el shader
     // seguía dibujándose a pantalla completa cada frame por nada (GPU + batería, clave en móvil).
     // stage.render() deja de dibujar cuando no queda ninguna malla visible.
     mesh.visible = !heroEl?.hidden
+    stage.hold = false
     if (!mesh.visible) return
-    const time = t * 0.001
-    program.uniforms.uTime.value = time
     const tx = settled ? 0 : pointer.pos.x
     const ty = settled ? 0 : pointer.pos.y
+    const busy =
+      Math.abs(tx - hm.x) + Math.abs(ty - hm.y) > 0.0005 ||
+      entering ||
+      transit ||
+      hover ||
+      L.r > 0.001 ||
+      !!document.body.dataset.transitioning
+    stage.calm = !busy
+    if (!busy && t - lastDraw < IDLE_MS) {
+      stage.hold = true // este cuadro no se dibuja
+      return
+    }
+    lastDraw = t
+    const time = t * 0.001
+    program.uniforms.uTime.value = time
     hm.x += (tx - hm.x) * 0.12
     hm.y += (ty - hm.y) * 0.12
     program.uniforms.uMouse.value = [hm.x, hm.y]

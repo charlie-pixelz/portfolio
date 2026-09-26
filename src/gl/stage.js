@@ -64,15 +64,19 @@ export const stage = {
 
     return { renderer, scene }
   },
+  // hero.js: `hold` = saltar este cuadro (reposo); `calm` = se está dibujando a ritmo de reposo, así
+  // que el intervalo entre cuadros no dice nada del rendimiento del equipo (no se mide)
+  hold: false,
+  calm: false,
   render(dt = 0) {
-    if (!renderer) return
+    if (!renderer || this.hold) return
     // sin nada visible (p.ej. el hero oculto en otra sección): se dibuja UNA vez más para limpiar
     // el canvas y después se deja de renderizar hasta que algo vuelva a ser visible
     const active = scene.children.some((c) => c.visible)
     if (!active && idle) return
     idle = !active
     renderer.render({ scene })
-    if (active) adapt(dt)
+    if (active && !this.calm) adapt(dt)
   },
   get renderer() {
     return renderer
