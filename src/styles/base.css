@@ -982,19 +982,17 @@ body.route-category .crt {
 .bio__scene.is-on::before {
   opacity: 1;
 }
-@media (min-width: 769px) {
-  /* mismo difuminado de bordes que el shader del hero (smoothstep de 3 %): al llegar por la lente
-     de rayos X (B4) el cambio de canvas a esta escena no se nota */
-  .bio__scene::before {
-    -webkit-mask:
-      linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
-      linear-gradient(transparent, #000 3%, #000 97%, transparent);
-    -webkit-mask-composite: source-in;
-    mask:
-      linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
-      linear-gradient(transparent, #000 3%, #000 97%, transparent);
-    mask-composite: intersect;
-  }
+/* mismo difuminado de bordes que el shader del hero (smoothstep de 3 %): al llegar por la lente o
+   el barrido de rayos X (B4) el cambio de canvas a esta escena no se nota */
+.bio__scene::before {
+  -webkit-mask:
+    linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
+    linear-gradient(transparent, #000 3%, #000 97%, transparent);
+  -webkit-mask-composite: source-in;
+  mask:
+    linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
+    linear-gradient(transparent, #000 3%, #000 97%, transparent);
+  mask-composite: intersect;
 }
 /* barra de escaneo: línea fósforo con núcleo casi blanco + estela tenue hacia arriba (lo recién
    expuesto). Es un solo trazo que se desplaza, no un destello (WCAG 2.3.1). */
@@ -1217,23 +1215,23 @@ body.route-category .crt {
   color: var(--phosphor);
   text-shadow: 0 0 6px var(--phosphor-glow);
 }
-/* ── Biografía MOBILE — B3 (Fase 4): dossier. El esqueleto ocupa la mitad de arriba con 3 puntos;
-   abajo, al alcance del pulgar, 3 pestañas y un panel (se cambia tocando o deslizando). bio.js
-   ubica los puntos y dibuja la línea del punto activo a su pestaña. ── */
+/* ── Biografía MOBILE — B3 (Fase 4, 2.ª versión): la escena tiene el MISMO encuadre que el hero
+   móvil (contain al aspecto de la radiografía), así el esqueleto aparece donde estaba el personaje.
+   Después bio.js la sube (y la aleja un poco si hace falta) para que las 3 miras queden sobre el
+   dossier: pestañas + panel al alcance del pulgar (se cambia tocando o deslizando). ── */
 @media (max-width: 768px) {
   .bio {
-    --scene-h: 56svh;
+    --scene-h: 52svh; /* dónde empieza el dossier */
     --tabs-h: 2.75rem;
-    --bio-pos-y: 55%; /* == MOBILE_POS_Y de bio.js */
+    container-type: size; /* la escena se dimensiona con el alto disponible (cqh), como el canvas */
   }
   .bio__scene {
-    width: 100vw;
-    height: var(--scene-h);
-    margin: 0;
-    aspect-ratio: auto;
+    width: min(100cqw, calc(100cqh * 1581 / 2810));
+    aspect-ratio: 1581 / 2810;
+    transform-origin: 50% 0;
   }
   .bio__scene::before {
-    background: var(--bio-mobile) center var(--bio-pos-y) / cover no-repeat;
+    background: var(--bio-mobile) center / cover no-repeat;
   }
   .bio__side {
     display: contents; /* las columnas L/R son solo layout de desktop */
@@ -1253,7 +1251,7 @@ body.route-category .crt {
     padding: 0 0.3em;
     font-family: var(--font-pixel);
     font-variation-settings: 'wght' 500, 'ELGR' 2;
-    font-size: 1.08rem;
+    font-size: 1.12rem;
     line-height: 1;
     color: var(--phosphor);
     background: rgba(1, 12, 5, 0.78);
@@ -1282,9 +1280,11 @@ body.route-category .crt {
     top: calc(var(--scene-h) - 0.6rem + var(--tabs-h) + 0.4rem);
     bottom: max(1rem, env(safe-area-inset-bottom));
     width: auto;
-    padding: 1rem 1.1rem;
+    padding: 1.05rem 1.15rem;
     overflow-y: auto;
     overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
   }
   .bio__box[hidden] {
     display: none;
@@ -1293,44 +1293,72 @@ body.route-category .crt {
     display: none; /* la pestaña ya nombra el panel */
   }
   .bio__title {
-    font-size: 1.18rem;
+    font-size: 1.45rem;
     text-align: left;
   }
-  .bio__text,
-  .bio__skills li {
-    font-size: 0.86rem;
-    line-height: 1.45;
+  /* contenido más grande (Charlie, 25/9): lectura cómoda en celular (~16 px) y las listas se reparten
+     en todo el alto del panel en vez de dejar aire muerto abajo */
+  .bio__text {
+    font-size: clamp(0.9rem, 4vw, 1rem);
+    line-height: 1.5;
+  }
+  .bio__tools,
+  .bio__skills {
+    flex: 1;
+    align-content: space-evenly;
   }
   .bio__tools {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 1rem;
-    row-gap: 0.45rem;
+    row-gap: 0.5rem;
   }
   .bio__tool-name {
-    font-size: 1rem;
+    font-size: 1.22rem;
   }
   .bio__tool-ico {
-    width: 30px;
-    height: 30px;
-    min-width: 30px;
-    min-height: 30px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .bio__skills li {
+    font-size: clamp(0.92rem, 4.1vw, 1.02rem);
+    line-height: 1.35;
   }
   .bio__wire {
     stroke-width: 2;
   }
-  /* en celular la mira es el aro tocable: de la capa de miras solo queda la etiqueta del activo */
+  /* miras: las mismas de desktop. Las inactivas, más tenues y "respirando" (se abren y cierran
+     lento) para invitar al toque; la activa, cerrada y con su etiqueta. La respiración anima la
+     propiedad `scale`, no `transform`, así no pisa la animación de entrada de GSAP. */
   .bio__lock svg {
-    display: none;
+    left: -15px;
+    top: -15px;
+    width: 30px;
+    height: 30px;
+  }
+  .bio__lock:not(.is-active) svg {
+    opacity: 0.6;
+    animation: bioLockBreathe 2.4s ease-in-out infinite;
   }
   .bio__tag {
-    left: 26px;
+    left: 24px;
     font-size: 14px;
   }
   .bio__lock:not([data-anchor='about']) .bio__tag {
-    right: 26px;
+    right: 24px;
   }
 }
-/* aros: SOLO existen en celular. z-index por encima de líneas y paneles */
+@keyframes bioLockBreathe {
+  0%,
+  100% {
+    scale: 1;
+  }
+  50% {
+    scale: 1.3;
+  }
+}
+/* área táctil de cada mira (solo celular): invisible, 44 px; el dibujo lo pone .bio__lock */
 .bio__rings {
   position: absolute;
   inset: 0;
@@ -1342,55 +1370,20 @@ body.route-category .crt {
     display: none;
   }
 }
-/* borde BLANCO (no fósforo): el esqueleto ya es fósforo brillante — un aro fósforo se pierde
-   encima (mismo patrón que el "encendido" de los letreros del Hero). Centrado con margen negativo
-   (no con transform): GSAP anima su escala al aparecer. */
 .bio__ring {
   position: absolute;
-  width: 34.5px;
-  height: 34.5px;
-  margin: -17.25px 0 0 -17.25px;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
   padding: 0;
-  border: 2.5px solid #fff;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.35);
+  border: 0;
+  background: none;
   cursor: pointer;
   pointer-events: auto;
-  opacity: 0;
-  box-shadow:
-    0 0 6px rgba(255, 255, 255, 0.6),
-    0 0 12px var(--phosphor-glow);
-}
-/* pulso constante: un aro "hijo" (::before) crece desde el centro y se desvanece — invita al tap
-   sin depender de hover (no existe en touch). Un solo evento por ciclo, lento (WCAG 2.3.1). */
-.bio__ring::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 2.5px solid #fff;
-  border-radius: 50%;
-  animation: bioRingPulse 2.4s ease-out infinite;
-}
-@keyframes bioRingPulse {
-  0% {
-    transform: scale(0.6);
-    opacity: 0.9;
-  }
-  70%,
-  100% {
-    transform: scale(1.7);
-    opacity: 0;
-  }
-}
-.bio__ring.is-active {
-  background: #fff;
-  box-shadow:
-    0 0 10px #fff,
-    0 0 22px var(--phosphor-glow);
 }
 .bio__ring:focus-visible {
-  outline: 2px dashed #fff;
-  outline-offset: 3px;
+  outline: 2px dashed var(--phosphor);
+  outline-offset: 2px;
 }
 
 /* marco "pixelado" compartido de las cajas capa-OS (Biografía, Contacto, categoría): borde
@@ -2327,8 +2320,7 @@ html.lenis body {
   .sign {
     animation: none;
   }
-  .bio__ring::before {
-    animation: none;
-    display: none;
+  .bio__lock svg {
+    animation: none !important;
   }
 }

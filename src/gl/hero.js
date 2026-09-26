@@ -45,6 +45,7 @@ const fragment = /* glsl */ `
   uniform vec2 uLens;
   uniform float uLensR;
   uniform float uLensFill;
+  uniform float uWipe; // celular: altura ya escaneada desde arriba (0..1), la radiografía queda por encima
   varying vec2 vUv;
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(41.31, 289.17))) * 43758.5453); }
@@ -119,6 +120,19 @@ const fragment = /* glsl */ `
       float e = abs(dist - uLensR);
       float ring = (1.0 - smoothstep(px, px * 2.5, e)) + exp(-e / (px * 9.0)) * 0.3;
       comp += vec3(0.2, 1.0, 0.4) * ring * (1.0 - uLensFill);
+    }
+
+    if (uWipe > 0.0005) {
+      float px = 1.0 / (uResolution.y * scale.y);
+      float fromTop = 1.0 - cuv.y;
+      float above = 1.0 - smoothstep(uWipe - px, uWipe, fromTop);
+      vec3 xr = texture2D(uXray, suv + look * uStrengthChar).rgb;
+      comp = mix(comp, xr, above);
+      // línea de escaneo (misma que la de la página) + estela tenue sobre lo recién expuesto
+      float e = abs(fromTop - uWipe);
+      float line = (1.0 - smoothstep(px, px * 2.5, e)) + exp(-e / (px * 14.0)) * 0.35;
+      float trail = above * exp(-(uWipe - fromTop) / 0.07) * 0.14;
+      comp += vec3(0.2, 1.0, 0.4) * (line + trail) * (1.0 - uLensFill);
     }
 
     // difuminar bordes hacia --void: disuelve la costura de las barras (aspect-lock)
@@ -208,6 +222,7 @@ export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
       uLens: { value: [...HEAD] },
       uLensR: { value: 0 },
       uLensFill: { value: 0 },
+      uWipe: { value: 0 },
     },
   })
   const mesh = new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program })
@@ -271,12 +286,15 @@ export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
   )
 
   // ── B4: lente de rayos X ──
-  // Al pasar el cursor por el letrero "Biografía" se abre una lente sobre el cráneo del personaje (el
-  // letrero está sobre la calle, no sobre él: una lente bajo el cursor mostraría solo la calle en
-  // radiografía). Mover el cursor dentro del letrero la corre un poco, como un visor. Al hacer clic,
-  // la lente se expande a toda la pantalla y esa es la transición a Biografía.
-  const lensable = !!xrayUrl && !isMobileLayout && !quality.isTouch && !still
-  const L = { r: 0, fill: 0, x: HEAD[0], y: HEAD[1] }
+  // Desktop: al pasar el cursor por el letrero "Biografía" se abre una lente sobre el cráneo del
+  // personaje (el letrero está sobre la calle, no sobre él: una lente bajo el cursor mostraría solo
+  // la calle en radiografía). Mover el cursor dentro del letrero la corre un poco, como un visor. Al
+  // hacer clic, la lente se expande a toda la pantalla y esa es la transición a Biografía.
+  // Celular (sin cursor): la barra de escaneo de Biografía baja por el hero y convierte al personaje
+  // en su radiografía en el mismo lugar (la radiografía móvil está alineada con el hero móvil).
+  const lensable = !!xrayUrl && !still
+  const mode = isMobileLayout ? 'wipe' : 'lens'
+  const L = { r: 0, fill: 0, w: 0, x: HEAD[0], y: HEAD[1] }
   const off = { x: 0, y: 0 }
   let hover = false
   let transit = false
@@ -292,28 +310,35 @@ export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
       }
       img.src = xrayUrl
     }
-    // se baja con la primera señal de intención hacia Biografía (letrero o menú), no con la carga
+    // se baja con la primera señal de intención hacia Biografía (letrero o menú) o, si no llega
+    // (en celular no hay hover antes del toque), a los pocos segundos: para entonces main.js ya la
+    // precargó, así que sale del caché
     const intent = (e) => e.target.closest?.('[data-route="bio"]') && loadXray()
     document.addEventListener('pointerover', intent, { passive: true })
     document.addEventListener('focusin', intent)
-    const bioSign = document.querySelector('.sign[data-route="bio"]')
-    bioSign?.addEventListener('pointerenter', () => (hover = true))
-    bioSign?.addEventListener('pointerleave', () => (hover = false))
-    bioSign?.addEventListener('pointermove', (e) => {
-      const r = bioSign.getBoundingClientRect()
-      off.x = ((e.clientX - r.left) / r.width - 0.5) * 2
-      off.y = -((e.clientY - r.top) / r.height - 0.5) * 2
-    })
+    setTimeout(loadXray, 4000)
+    if (mode === 'lens' && !quality.isTouch) {
+      const bioSign = document.querySelector('.sign[data-route="bio"]')
+      bioSign?.addEventListener('pointerenter', () => (hover = true))
+      bioSign?.addEventListener('pointerleave', () => (hover = false))
+      bioSign?.addEventListener('pointermove', (e) => {
+        const r = bioSign.getBoundingClientRect()
+        off.x = ((e.clientX - r.left) / r.width - 0.5) * 2
+        off.y = -((e.clientY - r.top) / r.height - 0.5) * 2
+      })
+    }
     const U = program.uniforms
+    const D = mode === 'lens' ? 0.62 : 0.8 // el barrido recorre toda la altura: un poco más largo
     heroLens.expand = (done) => {
       transit = true
-      gsap.to(L, { r: LENS_FULL, duration: 0.62, ease: 'power2.in' })
-      gsap.to(L, { fill: 1, duration: 0.25, delay: 0.37, ease: 'none' })
+      if (mode === 'lens') gsap.to(L, { r: LENS_FULL, duration: D, ease: 'power2.in' })
+      else gsap.to(L, { w: 1.02, duration: D, ease: 'none' })
+      gsap.to(L, { fill: 1, duration: 0.25, delay: D - 0.25, ease: 'none' })
       // al terminar, encuadre idéntico al de la página de Biografía: sin overscan ni deriva
-      gsap.to(U.uZoom, { value: 1, duration: 0.62, ease: 'power2.inOut' })
+      gsap.to(U.uZoom, { value: 1, duration: D, ease: 'power2.inOut' })
       gsap.to(U.uDrift, {
         value: 0,
-        duration: 0.62,
+        duration: D,
         ease: 'power2.inOut',
         onComplete: () => {
           hover = false
@@ -321,11 +346,13 @@ export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
         },
       })
     }
-    // vuelta: arranca con la lente completa (misma imagen que la página que se va) y la cierra
+    // vuelta: arranca completa (misma imagen que la página que se va) y se cierra — la lente sobre
+    // el cráneo; el barrido sube devolviendo al personaje
     heroLens.contract = (done) => {
       transit = true
       gsap.to(L, { fill: 0, duration: 0.2, ease: 'none' })
-      gsap.to(L, { r: 0, duration: 0.6, ease: 'power2.out' })
+      if (mode === 'lens') gsap.to(L, { r: 0, duration: 0.6, ease: 'power2.out' })
+      else gsap.to(L, { w: 0, duration: 0.6, ease: 'none' })
       gsap.to(U.uZoom, { value: 1.05, duration: 0.6, ease: 'power2.inOut' })
       gsap.to(U.uDrift, {
         value: 1,
@@ -339,7 +366,7 @@ export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
     }
     heroLens.full = () => {
       gsap.killTweensOf([L, U.uZoom, U.uDrift])
-      Object.assign(L, { r: LENS_FULL, fill: 1, x: HEAD[0], y: HEAD[1] })
+      Object.assign(L, { fill: 1, x: HEAD[0], y: HEAD[1] }, mode === 'lens' ? { r: LENS_FULL } : { w: 1.02 })
       U.uZoom.value = 1
       U.uDrift.value = 0
       transit = true
@@ -375,6 +402,7 @@ export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
         L.y += (HEAD[1] + (hover ? off.y * 0.04 : 0) - L.y) * kp
       }
       program.uniforms.uLensR.value = L.r < 0.001 ? 0 : L.r
+      program.uniforms.uWipe.value = L.w
       program.uniforms.uLensFill.value = L.fill
       program.uniforms.uLens.value = [L.x, L.y]
     }

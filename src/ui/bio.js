@@ -72,18 +72,15 @@ const CONTENT = {
   },
 }
 
-// Anclas en coordenadas de la IMAGEN (0..1 desde arriba a la izquierda), no de la pantalla: así
-// sirven igual con el encuadre contain de desktop y con el cover recortado de celular. Cada una cae
-// del lado de su panel para que la línea no cruce el cuerpo (desktop: Quién soy a la izquierda,
-// Herramientas y Habilidades a la derecha; celular: el orden de las pestañas).
-const IMG = { desktop: [2400, 1465], mobile: [1581, 2810] }
+// Anclas en coordenadas de la IMAGEN (0..1 desde arriba a la izquierda). La escena tiene el aspecto
+// exacto de su radiografía en los dos layouts (contain, igual que el hero), así que valen tal cual.
+// Cada una cae del lado de su panel para que la línea no cruce el cuerpo (desktop: Quién soy a la
+// izquierda, Herramientas y Habilidades a la derecha; celular: el orden de las pestañas).
 const ANCHORS = {
   desktop: { tools: [0.545, 0.36], about: [0.41, 0.8], skills: [0.6, 0.72] },
-  mobile: { tools: [0.604, 0.415], about: [0.3, 0.8], skills: [0.87, 0.74] },
+  mobile: { tools: [0.604, 0.415], about: [0.3, 0.77], skills: [0.87, 0.74] },
 }
-// celular: el esqueleto se encuadra en la mitad superior con `cover`; este es el background-position
-// vertical de .bio__scene::before en base.css (--bio-pos-y). Tienen que coincidir.
-const MOBILE_POS_Y = 0.55
+const SKULL_TOP = 0.28 // borde superior del cráneo en la radiografía móvil (para el deslizamiento)
 const ORDER = ['about', 'tools', 'skills'] // orden de las pestañas en celular
 
 const SCAN_DUR = 0.8
@@ -187,25 +184,33 @@ export function initBio({ lang, isMobile = false }) {
   const sceneFrac = {} // key → altura relativa dentro de la escena (0..1), para saber cuándo la cruza la barra
   const measure = () => {
     const sr = scene.getBoundingClientRect()
-    const [iw, ih] = IMG[layout]
-    const s = Math.max(sr.width / iw, sr.height / ih) // cover (en desktop la escena ya tiene el aspecto de la imagen)
-    const dw = iw * s
-    const dh = ih * s
-    const ox = (sr.width - dw) * 0.5
-    const oy = (sr.height - dh) * (isMobile ? MOBILE_POS_Y : 0.5)
     ORDER.forEach((key) => {
       const [ax, ay] = ANCHORS[layout][key]
-      const y = oy + ay * dh
-      pts[key] = { x: sr.left + ox + ax * dw, y: sr.top + y }
-      sceneFrac[key] = y / sr.height
+      pts[key] = { x: sr.left + ax * sr.width, y: sr.top + ay * sr.height }
+      sceneFrac[key] = ay
       const ring = ringOf[key]
       if (ring) {
-        ring.style.left = `${ox + ax * dw}px`
-        ring.style.top = `${y}px`
+        ring.style.left = `${ax * 100}%`
+        ring.style.top = `${ay * 100}%`
       }
       lockOf[key].style.left = `${pts[key].x.toFixed(1)}px`
       lockOf[key].style.top = `${pts[key].y.toFixed(1)}px`
     })
+  }
+
+  // celular: el esqueleto aparece en la MISMA posición que el personaje del hero y después sube (y se
+  // aleja un poco si hace falta) para dejar las 3 miras entre el breadcrumb y las pestañas
+  const glideTarget = () => {
+    const h = scene.offsetHeight // sin transformar
+    const lo = el.querySelector('.bio__crumb').getBoundingClientRect().bottom + 14
+    const hi = parseFloat(getComputedStyle(tabsEl).top) - 40
+    const ys = ORDER.map((k) => ANCHORS.mobile[k][1])
+    const a = Math.min(SKULL_TOP, ...ys)
+    const need = (Math.max(...ys) - a) * h
+    const scale = Math.min(1, (hi - lo) / need)
+    // transform-origin arriba al centro: el punto `a` queda en offsetTop + y + a·h·scale
+    const y = lo + (hi - lo - need * scale) / 2 - scene.offsetTop - a * h * scale
+    return { y, scale }
   }
 
   // línea guía. Desktop: diagonal a 45° hacia el panel y horizontal hasta su borde. Celular: diagonal
@@ -222,8 +227,8 @@ export function initBio({ lang, isMobile = false }) {
       const dx = tx - a.x
       const run = Math.min(Math.abs(dx), Math.max(0, tr.top - a.y - 30))
       const kx = a.x + Math.sign(dx) * run
-      // arranca en el borde del aro (no en su centro) y baja en vertical hasta la pestaña
-      d = [a.x, a.y + 18, a.x, tr.top - run, kx, tr.top]
+      // arranca en el borde de la mira (no en su centro) y baja en vertical hasta la pestaña
+      d = [a.x, a.y + 16, a.x, tr.top - run, kx, tr.top]
     } else {
       const br = boxOf[key].getBoundingClientRect()
       const left = br.left > a.x // el panel está a la derecha de la mira
@@ -278,6 +283,7 @@ export function initBio({ lang, isMobile = false }) {
     gsap.set(Object.values(wireOf), { opacity: 0 })
     gsap.set(Object.values(ringOf), { opacity: 0, scale: 1 })
     if (tabsEl) gsap.set(tabsEl, { opacity: 0, y: 0 })
+    gsap.set(scene, { y: 0, scale: 1 })
     scene.classList.remove('is-on')
     scene.style.setProperty('--scan', '0%')
     gsap.set(scan, { opacity: 0, top: '0%' })
@@ -325,7 +331,14 @@ export function initBio({ lang, isMobile = false }) {
     return track(tl)
   }
 
-  // ── CELULAR: un panel a la vez ──
+  // ── CELULAR: miras (las inactivas "respiran" por CSS) y un panel a la vez ──
+  const lockIn = (key) => {
+    const tl = gsap.timeline()
+    tl.fromTo(lockOf[key], { opacity: 0 }, { opacity: 1, duration: 0.15 })
+      // clearProps: al terminar, la respiración CSS (propiedad `scale`) queda libre
+      .fromTo(lockOf[key].firstChild, { scale: 2.4 }, { scale: 1, duration: 0.22, ease: 'power3.out', clearProps: 'transform' }, 0)
+    return track(tl)
+  }
   const setActive = (key, instant = false) => {
     if (key === active) return
     const prev = active
@@ -425,7 +438,9 @@ export function initBio({ lang, isMobile = false }) {
     if (quality.reducedMotion) {
       scene.style.setProperty('--scan', '100%')
       if (isMobile) {
-        gsap.set(Object.values(ringOf), { opacity: 1 })
+        gsap.set(scene, glideTarget())
+        layoutAll()
+        gsap.set(Object.values(lockOf), { opacity: 1 })
         gsap.set(tabsEl, { opacity: 1 })
         setActive('about', true)
       } else {
@@ -440,21 +455,32 @@ export function initBio({ lang, isMobile = false }) {
     }
     if (xray) scene.style.setProperty('--scan', '100%')
     if (!isMobile) return runScan(lockOn, xray)
-    // celular: los puntos aparecen al pasar la barra; al terminar sube el dossier con "Quién soy"
+    // celular: esqueleto en la posición del hero → sube y sube el dossier → se fijan las miras →
+    // se abre "Quién soy"
     ORDER.forEach((k) => (boxOf[k].hidden = true))
-    runScan((k) => track(gsap.fromTo(ringOf[k], { opacity: 0, scale: 2 }, { opacity: 1, scale: 1, duration: 0.22, ease: 'power3.out' })))
-    track(
-      gsap.fromTo(
-        tabsEl,
-        { opacity: 0, y: 24 },
-        { opacity: 1, y: 0, duration: 0.3, ease: 'power3.out', delay: SCAN_DUR * 0.75, onStart: () => setActive('about') },
-      ),
-    )
+    const glide = () => {
+      track(
+        gsap.to(scene, {
+          ...glideTarget(),
+          duration: 0.6,
+          ease: 'power3.inOut',
+          onComplete: () => {
+            layoutAll()
+            ORDER.forEach((k, i) => track(gsap.delayedCall(i * 0.08, () => lockIn(k))))
+            track(gsap.delayedCall(0.22, () => setActive('about')))
+          },
+        }),
+      )
+      track(gsap.fromTo(tabsEl, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', delay: 0.15 }))
+    }
+    if (xray) return track(gsap.delayedCall(0.12, glide))
+    runScan(() => {})
+    track(gsap.delayedCall(SCAN_DUR + 0.1, glide))
   }
 
   // salida: se apagan paneles, líneas y miras; después la barra sube borrando el esqueleto. Con
-  // lens = true (vuelta a Inicio por la lente del hero, desktop) el esqueleto se queda: la lente lo
-  // cierra en el shader.
+  // lens = true (vuelta a Inicio por la lente o el barrido del hero) el esqueleto se queda: el shader
+  // lo cierra.
   const leave = (onDone, { lens = false } = {}) => {
     running.forEach((a) => a.kill())
     running = []
@@ -468,6 +494,12 @@ export function initBio({ lang, isMobile = false }) {
       duration: 0.18,
       ease: 'power2.in',
       onComplete: () => {
+        // celular: el esqueleto vuelve primero a la posición del hero
+        if (isMobile) gsap.to(scene, { y: 0, scale: 1, duration: 0.45, ease: 'power3.inOut', onComplete: after })
+        else after()
+      },
+    })
+    const after = () => {
         if (lens) return onDone?.()
         const o = { p: 1 }
         gsap.set(scan, { opacity: 1 })
@@ -482,8 +514,7 @@ export function initBio({ lang, isMobile = false }) {
           },
           onComplete: () => onDone?.(),
         })
-      },
-    })
+    }
   }
 
   // al redimensionar: reubica miras/líneas (sin animar) y el párrafo vuelve a partir líneas solo
@@ -496,6 +527,7 @@ export function initBio({ lang, isMobile = false }) {
         if (el.hidden) return
         split?.revert()
         split = null
+        if (isMobile && active) gsap.set(scene, glideTarget())
         layoutAll()
         ORDER.forEach((k) => (wireOf[k].style.strokeDasharray = 'none'))
       }, 150)

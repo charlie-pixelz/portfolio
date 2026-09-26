@@ -142,7 +142,7 @@ if (lang) {
     // limpio de desktop (proporción más cercana a la del monitor horizontal, sugerido por Charlie)
     document.documentElement.style.setProperty('--hero-clean', `url(${heroCleanMobileUrl})`)
     document.documentElement.style.setProperty('--bio-mobile', `url(${bioMobileUrl})`)
-    initHero(heroMobileBgUrl, heroMobileCharUrl, heroMobileDepthUrl) // mismo shader multi-capa que desktop
+    initHero(heroMobileBgUrl, heroMobileCharUrl, heroMobileDepthUrl, bioMobileUrl) // mismo shader multi-capa que desktop; bioMobileUrl = radiografía para el barrido (B4 móvil)
     applyMobileSignLayout()
   } else {
     initHero(heroBgUrl, heroCharUrl, heroDepthUrl, bioUrl) // hero multi-capa (shader de profundidad) en desktop; bioUrl = radiografía para la lente (B4)

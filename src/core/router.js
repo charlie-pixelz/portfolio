@@ -528,9 +528,9 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
   const homeToBio = (done) => {
     // recentra el personaje del hero (sin parallax del mouse) antes de fundir a la escena
     dispatchEvent(new Event('cp:hero-settle'))
-    // B4 (desktop): la lente de rayos X se expande desde el cráneo hasta llenar la pantalla; al
-    // terminar, el canvas muestra EXACTAMENTE la escena de Biografía y el cambio es invisible.
-    if (heroLens.ready && !isMobile) {
+    // B4: la lente de rayos X (desktop) se expande desde el cráneo hasta llenar la pantalla, o el
+    // barrido (celular) convierte al personaje en su radiografía; al terminar, el canvas muestra EXACTAMENTE la escena de Biografía y el cambio es invisible.
+    if (heroLens.ready) {
       gsap.to(hero, { opacity: 0, duration: 0.3, ease: 'power2.in' }) // letreros y logo se retiran
       heroLens.expand(() => {
         bio.el.hidden = false
@@ -561,9 +561,9 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
 
   // Parte: bio visible. Llega a: hero visible, bio oculto.
   const bioToHome = (done) => {
-    // B4 (desktop): el hero vuelve DEBAJO de Biografía con la lente completa (misma imagen), se
-    // apagan paneles y miras, y la lente se cierra sobre el cráneo
-    if (heroLens.ready && !isMobile) {
+    // B4: el hero vuelve DEBAJO de Biografía con la lente completa (misma imagen), se
+    // apagan paneles y miras, y la lente se cierra sobre el cráneo (o el barrido sube)
+    if (heroLens.ready) {
       heroLens.full()
       gsap.set(hero, { opacity: 0 })
       hero.hidden = false
