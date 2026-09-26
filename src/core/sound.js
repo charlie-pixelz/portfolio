@@ -80,7 +80,7 @@ const env = (param, t, peak, attack, release) => {
   param.exponentialRampToValueAtTime(0.0001, t + attack + release)
 }
 // ráfaga corta de ruido agudo: la "chispa" de un tubo de neón o de un relé
-const crackle = (t, peak = 0.25) => {
+const crackle = (t, peak = 0.12) => {
   const g = gainNode()
   noise(t, 0.03).connect(filter('highpass', 3200)).connect(g).connect(master)
   env(g.gain, t, peak, 0.002, 0.018)
@@ -108,6 +108,49 @@ function startHum() {
   ;[o1, o2, n, lfo].forEach((s) => s.start())
 }
 
+// ráfaga de ruido filtrado con envolvente propia (base de golpes, chasquidos y siseos)
+const burst = (t, { type = 'bandpass', freq = 2000, q = 0.7, peak = 0.1, attack = 0.004, hold = 0, release = 0.05 }) => {
+  const g = gainNode()
+  noise(t, attack + hold + release + 0.02).connect(filter(type, freq, q)).connect(g).connect(master)
+  g.gain.setValueAtTime(0.0001, t)
+  g.gain.exponentialRampToValueAtTime(peak, t + attack)
+  g.gain.setValueAtTime(peak, t + attack + hold)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + attack + hold + release)
+}
+// golpe grave de relé/interruptor: "clunk" (seno que cae + transiente de ruido opaco)
+const clunk = (t, peak = 0.12) => {
+  const o = osc('sine', 80)
+  o.frequency.exponentialRampToValueAtTime(42, t + 0.12)
+  const g = gainNode()
+  o.connect(g).connect(master)
+  env(g.gain, t, peak, 0.003, 0.13)
+  o.start(t)
+  o.stop(t + 0.18)
+  burst(t, { type: 'lowpass', freq: 900, peak: peak * 0.6, attack: 0.002, release: 0.07 })
+}
+// zumbido eléctrico de red (50 Hz + armónicos, sin el brillo "chiptune" de una onda cuadrada)
+const mains = (t, dur, peak, { bright = 500, flicker = [] } = {}) => {
+  const g = gainNode()
+  const lp = filter('lowpass', bright)
+  lp.connect(g).connect(master)
+  ;[
+    ['sine', 100, 1],
+    ['triangle', 200, 0.35],
+    ['sawtooth', 50, 0.25],
+  ].forEach(([type, f, v]) => {
+    const o = osc(type, f)
+    const gv = gainNode(v)
+    o.connect(gv).connect(lp)
+    o.start(t)
+    o.stop(t + dur + 0.05)
+  })
+  g.gain.setValueAtTime(0.0001, t)
+  flicker.forEach(([dt, v]) => g.gain.linearRampToValueAtTime(v * peak, t + dt))
+  g.gain.linearRampToValueAtTime(peak, t + (flicker.at(-1)?.[0] ?? 0) + 0.05)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+}
+
+// Volúmenes (Charlie, 26/9): la mitad de la primera versión; estática y lámparas, algo menos aún.
 const CUES = {
   whoosh({ dir = 'in', dur = 0.6 } = {}) {
     const t = ctx.currentTime
@@ -118,16 +161,14 @@ const CUES = {
     const g = gainNode()
     noise(t, dur + 0.05).connect(f).connect(g).connect(master)
     g.gain.setValueAtTime(0.0001, t)
-    g.gain.exponentialRampToValueAtTime(0.55, t + dur * 0.55)
+    g.gain.exponentialRampToValueAtTime(0.27, t + dur * 0.55)
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
   },
+  // cambio de canal: un tramo largo de estática y un "coletazo" corto al final (antes: 3 cortes)
   static() {
     const t = ctx.currentTime
-    const g = gainNode()
-    noise(t, 0.36).connect(filter('bandpass', 2400, 0.5)).connect(g).connect(master)
-    // escalones duros, como el corte de canal de la imagen (0.34 s)
-    const steps = [0.34, 0.1, 0.28, 0.05, 0.22, 0.0001]
-    steps.forEach((v, i) => g.gain.setValueAtTime(v, t + i * 0.06))
+    burst(t, { freq: 2600, q: 0.45, peak: 0.12, attack: 0.008, hold: 0.17, release: 0.05 })
+    burst(t + 0.26, { freq: 3400, q: 0.6, peak: 0.07, attack: 0.004, hold: 0.02, release: 0.04 })
   },
   power() {
     const t = ctx.currentTime
@@ -136,47 +177,34 @@ const CUES = {
     thump.frequency.exponentialRampToValueAtTime(38, t + 0.14)
     const g = gainNode()
     thump.connect(g).connect(master)
-    env(g.gain, t, 0.45, 0.005, 0.16)
+    env(g.gain, t, 0.22, 0.005, 0.16)
     const whine = osc('sine', 900)
     whine.frequency.exponentialRampToValueAtTime(3400, t + 0.22)
     const gw = gainNode()
     whine.connect(gw).connect(master)
-    env(gw.gain, t, 0.04, 0.04, 0.2)
+    env(gw.gain, t, 0.02, 0.04, 0.2)
     ;[thump, whine].forEach((o) => {
       o.start(t)
       o.stop(t + 0.3)
     })
-    crackle(t, 0.14)
+    crackle(t, 0.07)
   },
+  // lámparas de la galería: el relé que cierra ("clunk"), el balasto que zumba y sube con el mismo
+  // titileo suave de la luz (category.js lightOn: 0.2 s sube, baja, enciende) y se apaga lento
   neon() {
     const t = ctx.currentTime
-    // zumbido de balasto con el mismo titileo suave de las lámparas (category.js lightOn)
-    const o = osc('sawtooth', 100)
-    const g = gainNode(0)
-    o.connect(filter('lowpass', 1800)).connect(g).connect(master)
-    const pattern = [
-      [0, 0.0001],
-      [0.02, 0.16],
-      [0.2, 0.07],
-      [0.3, 0.17],
-      [0.5, 0.09],
-    ]
-    pattern.forEach(([dt, v]) => g.gain.setValueAtTime(v, t + dt))
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1)
-    o.start(t)
-    o.stop(t + 1.15)
-    crackle(t + 0.01, 0.3)
-    crackle(t + 0.3, 0.22)
+    clunk(t, 0.1)
+    mains(t + 0.02, 1.4, 0.05, { bright: 420, flicker: [[0.2, 0.7], [0.3, 0.3], [0.45, 1]] })
+    burst(t + 0.02, { type: 'highpass', freq: 5000, peak: 0.012, attack: 0.1, hold: 0.3, release: 0.6 }) // siseo del arco
   },
+  // letrero de neón: dos arranques del transformador ("bzzt-bzzt") y el tubo que queda zumbando
   buzz() {
     const t = ctx.currentTime
-    const o = osc('sawtooth', 120)
-    const g = gainNode()
-    o.connect(filter('lowpass', 1500)).connect(g).connect(master)
-    env(g.gain, t, 0.09, 0.02, 0.28)
-    o.start(t)
-    o.stop(t + 0.32)
-    crackle(t, 0.12)
+    ;[0, 0.11].forEach((dt, i) => {
+      burst(t + dt, { freq: 3200, q: 1.2, peak: 0.05 - i * 0.015, attack: 0.003, hold: 0.04, release: 0.02 })
+      crackle(t + dt, 0.05)
+    })
+    mains(t + 0.02, 0.55, 0.035, { bright: 1400, flicker: [[0.05, 0.8], [0.09, 0.1], [0.14, 0.9], [0.2, 0.4], [0.26, 1]] })
   },
   decode({ dur = 0.3 } = {}) {
     const t = ctx.currentTime
@@ -189,30 +217,34 @@ const CUES = {
       const o = osc('square', 520 + Math.floor(Math.random() * 8) * 160)
       const g = gainNode()
       o.connect(g).connect(lp)
-      env(g.gain, at, 0.06, 0.003, 0.02)
+      env(g.gain, at, 0.03, 0.003, 0.02)
       o.start(at)
       o.stop(at + 0.03)
     }
   },
+  // rayos X: equipo "real", no un tono que sube — relé de arranque, motor grave del carro y el
+  // siseo de la lámpara que pasa (ruido filtrado que barre lento), sin notas musicales
   scan({ dur = 0.8 } = {}) {
     const t = ctx.currentTime
-    const o = osc('triangle', 160)
-    o.frequency.exponentialRampToValueAtTime(640, t + dur)
+    clunk(t, 0.06)
+    const f = filter('bandpass', 700, 3)
+    f.frequency.setValueAtTime(700, t)
+    f.frequency.linearRampToValueAtTime(1500, t + dur)
     const g = gainNode()
-    o.connect(filter('lowpass', 1400)).connect(g).connect(master)
+    noise(t, dur + 0.1).connect(f).connect(g).connect(master)
     g.gain.setValueAtTime(0.0001, t)
-    g.gain.exponentialRampToValueAtTime(0.12, t + 0.08)
-    g.gain.setValueAtTime(0.12, t + dur - 0.1)
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
-    o.start(t)
-    o.stop(t + dur + 0.02)
+    g.gain.exponentialRampToValueAtTime(0.09, t + 0.1)
+    g.gain.setValueAtTime(0.09, t + dur - 0.15)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.05)
+    mains(t, dur + 0.1, 0.03, { bright: 300, flicker: [[0.08, 1]] }) // motor
+    burst(t, { type: 'highpass', freq: 7000, peak: 0.01, attack: 0.1, hold: dur - 0.2, release: 0.1 }) // alta tensión
   },
   tick() {
     const t = ctx.currentTime
     const o = osc('square', 1250)
     const g = gainNode()
     o.connect(filter('lowpass', 2800)).connect(g).connect(master)
-    env(g.gain, t, 0.08, 0.002, 0.03)
+    env(g.gain, t, 0.04, 0.002, 0.03)
     o.start(t)
     o.stop(t + 0.04)
   },
@@ -223,14 +255,14 @@ const CUES = {
       const o = osc('square', f)
       const g = gainNode()
       o.connect(filter('lowpass', 2600)).connect(g).connect(master)
-      env(g.gain, at, 0.08, 0.003, 0.06)
+      env(g.gain, at, 0.04, 0.003, 0.06)
       o.start(at)
       o.stop(at + 0.08)
     })
   },
 }
 // separación mínima entre dos disparos del mismo cue (varios decodes a la vez = una sola ráfaga)
-const GAP = { decode: 0.25, buzz: 0.15, power: 0.05, static: 0.2 }
+const GAP = { decode: 0.25, buzz: 0.3, power: 0.05, static: 0.2 }
 
 function apply(v) {
   clearTimeout(offTimer)
