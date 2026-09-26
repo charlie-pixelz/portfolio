@@ -73,7 +73,7 @@ Detalle y evidencia en [`CRITICA_FABLE5.md`](files/CRITICA_FABLE5.md). Marca `�
 | F10 | Ratificar P1–P4 | ☑ | **P1→P2→P3→P4 ratificado** por Charlie (20/7) como ruta de lanzamiento/degradación |
 | F11 | Sistema tipográfico | ☑ | 5 familias con roles + regla de frontera de Doto (ver ART_DIR §3) |
 
-**Gates abiertos:** ninguno — **F1–F11 cerrados**. Lighthouse (2/8, `vite preview` + build real): Accesibilidad/Best Practices/SEO **100/100/100**. Performance móvil **44→74** tras acotar el precalentado de `category.js` (disparaba ~8 MB de media de las 4 categorías con solo cargar Inicio; ahora espera una señal real de que alguien va a Proyectos — hover/click del letrero). Sigue bajo el piso de 85: el LCP (~8.3s) no se movió con ese fix, parece atado al pipeline de texturas WebGL del hero — posiblemente inflado por el renderer por software del Chrome headless usado para medir (no es un dispositivo real). Pendiente no-bloqueante: revisar con un dispositivo/PageSpeed real antes de perseguir más este número.
+**Gates abiertos:** ninguno — **F1–F11 cerrados**. **PageSpeed en producción (26/9/2026, tras la revisión de 8 fases): Performance 95 celular / 96 desktop** (antes 37), Accesibilidad/Recomendaciones/SEO 100 — **DoD de Lighthouse cumplido**. Clave del salto: el Inicio dibuja a ~8 cuadros/s en reposo (4 sin GPU), la resolución se sigue adaptando en reposo y con WebGL por software arranca a densidad 0.5 (`src/gl/stage.js`, `src/gl/hero.js`). Si vuelve a subir el TBT, revisar primero ese loop.
 
 ---
 
