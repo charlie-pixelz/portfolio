@@ -313,28 +313,35 @@ export function initBio({ lang, isMobile = false }) {
     // hacer scroll dentro, con un piso de 45svh: más arriba el cráneo queda bajo el breadcrumb
     el.style.setProperty('--scene-h', `max(45svh, ${Math.floor(sceneH)}px)`)
 
-    // "Quién soy" suele ser el panel más corto: el párrafo crece (hasta 1.1rem) para ocupar el aire
-    // que dejan los otros dos; lo que aún sobre se reparte arriba y abajo (CSS: centrado)
-    const about = boxOf.about
-    if (!about) return
-    const wasHidden = about.hidden
-    about.hidden = false
-    if (wasHidden) about.style.visibility = 'hidden'
-    textEl.style.removeProperty('font-size')
-    const cs = getComputedStyle(about)
-    const room = about.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 0.6 * rem
-    const fits = () => [...about.children].reduce((h, ch) => h + ch.offsetHeight, 0) <= room
-    let size = parseFloat(getComputedStyle(textEl).fontSize)
+    // "Quién soy" y "Habilidades" suelen quedar más cortos que "Herramientas": su texto crece (hasta
+    // 1.1rem) para ocupar el aire que sobra; lo que aún quede se reparte arriba y abajo (CSS)
+    grow(boxOf.about, [textEl], rem)
+    grow(boxOf.skills, [skillsUl, ...skillsUl.children], rem)
+  }
+  const grow = (box, targets, rem) => {
+    if (!box) return
+    const wasHidden = box.hidden
+    box.hidden = false
+    if (wasHidden) box.style.visibility = 'hidden'
+    targets.forEach((t) => t.style.removeProperty('font-size'))
+    const kids = [...box.children]
+    kids.forEach((ch) => (ch.style.flex = 'none'))
+    const cs = getComputedStyle(box)
+    const room = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 0.6 * rem - 2
+    const fits = () => kids.reduce((h, ch) => h + ch.offsetHeight, 0) <= room
+    const set = (px) => targets.forEach((t) => (t.style.fontSize = `${px}px`))
+    let size = parseFloat(getComputedStyle(targets.at(-1)).fontSize)
     while (size < 1.1 * rem) {
-      textEl.style.fontSize = `${size + 0.5}px`
+      set(size + 0.5)
       if (!fits()) {
-        textEl.style.fontSize = `${size}px`
+        set(size)
         break
       }
       size += 0.5
     }
-    about.hidden = wasHidden
-    about.style.removeProperty('visibility')
+    kids.forEach((ch) => ch.style.removeProperty('flex'))
+    box.hidden = wasHidden
+    box.style.removeProperty('visibility')
   }
 
   const prepare = () => {
