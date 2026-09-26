@@ -21,6 +21,7 @@ import { gsap } from 'gsap'
 import { quality } from './quality.js'
 import { flattenScreen } from '../ui/screens.js'
 import { heroLens, heroFx } from '../gl/hero.js'
+import { sfx } from './sound.js'
 
 const SEG = { es: 'proyectos', en: 'projects' }
 const BIO = { es: 'biografia', en: 'biography' }
@@ -94,6 +95,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
   let glitchTimer
   const tvGlitch = () => {
     if (reduced) return
+    sfx('static')
     glitchEl.classList.remove('is-on')
     void glitchEl.offsetWidth // reinicia la animación
     glitchEl.classList.add('is-on')
@@ -234,6 +236,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
       const el = catScreens[c]
       // desfase chico y distinto por monitor: la cascada se siente orgánica, no un bloque
       setTimeout(() => {
+        sfx('power')
         el.classList.remove('is-off')
         el.classList.add('is-powering')
         setTimeout(() => el.classList.remove('is-powering'), 460)
@@ -609,6 +612,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
 
   // Parte: hero visible. Llega a: bio visible (rayos X encendido, cajas reveladas), hero oculto.
   const homeToBio = (done) => {
+    sfx('whoosh', { dir: 'in', dur: 0.8 })
     // recentra el personaje del hero (sin parallax del mouse) antes de fundir a la escena
     dispatchEvent(new Event('cp:hero-settle'))
     // B4: la lente de rayos X (desktop) se expande desde el cráneo hasta llenar la pantalla, o el
@@ -644,6 +648,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
 
   // Parte: bio visible. Llega a: hero visible, bio oculto.
   const bioToHome = (done) => {
+    sfx('whoosh', { dir: 'out', dur: 0.8 })
     // B4: el hero vuelve DEBAJO de Biografía con la lente completa (misma imagen), se
     // apagan paneles y miras, y la lente se cierra sobre el cráneo (o el barrido sube)
     if (heroLens.ready) {
@@ -675,6 +680,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
 
   // Parte: hero visible. Llega a: contacto visible (panel revelado), hero oculto.
   const homeToContacto = (done) => {
+    sfx('whoosh', { dir: 'out', dur: 0.9 })
     contacto.prepare()
     contacto.enter() // arranca el video durante el barrido
     sweep(true, () => {
@@ -686,6 +692,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
 
   // Parte: contacto visible. Llega a: hero visible, contacto oculto.
   const contactoToHome = (done) => {
+    sfx('whoosh', { dir: 'in', dur: 0.9 })
     hero.hidden = false
     sweep(false, () => {
       contacto.el.hidden = true
@@ -697,10 +704,11 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
 
   // despachadores: mismo nombre/firma para desktop y mobile — direct()/exitToHome()/
   // enterFromHome() no necesitan saber cuál corre por dentro.
-  const homeToProjects = (done) => (isMobile ? homeToProjectsMobile(done) : homeToProjectsDesktop(done))
-  const projectsToHome = (done) => (isMobile ? projectsMobileToHome(done) : projectsToHomeDesktop(done))
-  const projectsToCat = (catKey, done) => (isMobile ? projectsMenuToCat(catKey, done) : projectsToCatDesktop(catKey, done))
-  const catToProjects = (catKey, done) => (isMobile ? catToProjectsMenu(catKey, done) : catToProjectsDesktop(catKey, done))
+  // H4: whoosh "in" al acercarse a una pantalla, "out" al alejarse
+  const homeToProjects = (done) => (sfx('whoosh', { dir: 'out' }), isMobile ? homeToProjectsMobile(done) : homeToProjectsDesktop(done))
+  const projectsToHome = (done) => (sfx('whoosh', { dir: 'in' }), isMobile ? projectsMobileToHome(done) : projectsToHomeDesktop(done))
+  const projectsToCat = (catKey, done) => (sfx('whoosh', { dir: 'in' }), isMobile ? projectsMenuToCat(catKey, done) : projectsToCatDesktop(catKey, done))
+  const catToProjects = (catKey, done) => (sfx('whoosh', { dir: 'out' }), isMobile ? catToProjectsMenu(catKey, done) : catToProjectsDesktop(catKey, done))
 
   // pares con animación DEDICADA (ver cabecera del archivo)
   const direct = (from, view) => {

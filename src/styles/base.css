@@ -1880,6 +1880,89 @@ body.route-category .crt {
   color: var(--phosphor);
   word-break: break-word;
 }
+/* C2/C1: fila con el link + un botón chico a la derecha (Copiar / CV en el otro idioma) */
+.contacto__links li {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+.contacto__link {
+  flex: 1;
+  min-width: 0;
+}
+.contacto__chip {
+  flex: none;
+  font-family: var(--font-pixel);
+  font-variation-settings: 'wght' 600, 'ELGR' 2;
+  font-size: clamp(0.8rem, 1.15vw, 0.95rem);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: var(--phosphor);
+  background: rgba(1, 12, 5, 0.4);
+  border: 1px solid var(--phosphor-dim);
+  padding: 0.45em 0.75em 0.5em;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+.contacto__chip:hover,
+.contacto__chip:focus-visible,
+.contacto__chip.is-done {
+  background: var(--phosphor);
+  border-color: var(--phosphor);
+  color: var(--void);
+  outline: none;
+}
+/* C3: estado "disponible" — lectura de sistema sobre la tagline, con un led que respira lento
+   (pulso de 2.4 s: nada que se acerque a los 3 destellos/s de WCAG 2.3.1) */
+.contacto__status {
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  margin: 0 0 0.7em;
+  font-family: var(--font-pixel);
+  font-variation-settings: 'wght' 500, 'ELGR' 2;
+  font-size: clamp(0.85rem, 1.25vw, 1.05rem);
+  letter-spacing: 0.06em;
+  color: var(--phosphor-dim);
+}
+.contacto__status b {
+  font-weight: inherit;
+  font-variation-settings: 'wght' 700, 'ELGR' 2;
+  color: var(--phosphor);
+  text-transform: uppercase;
+  text-shadow: 0 0 8px var(--phosphor-glow);
+}
+.contacto__dot {
+  width: 0.55em;
+  height: 0.55em;
+  background: var(--phosphor);
+  box-shadow: 0 0 8px var(--phosphor-glow);
+  animation: contactoDot 2.4s ease-in-out infinite;
+}
+@keyframes contactoDot {
+  50% {
+    opacity: 0.35;
+    box-shadow: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contacto__dot {
+    animation: none;
+  }
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
 /* CRT reforzado SOLO en Contacto: scanlines densas + viñeta sobre el video → camufla el
    pixelado de compresión sin subir el peso del asset (lo-fi simulado en CSS, CLAUDE §3). */
 .contacto__crt {
@@ -1970,6 +2053,10 @@ body.route-category .crt {
   }
   .contacto__link-value {
     font-size: clamp(0.88rem, 3.4vw, 1rem);
+  }
+  .contacto__chip,
+  .contacto__status {
+    font-size: clamp(0.85rem, 3.4vw, 1rem);
   }
 }
 
@@ -2435,6 +2522,44 @@ body.route-contacto .pipboy__item[data-route='contacto'] {
   background: var(--phosphor);
   color: var(--void);
   border-color: var(--phosphor);
+  outline: none;
+}
+/* H4: interruptor de sonido (apagado por defecto; sound.js) */
+.pipboy__sound {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.7rem;
+  padding: 0.7rem 0 0;
+  border: 0;
+  border-top: 1px solid rgba(51, 255, 102, 0.25);
+  background: none;
+  font-family: var(--font-pixel);
+  font-variation-settings: 'wght' 500, 'ELGR' 2;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  color: var(--phosphor-dim);
+  cursor: pointer;
+}
+.pipboy__sound-state {
+  min-width: 3.2em;
+  padding: 0.25em 0.6em;
+  border: 1px solid var(--phosphor-dim);
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+.pipboy__sound[aria-checked='true'] {
+  color: var(--phosphor);
+}
+.pipboy__sound[aria-checked='true'] .pipboy__sound-state,
+.pipboy__sound:hover .pipboy__sound-state,
+.pipboy__sound:focus-visible .pipboy__sound-state {
+  background: var(--phosphor);
+  border-color: var(--phosphor);
+  color: var(--void);
+}
+.pipboy__sound:focus-visible {
   outline: none;
 }
 @media (prefers-reduced-motion: reduce) {

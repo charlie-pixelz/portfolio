@@ -5,6 +5,7 @@
 
 import menuOff from '../../assets/icons/icon_menu-off.png'
 import menuOn from '../../assets/icons/icon_menu-on.png'
+import { sound } from '../core/sound.js'
 
 export function initMenu() {
   const nav = document.querySelector('.pipboy')
@@ -16,6 +17,25 @@ export function initMenu() {
   // los íconos on/off (pixel-art) se inyectan como variables → el CSS los intercambia al abrir/hover
   toggle.style.setProperty('--menu-off', `url(${menuOff})`)
   toggle.style.setProperty('--menu-on', `url(${menuOn})`)
+
+  // H4: interruptor de sonido al pie del panel (apagado por defecto; sound.js)
+  if (sound.available) {
+    const en = document.documentElement.lang === 'en'
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'pipboy__sound'
+    btn.setAttribute('role', 'menuitemcheckbox')
+    btn.innerHTML = `<span>${en ? 'SOUND' : 'SONIDO'}</span><span class="pipboy__sound-state"></span>`
+    const state = btn.lastChild
+    const sync = (v) => {
+      btn.setAttribute('aria-checked', String(v))
+      state.textContent = v ? 'ON' : 'OFF'
+    }
+    sync(sound.on)
+    sound.onChange(sync)
+    btn.addEventListener('click', () => sound.toggle())
+    panel.appendChild(btn)
+  }
 
   let open = false
   const setOpen = (v) => {

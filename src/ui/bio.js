@@ -13,6 +13,7 @@
 import { gsap } from 'gsap'
 import { SplitText } from 'gsap/SplitText'
 import { quality } from '../core/quality.js'
+import { sfx } from '../core/sound.js'
 
 gsap.registerPlugin(SplitText)
 
@@ -97,6 +98,7 @@ function decode(node, text, dur) {
     p: 1,
     duration: dur,
     ease: 'none',
+    onStart: () => sfx('decode', { dur }), // H4: reemplaza al "tecleo" que B2 eliminó
     onUpdate: () => {
       const n = Math.floor(o.p * text.length)
       let s = text.slice(0, n)
@@ -414,6 +416,7 @@ export function initBio({ lang, isMobile = false }) {
   const runScan = (onCross, xray) => {
     const o = { p: 0 }
     const crossed = new Set()
+    sfx('scan', { dur: SCAN_DUR })
     gsap.set(scan, { opacity: 1 })
     return track(
       gsap.to(o, {

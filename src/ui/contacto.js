@@ -5,6 +5,7 @@
 
 import { gsap } from 'gsap'
 import { quality } from '../core/quality.js'
+import { sfx } from '../core/sound.js'
 import webmUrl from '../../assets/efecto-loop/contacto_loop_1080.webm'
 import mp4Url from '../../assets/efecto-loop/contacto_loop_1080_h264.mp4'
 import posterUrl from '../../assets/efecto-loop/contacto_poster.webp'
@@ -13,13 +14,34 @@ import posterUrl from '../../assets/efecto-loop/contacto_poster.webp'
 import posterMobileUrl from '../../assets/efecto-loop/contacto_poster_mobile.webp'
 
 const CONTENT = {
-  es: { tagline: '¿Creamos algo impresionante?' }, // cabe en una línea
-  en: { tagline: 'Shall we create something amazing?' }, // va en 2 líneas (caja más alta)
+  es: {
+    tagline: '¿Creamos algo impresionante?', // cabe en una línea
+    status: 'Disponible', // C3
+    statusDetail: 'freelance y full-time',
+    copy: 'Copiar',
+    copied: 'Copiado',
+    copiedSr: 'Email copiado al portapapeles',
+    cv: 'Descargar PDF',
+    cvAlt: { label: 'EN', aria: 'Descargar CV en inglés' },
+  },
+  en: {
+    tagline: 'Shall we create something amazing?', // va en 2 líneas (caja más alta)
+    status: 'Available',
+    statusDetail: 'freelance & full-time',
+    copy: 'Copy',
+    copied: 'Copied',
+    copiedSr: 'Email copied to clipboard',
+    cv: 'Download PDF',
+    cvAlt: { label: 'ES', aria: 'Download CV in Spanish' },
+  },
 }
+const EMAIL = 'c.perez.grafica@gmail.com'
+// C1: el PDF del idioma de la página + un acceso chico al otro (servidos desde public/cv/)
+const CV = { es: '/cv/CV_Carlos_Perez_2026_ES.pdf', en: '/cv/CV_Carlos_Perez_2026_EN.pdf' }
 // links reales (los abre el usuario con su clic; wa.me/linkedin en pestaña nueva)
 const LINKS = [
   { label: 'WhatsApp', value: '+56 9 9473 8880', href: 'https://wa.me/56994738880', ext: true },
-  { label: 'Email', value: 'c.perez.grafica@gmail.com', href: 'mailto:c.perez.grafica@gmail.com', ext: false },
+  { label: 'Email', value: EMAIL, href: `mailto:${EMAIL}`, ext: false, copy: true },
   { label: 'LinkedIn', value: '/in/charlie-pixelz', href: 'https://www.linkedin.com/in/charlie-pixelz', ext: true },
 ]
 
@@ -27,6 +49,7 @@ export function initContacto({ lang, isMobile = false }) {
   const el = document.querySelector('.contacto')
   if (!el) return null
   const c = CONTENT[lang] || CONTENT.es
+  const other = lang === 'en' ? 'es' : 'en'
   const video = el.querySelector('.contacto__video')
   const taglineEl = el.querySelector('.contacto__tagline')
   const linksUl = el.querySelector('.contacto__links')
@@ -45,19 +68,77 @@ export function initContacto({ lang, isMobile = false }) {
 
   // contenido (la tagline hace de título de la caja; el nombre "Contacto" va en el breadcrumb)
   taglineEl.textContent = c.tagline
-  linksUl.innerHTML = LINKS.map(
-    (l) =>
-      `<li><a class="contacto__link" href="${l.href}"${l.ext ? ' target="_blank" rel="noopener"' : ''}>` +
-      `<span class="contacto__link-label">${l.label}</span>` +
-      `<span class="contacto__link-value">${l.value}</span></a></li>`,
-  ).join('')
+  // C3: línea de disponibilidad, sobre la tagline (lectura tipo "estado del sistema")
+  const status = document.createElement('p')
+  status.className = 'contacto__status'
+  status.innerHTML = `<span class="contacto__dot" aria-hidden="true"></span><b>${c.status}</b> · ${c.statusDetail}`
+  taglineEl.before(status)
+
+  const rows = [
+    ...LINKS.map((l) => ({ ...l, ev: l.label.toLowerCase() })),
+    { label: 'CV', value: c.cv, href: CV[lang], download: true, ev: `cv-${lang}` },
+  ]
+  linksUl.innerHTML = rows
+    .map(
+      (l) =>
+        `<li><a class="contacto__link" href="${l.href}" data-ev="${l.ev}"` +
+        (l.ext ? ' target="_blank" rel="noopener"' : '') +
+        (l.download ? ' download' : '') +
+        `><span class="contacto__link-label">${l.label}</span>` +
+        `<span class="contacto__link-value">${l.value}</span></a>` +
+        // C2: copiar el email sin depender de un cliente de correo configurado
+        (l.copy ? `<button class="contacto__chip" type="button" data-copy>${c.copy}</button>` : '') +
+        (l.download ? `<a class="contacto__chip" href="${CV[other]}" download data-ev="cv-${other}" hreflang="${other}" aria-label="${c.cvAlt.aria}">${c.cvAlt.label}</a>` : '') +
+        `</li>`,
+    )
+    .join('')
+  const live = document.createElement('span')
+  live.className = 'sr-only'
+  live.setAttribute('aria-live', 'polite')
+  panel.appendChild(live)
+
   // GoatCounter: único clic que de verdad importa medir acá — el resto de la navegación (rutas
-  // internas) ya la cuenta router.js. Estos links salen del sitio (wa.me/mailto/linkedin), así que
-  // sin un evento explícito no quedarían registrados en ningún lado.
-  el.querySelectorAll('.contacto__link').forEach((a, i) => {
-    a.addEventListener('click', () => {
-      window.goatcounter?.count?.({ path: `contacto-click-${LINKS[i].label.toLowerCase()}`, event: true })
-    })
+  // internas) ya la cuenta router.js. Estos links salen del sitio (wa.me/mailto/linkedin/PDF), así
+  // que sin un evento explícito no quedarían registrados en ningún lado.
+  const count = (ev) => window.goatcounter?.count?.({ path: `contacto-click-${ev}`, event: true })
+  el.querySelectorAll('[data-ev]').forEach((a) => a.addEventListener('click', () => count(a.dataset.ev)))
+
+  // navigator.clipboard solo existe en contexto seguro (https/localhost): en la IP de la red local
+  // (pruebas en el celular) cae al execCommand de siempre
+  const copyText = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.setAttribute('readonly', '')
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none'
+      document.body.appendChild(ta)
+      ta.select()
+      let ok = false
+      try {
+        ok = document.execCommand('copy')
+      } catch {}
+      ta.remove()
+      return ok
+    }
+  }
+  const copyBtn = linksUl.querySelector('[data-copy]')
+  let copyTimer
+  copyBtn?.addEventListener('click', async () => {
+    if (!(await copyText(EMAIL))) return
+    count('copiar-email')
+    sfx('confirm')
+    copyBtn.textContent = `${c.copied} ✓`
+    copyBtn.classList.add('is-done')
+    live.textContent = c.copiedSr
+    clearTimeout(copyTimer)
+    copyTimer = setTimeout(() => {
+      copyBtn.textContent = c.copy
+      copyBtn.classList.remove('is-done')
+      live.textContent = ''
+    }, 1800)
   })
 
   const revealTargets = [panel, crumb]
@@ -65,7 +146,7 @@ export function initContacto({ lang, isMobile = false }) {
   const prepare = () => {
     setPoster()
     gsap.set(revealTargets, { opacity: 0 })
-    gsap.set(el.querySelectorAll('.contacto__link'), { opacity: 0 })
+    gsap.set(el.querySelectorAll('.contacto__links > li'), { opacity: 0 })
   }
 
   // "cambio de canal" al reiniciar el loop (la costura no es suave): cortes horizontales +
@@ -122,14 +203,14 @@ export function initContacto({ lang, isMobile = false }) {
   const reveal = () => {
     if (quality.reducedMotion) {
       gsap.set(revealTargets, { opacity: 1, y: 0 })
-      gsap.set(el.querySelectorAll('.contacto__link'), { opacity: 1 })
+      gsap.set(el.querySelectorAll('.contacto__links > li'), { opacity: 1 })
       return
     }
     gsap.fromTo(crumb, { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.4, ease: 'power2.out' })
     gsap
       .timeline({ delay: 0.3 })
       .fromTo(panel, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' })
-      .to(el.querySelectorAll('.contacto__link'), { opacity: 1, x: 0, duration: 0.35, stagger: 0.1, startAt: { x: -14 } }, '-=0.2')
+      .to(el.querySelectorAll('.contacto__links > li'), { opacity: 1, x: 0, duration: 0.35, stagger: 0.1, startAt: { x: -14 } }, '-=0.2')
   }
 
   const leave = () => {

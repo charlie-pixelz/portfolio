@@ -4,6 +4,7 @@
 
 import { gsap } from 'gsap'
 import { quality } from '../core/quality.js'
+import { sfx } from '../core/sound.js'
 import casos from '../../files/proyectos/casos.json'
 import { createViewer } from './viewer.js'
 
@@ -367,6 +368,7 @@ export function initCategory({ lang }) {
 
   // secuencia de encendido: las lámparas calientan (un titileo suave) → aparece el chrome
   const lightOn = () => {
+    sfx('neon')
     if (quality.reducedMotion) {
       gsap.set(luces, { opacity: 1 })
       gsap.set(reveal, { opacity: 1, y: 0 })
