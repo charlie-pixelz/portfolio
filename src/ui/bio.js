@@ -279,6 +279,64 @@ export function initBio({ lang, isMobile = false }) {
   }
 
   // deja todo en el estado "apagado" (lo llama el router antes de entrar)
+  // celular alto (p. ej. 430×932): el dossier empezaba siempre al 52 % del alto y el panel se
+  // estiraba hasta abajo, con media caja vacía bajo "Quién soy" (Charlie, 26/9). Se mide el alto
+  // natural del panel más largo de los 3 y el dossier empieza donde haga falta para que el panel
+  // tenga el tamaño de su contenido; el esqueleto se acomoda al resto (glideTarget).
+  const fitDossier = () => {
+    if (!isMobile || el.hidden) return
+    el.style.removeProperty('--scene-h')
+    const boxes = Object.values(boxOf)
+    let need = 0
+    boxes.forEach((b) => {
+      const hidden = b.hidden
+      b.hidden = false
+      b.style.visibility = 'hidden'
+      b.style.bottom = 'auto'
+      b.style.overflowY = 'visible'
+      const grow = [...b.children].map((ch) => [ch, ch.style.flex])
+      grow.forEach(([ch]) => (ch.style.flex = 'none'))
+      need = Math.max(need, b.offsetHeight)
+      grow.forEach(([ch, f]) => (ch.style.flex = f))
+      b.style.removeProperty('visibility')
+      b.style.removeProperty('bottom')
+      b.style.removeProperty('overflow-y')
+      b.hidden = hidden
+    })
+    const box = boxes[0]
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+    const bottom = parseFloat(getComputedStyle(box).bottom) || rem
+    const tabsH = tabsEl?.offsetHeight || 2.75 * rem
+    // mismo encadenado que el CSS: pestañas en scene-h − 0.6rem, panel 0.4rem bajo ellas
+    const sceneH = innerHeight - bottom - (need + 1.2 * rem) - 0.4 * rem - tabsH + 0.6 * rem
+    // y al revés en teléfonos bajos (375×667): el panel sube lo que necesite para no tener que
+    // hacer scroll dentro, con un piso de 45svh: más arriba el cráneo queda bajo el breadcrumb
+    el.style.setProperty('--scene-h', `max(45svh, ${Math.floor(sceneH)}px)`)
+
+    // "Quién soy" suele ser el panel más corto: el párrafo crece (hasta 1.1rem) para ocupar el aire
+    // que dejan los otros dos; lo que aún sobre se reparte arriba y abajo (CSS: centrado)
+    const about = boxOf.about
+    if (!about) return
+    const wasHidden = about.hidden
+    about.hidden = false
+    if (wasHidden) about.style.visibility = 'hidden'
+    textEl.style.removeProperty('font-size')
+    const cs = getComputedStyle(about)
+    const room = about.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 0.6 * rem
+    const fits = () => [...about.children].reduce((h, ch) => h + ch.offsetHeight, 0) <= room
+    let size = parseFloat(getComputedStyle(textEl).fontSize)
+    while (size < 1.1 * rem) {
+      textEl.style.fontSize = `${size + 0.5}px`
+      if (!fits()) {
+        textEl.style.fontSize = `${size}px`
+        break
+      }
+      size += 0.5
+    }
+    about.hidden = wasHidden
+    about.style.removeProperty('visibility')
+  }
+
   const prepare = () => {
     running.forEach((a) => a.kill())
     running = []
@@ -298,6 +356,7 @@ export function initBio({ lang, isMobile = false }) {
     scene.style.setProperty('--scan', '0%')
     gsap.set(scan, { opacity: 0, top: '0%' })
     active = null
+    fitDossier()
     Object.values(lockOf).forEach((l) => l.classList.remove('is-active'))
   }
 
@@ -538,6 +597,7 @@ export function initBio({ lang, isMobile = false }) {
         if (el.hidden) return
         split?.revert()
         split = null
+        fitDossier()
         if (isMobile && active) gsap.set(scene, glideTarget())
         layoutAll()
         ORDER.forEach((k) => (wireOf[k].style.strokeDasharray = 'none'))

@@ -1625,6 +1625,9 @@ body.route-category .crt {
   .bio__box-title {
     display: none; /* la pestaña ya nombra el panel */
   }
+  .bio__box[data-anchor='about'] {
+    justify-content: center; /* bio.js agranda el párrafo; si aún sobra alto, se reparte */
+  }
   .bio__title {
     font-size: 1.45rem;
     text-align: left;
