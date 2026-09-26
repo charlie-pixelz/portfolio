@@ -78,7 +78,7 @@ const CONTENT = {
 // izquierda, Herramientas y Habilidades a la derecha; celular: el orden de las pestañas).
 const ANCHORS = {
   desktop: { tools: [0.545, 0.36], about: [0.41, 0.8], skills: [0.6, 0.72] },
-  mobile: { tools: [0.604, 0.415], about: [0.3, 0.77], skills: [0.87, 0.74] },
+  mobile: { tools: [0.604, 0.415], about: [0.3, 0.75], skills: [0.87, 0.74] },
 }
 const SKULL_TOP = 0.28 // borde superior del cráneo en la radiografía móvil (para el deslizamiento)
 const ORDER = ['about', 'tools', 'skills'] // orden de las pestañas en celular
@@ -198,15 +198,19 @@ export function initBio({ lang, isMobile = false }) {
     })
   }
 
-  // celular: el esqueleto aparece en la MISMA posición que el personaje del hero y después sube (y se
-  // aleja un poco si hace falta) para dejar las 3 miras entre el breadcrumb y las pestañas
+  // celular: el esqueleto aparece en la MISMA posición que el personaje del hero y después sube para
+  // dejar las 3 miras entre el breadcrumb y las pestañas. Prioridad: escala 1, así la imagen sigue
+  // ocupando todo el ancho (Charlie, 25/9). Si no cabe, el cráneo puede pasar bajo el breadcrumb; solo
+  // si aun así no cabe (teléfonos bajos) se aleja lo justo.
   const glideTarget = () => {
     const h = scene.offsetHeight // sin transformar
-    const lo = el.querySelector('.bio__crumb').getBoundingClientRect().bottom + 14
+    const crumb = el.querySelector('.bio__crumb').getBoundingClientRect()
     const hi = parseFloat(getComputedStyle(tabsEl).top) - 40
     const ys = ORDER.map((k) => ANCHORS.mobile[k][1])
     const a = Math.min(SKULL_TOP, ...ys)
     const need = (Math.max(...ys) - a) * h
+    let lo = crumb.bottom + 14
+    if (need > hi - lo) lo = Math.max(crumb.top, hi - need)
     const scale = Math.min(1, (hi - lo) / need)
     // transform-origin arriba al centro: el punto `a` queda en offsetTop + y + a·h·scale
     const y = lo + (hi - lo - need * scale) / 2 - scene.offsetTop - a * h * scale
