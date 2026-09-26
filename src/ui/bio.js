@@ -314,7 +314,7 @@ export function initBio({ lang, isMobile = false }) {
     if (key === 'about') {
       tl.add(decode(titleEl, c.title, 0.3), 0.04)
       // se parte una sola vez por visita (no en cada cambio de pestaña: partir fuerza un relayout)
-      if (!split) split = SplitText.create(textEl, { type: 'lines', mask: 'lines' })
+      if (!split) split = SplitText.create(textEl, { type: 'lines', mask: 'lines', linesClass: 'bio__line' })
       tl.from(split.lines, { yPercent: 100, duration: 0.32, stagger: 0.035, ease: 'power3.out' }, 0.12)
     } else {
       const title = box.querySelector('.bio__box-title')

@@ -1321,7 +1321,16 @@ body.route-category .crt {
   .bio__skills {
     flex: 1;
     align-content: center;
-    gap: 0.85em;
+    gap: 0.55em;
+  }
+  /* lag al cambiar de pestaña (2.ª pasada): lo que GSAP anima dentro del panel va en su propia capa
+     de GPU. Sin esto, cada cuadro de la animación obligaba a redibujar el panel entero con su brillo
+     (filter: drop-shadow) y su silueta escalonada (clip-path). */
+  .bio__box,
+  .bio__line,
+  .bio__tool,
+  .bio__skills li {
+    will-change: transform, opacity;
   }
   .bio__tools {
     grid-template-columns: repeat(2, minmax(0, 1fr));
