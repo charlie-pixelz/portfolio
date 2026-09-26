@@ -106,16 +106,16 @@ Detalle y evidencia en [`CRITICA_FABLE5.md`](files/CRITICA_FABLE5.md). Marca `�
 
 ## 5. No-negociables
 
-- **Accesibilidad (piso):** `prefers-reduced-motion` → sin parallax/partículas/cursor custom/shader; fades ≤ 300 ms; contenido 100% navegable. Teclado completo con foco visible propio. Cursor custom = capa visual (`pointer-events:none`), nunca reemplaza al del sistema: el cursor nativo puede llevar imagen por CSS (flecha/punto/retícula fósforo, 25/9 — sigue siendo el del sistema, sin retraso y sin depender de JS), pero nunca se oculta para dibujar uno con JS. Audio solo **opt-in**, jamás autoplay.
+- **Accesibilidad (piso):** `prefers-reduced-motion` → sin parallax/partículas/cursor custom/shader; fades ≤ 300 ms; contenido 100% navegable. Teclado completo con foco visible propio. Cursor custom = capa visual (`pointer-events:none`), nunca reemplaza al del sistema: el cursor nativo puede llevar imagen por CSS (flecha/punto/retícula fósforo, 25/9 — sigue siendo el del sistema, sin retraso y sin depender de JS), pero nunca se oculta para dibujar uno con JS. Audio: **nunca suena sin un gesto del usuario**. Decisión de Charlie (26/9, reemplaza el "solo opt-in" original): el sonido se elige en el preloader, junto al idioma, **marcado por defecto** y a la vista antes de que suene nada; arranca con el primer clic de la página y hay un control siempre visible (ecualizador bajo el menú). Efectos sintetizados con Web Audio (`src/core/sound.js`, 0 bytes de audio). Quien entra directo a `/es/` `/en/` sin pasar por el preloader empieza sin sonido.
 - **Fotosensibilidad (WCAG 2.3.1, obligatorio):** nunca **> 3 destellos/s**, sin strobe de pantalla completa a alto contraste. Flicker de neón "antiguo" = lento e irregular (2–4 s entre eventos).
-- **Contraste:** texto de lectura (Space Grotesk) cumple **AA (4.5:1)**; nunca párrafos en magenta puro; Doto nunca lleva cuerpo de lectura (regla de frontera, F11).
+- **Contraste:** texto de lectura (Chakra Petch) cumple **AA (4.5:1)**; nunca párrafos en magenta puro; Doto nunca lleva cuerpo de lectura (regla de frontera, F11).
 - **Identidad:** los referentes (Blade Runner, Cyberpunk, Fallout/Pip-Boy) **se evocan, nunca se citan** — cero marcas, nombres o assets de esas IPs en el sitio ni en el dominio. La ingeniería se hereda de unseen.co; la estética es 100% de Charlie.
 - **Capa OS vs Mundo:** verde `--phosphor` = interfaz (menú, rayos X, readouts); magenta/cian = mundo (escenas, letreros). No mezclar.
 - **"Loader que miente = prohibido":** el % es progreso real del asset manager.
 
 **Paleta** (tokens, ART_DIR §2): `--void #010135` · `--deep #00026C` · `--magenta #F202CD` · `--purple #9303AA` · `--cyan #4BDFF4` · `--phosphor #33FF66` · `--phosphor-dim #1FA648` · `--phosphor-glow rgba(51,255,102,.35)` · `--red-eye ~#FF2A2A`.
 
-**Tipografía** (roles cerrados, ART_DIR §3): **Glitch Goblin** (solo título hero) · **Space Grotesk** (todo texto de lectura) · **Handjet** (títulos 1 línea + menú Pip-Boy; efecto píxel vía ejes variables `wght`/`ELSH`/`ELGR`) · **Doto** (bloques retro 2–3 líneas máx, `wght`/`ROND`, ≥18–20 px) · **Protest Revolution** (solo swap por hover). Los TTF + OFL están en `/fonts` → convertir a woff2 subseteado.
+**Tipografía** (roles cerrados, ART_DIR §3): **Glitch Goblin** (solo título hero) · **Chakra Petch** (todo texto de lectura; reemplazó a Space Grotesk el 26/9, P6) · **Handjet** (títulos 1 línea + menú Pip-Boy; efecto píxel vía ejes variables `wght`/`ELSH`/`ELGR`) · **Doto** (bloques retro 2–3 líneas máx, `wght`/`ROND`, ≥18–20 px) · **Protest Revolution** (solo swap por hover). Los TTF + OFL están en `/fonts` → convertir a woff2 subseteado.
 
 ---
 
@@ -125,7 +125,7 @@ Optimizados listos en **`assets/upscale/`**; máster/fuente en `assets/efecto-*/
 
 **Listos (verificados en repo):** hero clean 2400/4602w · **depth-map hero** (`efecto-fake3d/…_depth-map.png`) · bio 2400/4602w · sala proyectos desktop 2400/4096w + móvil 1080/2446w · categoría desktop/móvil (apagadas) + **capas de LUCES** (`efecto-galeria/Categoria_*_Luces.png`, sin optimizar aún) · callejón 1536w · menú móvil · Contacto (webm+mp4+poster) · 11 íconos de herramientas + 3 flechas · JSON de pantallas (`files/pantallas/`) · 5 familias tipográficas (TTF+OFL) · `hero_css_demo_v6.html` (prototipo nav diegética).
 
-**Ya cerrados (verificado 2/8, doc estaba desactualizado):** copy Biografía ES/EN (`bio.js`) · contenido de los 16 casos, título/desc/tags/media ES/EN (`casos.json`) · datos de contacto reales — email, WhatsApp, LinkedIn (`contacto.js`; **falta Behance**, descartado por ahora, Charlie evalúa sumarlo a futuro).
+**Ya cerrados (verificado 2/8, doc estaba desactualizado):** copy Biografía ES/EN (`bio.js`) · contenido de los 16 casos, título/desc/tags/media ES/EN (`casos.json`) · datos de contacto reales — email, WhatsApp, LinkedIn (`contacto.js`; **falta Behance**, descartado por ahora, Charlie evalúa sumarlo a futuro) · CV ES/EN descargable en Contacto (`public/cv/`, 26/9; reemplazar esos PDF si Charlie actualiza su CV).
 
 **Cerrados (3/8):** favicon + apple-touch-icon (recortados del ojo rojo del preloader) · og-image 1200×630 · GoatCounter (`<script>` con `no_onload` + conteo manual en `router.js`/`contacto.js`) · licencias OFL copiadas a `/docs/licencias/`.
 

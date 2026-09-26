@@ -1537,7 +1537,7 @@ body.route-category .crt {
   position: relative;
   padding-left: 1.1em;
   font-family: var(--font-body);
-  font-size: calc(var(--bu) * 1.05); /* MISMO valor que .bio__text (mismo Space Grotesk) — pedido de Charlie */
+  font-size: calc(var(--bu) * 1.05); /* MISMO valor que .bio__text (misma fuente de lectura) — pedido de Charlie */
   line-height: 1.3;
   color: var(--phosphor);
 }

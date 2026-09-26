@@ -7,7 +7,7 @@
 // el flash real ocurre después: el hero pinta las letreros con la fuente de respaldo (font-display:
 // swap) y recién cuando terminan de llegar, fitSigns() las reajusta (el "salto" de tamaño que vio
 // Charlie). Forzamos el fetch de las 6 familias acá para que .ready las cuente de verdad.
-const FONT_FAMILIES = ['Space Grotesk', 'Doto', 'Glitch Goblin', 'Handjet', 'Rubik Glitch', 'Press Start 2P']
+const FONT_FAMILIES = ['Chakra Petch', 'Doto', 'Glitch Goblin', 'Handjet', 'Rubik Glitch', 'Press Start 2P']
 let fontsForced = false
 
 // Idempotente: se llama tanto desde acá (rama preloader, /) como desde la entrada de main.js para

@@ -36,3 +36,6 @@ assets/*.docx
 # Bitácoras de conversación exportadas (PDF): viajan con la carpeta,
 # pero el repo es público — nunca se publican.
 docs/conversaciones/
+
+# Notas internas de revisión de diseño (skill impeccable)
+.impeccable/

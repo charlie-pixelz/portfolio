@@ -82,14 +82,6 @@ try {
   }
 } catch {}
 
-// P6: prueba de fuente de lectura (?font=chakra / ?font=grotesk), recordada en la sesión para que
-// sobreviva a recargas y a la navegación interna (el router no conserva la query)
-try {
-  const f = new URLSearchParams(location.search).get('font')
-  if (f) sessionStorage.setItem('cp-font', f)
-  if (sessionStorage.getItem('cp-font') === 'chakra') document.documentElement.dataset.font = 'chakra'
-} catch {}
-
 // Recuerda el idioma de esta página para que la próxima visita salte el selector.
 const path = location.pathname
 const lang = path.includes('/en/') ? 'en' : path.includes('/es/') ? 'es' : null
