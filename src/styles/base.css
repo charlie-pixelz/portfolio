@@ -958,6 +958,10 @@ body.route-category .crt {
   /* contenedor de las CAJAS (viven fuera de .bio__scene, ver HTML): se posicionan y escalan
      respecto al VIEWPORT, no respecto a la radiografía apaisada → pueden usar todo el ancho */
   container-type: inline-size;
+  /* unidad de las cajas: 1 % del ancho, salvo en pantallas muy apaisadas (laptop con barras del
+     navegador) donde manda el alto — con 7 habilidades la columna derecha se salía por arriba y
+     por abajo en 1536×754. En 16:10 y 16:9 sigue siendo el ancho (sin cambios). */
+  --bu: min(1cqw, 1.8vh);
 }
 .bio[hidden] {
   display: none;
@@ -1099,14 +1103,21 @@ body.route-category .crt {
   /* padding lateral == column-gap de .bio__tools: así en Herramientas el margen izquierdo, el
      central (entre columnas) y el derecho miden lo mismo SIN cambiar el ancho de la caja
      (Charlie: "más valioso conservar los márgenes que no agrandar las cajas"). */
-  padding: 1.12cqw 2.93cqw;
+  padding: calc(var(--bu) * 1.12) calc(var(--bu) * 2.93);
   --os-fill: rgba(2, 13, 7, 0.97); /* relleno del .os-frame (casi opaco: sin sangrado del aro) */
   color: var(--phosphor);
 }
+/* con un relleno al 97 % el desenfoque de fondo del .os-frame no se ve, pero la GPU lo recalcula
+   cada vez que el panel cambia (pestañas, decode, líneas que entran): era parte del lag al
+   cambiar de sección en celular */
+.bio__box::after {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
 /* About: caja sola (no depende de gutters compartidos con otra caja) → padding IGUAL en los 4
-   lados, como pidió Charlie (29/7). El valor 1.9cqw es el mismo en top/right/bottom/left. */
+   lados, como pidió Charlie (29/7). El valor (1.9 unidades) es el mismo en top/right/bottom/left. */
 .bio__box--about {
-  padding: 1.9cqw;
+  padding: calc(var(--bu) * 1.9);
 }
 /* composición 5ª ronda (28/7) — columnas laterales que se CENTRAN solas verticalmente: así el
    margen de arriba y el de abajo son iguales por construcción (lo pidió Charlie para el grupo
@@ -1132,13 +1143,13 @@ body.route-category .crt {
 .bio__side--right {
   right: 6%;
   width: 26%;
-  gap: 1.8cqw; /* separación entre Herramientas y Habilidades */
+  gap: calc(var(--bu) * 1.8); /* separación entre Herramientas y Habilidades */
 }
 .bio__title,
 .bio__box-title {
   font-family: var(--font-display);
   font-variation-settings: 'ROND' 0, 'wght' 700;
-  font-size: 1.85cqw; /* mismo tamaño en las 3 cajas (cqw ahora = ancho del viewport) */
+  font-size: calc(var(--bu) * 1.85); /* mismo tamaño en las 3 cajas */
   line-height: 1.05;
   white-space: nowrap; /* cada título en una sola línea */
   margin-bottom: 0.55em;
@@ -1154,7 +1165,7 @@ body.route-category .crt {
 }
 .bio__text {
   font-family: var(--font-body);
-  font-size: 1.05cqw; /* agrandado (28/7); .bio__skills li usa el MISMO valor */
+  font-size: calc(var(--bu) * 1.05); /* agrandado (28/7); .bio__skills li usa el MISMO valor */
   line-height: 1.5;
   text-align: left; /* explícito (29/7) — el título va centrado, el párrafo no */
   color: var(--phosphor); /* todo el texto en fósforo; sin glow en cuerpo para lectura cómoda */
@@ -1167,8 +1178,8 @@ body.route-category .crt {
 .bio__tools {
   display: grid;
   grid-template-columns: repeat(2, max-content);
-  column-gap: 2.93cqw; /* == padding lateral de .bio__box */
-  row-gap: 0.58cqw;
+  column-gap: calc(var(--bu) * 2.93); /* == padding lateral de .bio__box */
+  row-gap: calc(var(--bu) * 0.58);
   list-style: none;
 }
 .bio__tool {
@@ -1180,8 +1191,8 @@ body.route-category .crt {
 }
 .bio__tool-ico {
   flex: none;
-  width: 2.65cqw;
-  height: 2.65cqw;
+  width: calc(var(--bu) * 2.65);
+  height: calc(var(--bu) * 2.65);
   min-width: 32px;
   min-height: 32px;
   object-fit: contain;
@@ -1190,7 +1201,7 @@ body.route-category .crt {
 .bio__tool-name {
   font-family: var(--font-pixel);
   font-variation-settings: 'wght' 500, 'ELGR' 2;
-  font-size: 1.21cqw; /* misma altura tipográfica en los 11 nombres (un solo valor, sin variar) */
+  font-size: calc(var(--bu) * 1.21); /* misma altura tipográfica en los 11 nombres (un solo valor, sin variar) */
   line-height: 1.05;
   color: var(--phosphor);
 }
@@ -1204,7 +1215,7 @@ body.route-category .crt {
   position: relative;
   padding-left: 1.1em;
   font-family: var(--font-body);
-  font-size: 1.05cqw; /* MISMO valor que .bio__text (mismo Space Grotesk) — pedido de Charlie */
+  font-size: calc(var(--bu) * 1.05); /* MISMO valor que .bio__text (mismo Space Grotesk) — pedido de Charlie */
   line-height: 1.3;
   color: var(--phosphor);
 }
@@ -1342,8 +1353,10 @@ body.route-category .crt {
     width: 30px;
     height: 30px;
   }
+  /* inactivas 20 % más chicas que la activa (Charlie, 25/9); la respiración parte de ese tamaño */
   .bio__lock:not(.is-active) svg {
     opacity: 0.6;
+    scale: 0.8;
     animation: bioLockBreathe 2.4s ease-in-out infinite;
   }
   .bio__tag {
@@ -1357,10 +1370,10 @@ body.route-category .crt {
 @keyframes bioLockBreathe {
   0%,
   100% {
-    scale: 1;
+    scale: 0.8;
   }
   50% {
-    scale: 1.3;
+    scale: 1.04;
   }
 }
 /* área táctil de cada mira (solo celular): invisible, 44 px; el dibujo lo pone .bio__lock */

@@ -47,6 +47,8 @@ const CONTENT = {
       'Motion graphics y animación',
       'Diseño web y UX/UI',
       'Integración estratégica de IA generativa',
+      'Automatización de flujos de contenido y marca',
+      'Gestión de campañas y marca multicanal',
     ],
     // B2: etiqueta anatómica de cada mira · B3: nombre corto de cada pestaña
     tags: { tools: 'CRÁNEO', about: 'TÓRAX', skills: 'CLAVÍCULA' },
@@ -65,6 +67,8 @@ const CONTENT = {
       'Motion graphics & animation',
       'Web design & UX/UI',
       'Strategic integration of generative AI tools',
+      'Content & brand workflow automation',
+      'Multichannel brand & campaign management',
     ],
     tags: { tools: 'SKULL', about: 'THORAX', skills: 'CLAVICLE' },
     tabs: { about: 'About', tools: 'Tools', skills: 'Skills' },
@@ -126,7 +130,7 @@ export function initBio({ lang, isMobile = false }) {
   el.querySelector('.bio__box--skills .bio__box-title').textContent = c.skillsTitle
   toolsUl.innerHTML = TOOLS.map(
     ([name, file]) =>
-      `<li class="bio__tool"><img class="bio__tool-ico" src="${iconFor(file)}" alt="" width="40" height="40" loading="lazy"><span class="bio__tool-name">${name}</span></li>`,
+      `<li class="bio__tool"><img class="bio__tool-ico" src="${iconFor(file)}" alt="" width="40" height="40" decoding="async"><span class="bio__tool-name">${name}</span></li>`,
   ).join('')
   skillsUl.innerHTML = c.skills.map((s) => `<li>${s}</li>`).join('')
 
@@ -309,8 +313,8 @@ export function initBio({ lang, isMobile = false }) {
     tl.fromTo(box, { opacity: 0 }, { keyframes: [{ opacity: 0.7, duration: 0.04 }, { opacity: 0.2, duration: 0.04 }, { opacity: 1, duration: 0.06 }] })
     if (key === 'about') {
       tl.add(decode(titleEl, c.title, 0.3), 0.04)
-      split?.revert()
-      split = SplitText.create(textEl, { type: 'lines', mask: 'lines' })
+      // se parte una sola vez por visita (no en cada cambio de pestaña: partir fuerza un relayout)
+      if (!split) split = SplitText.create(textEl, { type: 'lines', mask: 'lines' })
       tl.from(split.lines, { yPercent: 100, duration: 0.32, stagger: 0.035, ease: 'power3.out' }, 0.12)
     } else {
       const title = box.querySelector('.bio__box-title')
