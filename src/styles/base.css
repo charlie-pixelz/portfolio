@@ -477,7 +477,26 @@ body.cp-hover-reset .screen[data-cat]:hover .screen__label {
   animation: crtOn 0.3s steps(1, end); /* cambio de canal */
 }
 .screen__label {
-  transition: top 0.25s ease;
+  transition:
+    top 0.25s ease,
+    opacity 0.2s ease;
+}
+.screen__preview {
+  transition: opacity 0.25s ease;
+}
+/* zoom a la categoría (25/9): el monitor elegido pierde el "hover" — sin etiqueta, sin glitch,
+   sin brillo extra y el clip se desvanece — así el zoom llega limpio al letrero */
+.screen[data-cat].is-zooming,
+.screen[data-cat].is-zooming:hover {
+  filter: brightness(0.82) saturate(1.05) contrast(1.05);
+}
+.screen.is-zooming .screen__label {
+  opacity: 0;
+  animation: none;
+}
+.screen.is-zooming .screen__preview {
+  opacity: 0;
+  animation: none;
 }
 .screen.is-previewing .screen__label {
   top: 82%;
@@ -672,6 +691,16 @@ body.route-room .crt {
   /* recuadro pixelado (.os-frame): relleno oscuro para legibilidad del texto fósforo sobre el
      billboard (que puede ser brillante) */
   --os-fill: rgba(0, 7, 4, 0.97);
+  /* grilla: título/descripción a todo el ancho; abajo, etiquetas a la izquierda y "Ver sitio"
+     en la esquina inferior derecha (Charlie, 25/9) */
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 1em;
+  align-items: end;
+}
+.cat__meta,
+.cat__desc {
+  grid-column: 1 / -1;
 }
 .cat__meta {
   display: flex;
@@ -752,15 +781,18 @@ body.route-room .crt {
   display: none;
 }
 .cat__link {
-  display: inline-block;
-  margin-top: 0.6em;
+  grid-column: 2;
+  justify-self: end;
+  white-space: nowrap;
   font-family: var(--font-pixel);
   font-weight: 600;
-  font-size: clamp(0.6rem, 1.3cqw, 0.9rem);
+  font-variation-settings: 'wght' 600, 'ELGR' 2;
+  font-size: clamp(0.8rem, 1.8cqw, 1.25rem);
+  line-height: 1;
   color: var(--phosphor);
   text-decoration: none;
-  border: 1px solid var(--phosphor);
-  padding: 0.3em 0.8em;
+  border: 1.5px solid var(--phosphor);
+  padding: 0.4em 1em 0.45em;
   text-shadow: 0 0 8px var(--phosphor-glow);
   transition: background-color 0.15s ease, color 0.15s ease;
 }
@@ -1059,7 +1091,8 @@ body.route-category .crt {
     font-size: clamp(0.68rem, 2.6cqw, 0.85rem);
   }
   .cat__link {
-    font-size: clamp(0.7rem, 2.8cqw, 0.9rem);
+    font-size: clamp(0.85rem, 3.8cqw, 1.1rem);
+    padding: 0.75em 1.1em; /* área táctil ~44 px */
   }
   /* red de seguridad: la sala desktop nunca debe verse en mobile, sea cual sea el estado del
      router (belt-and-suspenders, no depende solo de la lógica JS) */
@@ -1154,6 +1187,13 @@ body.route-category .crt {
   background: var(--phosphor);
   box-shadow: 0 0 16px var(--phosphor-glow);
   outline: none;
+}
+/* bocina de los videos con audio: la misma de la galería, prestada al visor (category.js) */
+.viewer .cat__mute {
+  top: max(1rem, env(safe-area-inset-top));
+  right: 4.25rem;
+  width: 2.75rem;
+  height: 2.75rem;
 }
 .viewer__arrow {
   position: absolute;

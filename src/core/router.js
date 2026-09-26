@@ -106,6 +106,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
   // las pantallas (quedan apagadas) y solo los restauramos con el PRIMER movimiento real del mouse;
   // ahí el :hover ya refleja la posición verdadera. (En touch no existe :hover pegado → no aplica.)
   const resetHover = () => {
+    dispatchEvent(new Event('cp:room-ready')) // la sala terminó de alejarse (screens.js)
     if (quality.isTouch) return
     document.body.classList.add('cp-hover-reset')
     const clear = () => document.body.classList.remove('cp-hover-reset')
@@ -532,7 +533,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
         gsap.set(category.el, { opacity: 0 })
         gsap.to(category.el, {
           opacity: 1,
-          duration: XF,
+          duration: 0.3, // fundido del monitor al letrero: con 0.15 s se leía como un salto
           onComplete: () => {
             room.hidden = true
             gsap.set(frame, { clearProps: 'transform' })

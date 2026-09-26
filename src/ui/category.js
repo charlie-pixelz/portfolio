@@ -17,10 +17,11 @@ const files = import.meta.glob('../../assets/proyectos/*/*.{avif,webp,jpg,png,mp
 })
 const media = {}
 for (const [path, url] of Object.entries(files)) {
-  const m = /^(.+?)(-poster)?\.(\w+)$/.exec(path.split('/').pop())
+  const m = /^(.+?)(-poster|-hd)?\.(\w+)$/.exec(path.split('/').pop())
   if (!m) continue
   const e = (media[m[1]] ||= {})
-  if (m[2]) e.poster = url
+  if (m[2] === '-poster') e.poster = url
+  else if (m[2] === '-hd') e.hd = url // versión grande para el visor (npm run media); se baja al abrirlo
   else e[m[3]] = url
 }
 const idOf = (file) => file.replace(/\.\w+$/, '')
@@ -74,15 +75,47 @@ export function initCategory({ lang }) {
   let mainNode = null
   let mainMedia = null
   const meta = () => ({ title: items[idx]?.title[lang] || '', index: idx, count: items.length })
-  const giveBack = (n) => n && canvas.append(n)
+  const stageEl = el.querySelector('.cat__stage')
+  const giveBack = (n) => {
+    if (n) canvas.append(n)
+    stageEl?.appendChild(muteBtn) // el botón de sonido vuelve al letrero
+  }
   const viewer = createViewer({
     lang,
     onNav: (d) => move(d),
-    onClose: () => viewer.close(canvas.getBoundingClientRect(), giveBack),
+    onClose: () => {
+      // de vuelta al letrero el video sigue, pero en silencio (modo vitrina)
+      if (currentMedia && !currentMedia.muted) setMuted(true)
+      viewer.close(canvas.getBoundingClientRect(), giveBack)
+    },
   })
+  // en el visor: la imagen pasa a su versión HD (si existe) apenas termina de bajar; el video
+  // arranca con sonido desde el principio, como si se hubiera tocado la bocina (Charlie, 25/9)
+  const enhance = (it, media, node) => {
+    if (it.type === 'video') {
+      if (it.sound) {
+        setMuted(false)
+        media.currentTime = 0
+      }
+      media.play?.().catch(() => {})
+      return
+    }
+    const hd = srcOf(it).hd
+    if (!hd || media.dataset.hd) return
+    media.dataset.hd = '1'
+    const im = new Image()
+    im.onload = () => {
+      if (mainMedia !== media) return // ya se cambió de obra
+      node.querySelectorAll('source').forEach((src) => src.remove()) // si no, el <picture> sigue eligiendo la chica
+      media.src = hd
+    }
+    im.src = hd
+  }
   const openViewer = () => {
     if (!mainNode || viewer.isOpen()) return
     viewer.open(mainMedia, mainNode, meta(), canvas.getBoundingClientRect(), canvas)
+    if (!muteBtn.hidden) viewer.root.appendChild(muteBtn) // videos con audio: la bocina va al visor
+    enhance(items[idx], mainMedia, mainNode)
     count(items[idx], 'ampliar', 0)
   }
   canvas.addEventListener('click', openViewer)
@@ -235,8 +268,6 @@ export function initCategory({ lang }) {
     mainMedia = media
     preloaded.add(it.media)
     canvas.setAttribute('aria-label', ui.zoom(it.title[lang]))
-    // con el visor abierto, la obra nueva pasa directo a él
-    if (viewer.isOpen()) viewer.update(media, node, meta())
 
     // botón de audio solo si la obra tiene sonido (it.sound)
     if (it.type === 'video' && it.sound) {
@@ -259,6 +290,15 @@ export function initCategory({ lang }) {
         linkEl.hidden = true
         linkEl.removeAttribute('href')
       }
+    }
+
+    // (al final: el bloque de la bocina de arriba silencia por defecto)
+    // con el visor abierto, la obra nueva pasa directo a él (con su HD / su sonido)
+    if (viewer.isOpen()) {
+      viewer.update(media, node, meta())
+      if (it.type === 'video' && it.sound) viewer.root.appendChild(muteBtn)
+      else stageEl?.appendChild(muteBtn)
+      enhance(it, media, node)
     }
   }
 
@@ -309,20 +349,20 @@ export function initCategory({ lang }) {
     gsap.set(reveal, { opacity: 0, y: 10 })
   }
 
-  // secuencia de encendido: flicker cálido de las lámparas → aparece el chrome
+  // secuencia de encendido: las lámparas calientan (un titileo suave) → aparece el chrome
   const lightOn = () => {
     if (quality.reducedMotion) {
       gsap.set(luces, { opacity: 1 })
       gsap.set(reveal, { opacity: 1, y: 0 })
       return
     }
+    // (25/9) antes: 4 destellos fuertes en 0.25 s, que sobre obras oscuras se leían como un error
+    // de la transición. Ahora las lámparas "calientan": suben, un solo titileo suave, y encienden.
     gsap
       .timeline()
-      .to(luces, { opacity: 0.4, duration: 0.07 })
-      .to(luces, { opacity: 0.06, duration: 0.06 })
-      .to(luces, { opacity: 0.75, duration: 0.05 })
-      .to(luces, { opacity: 0.18, duration: 0.07 })
-      .to(luces, { opacity: 1, duration: 0.55, ease: 'power2.out' })
+      .to(luces, { opacity: 0.5, duration: 0.2, ease: 'power1.out' })
+      .to(luces, { opacity: 0.32, duration: 0.1, ease: 'power1.inOut' })
+      .to(luces, { opacity: 1, duration: 0.6, ease: 'power2.out' })
       .to(reveal, { opacity: 1, y: 0, duration: 0.35, stagger: 0.07 }, '-=0.2')
   }
 

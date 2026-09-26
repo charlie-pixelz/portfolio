@@ -109,7 +109,8 @@ export function initScreens() {
     // tras un clic (zoom a una categoría o de vuelta a Inicio) no hay vistas previas hasta que la
     // sala se vuelva a mostrar: el pointermove durante el zoom las reactivaría
     let locked = false
-    addEventListener('cp:refit-screens', () => (locked = false))
+    // se vuelve a habilitar cuando la sala termina su zoom-out (router: cp:room-ready)
+    addEventListener('cp:room-ready', () => (locked = false))
     const stop = (screen) => {
       screen.classList.remove('is-previewing')
       screen.querySelector('.screen__preview')?.pause()
@@ -145,7 +146,8 @@ export function initScreens() {
       screen.addEventListener('pointerleave', () => stop(screen))
       screen.addEventListener('click', () => {
         locked = true
-        stop(screen) // el zoom a la categoría no arrastra el clip
+        // el clip se desvanece durante el zoom (.is-zooming) en vez de cortarse de golpe
+        setTimeout(() => stop(screen), 300)
       })
     })
     central?.addEventListener('click', () => {
@@ -153,6 +155,11 @@ export function initScreens() {
       if (playing) stop(playing)
     })
   }
+
+  // zoom a una categoría: el monitor elegido deja de verse "en hover" (etiqueta con glitch, brillo
+  // extra) mientras llena la pantalla — se confundía con un error. Vuelve al terminar el zoom-out.
+  screens.forEach((screen) => screen.addEventListener('click', () => screen.classList.add('is-zooming')))
+  addEventListener('cp:room-ready', () => screens.forEach((sc) => sc.classList.remove('is-zooming')))
 
   const fit = () => screens.forEach((s) => applyPlane(s.dataset.cat, 0)) // t=0 → perspectiva de sala
 

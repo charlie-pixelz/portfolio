@@ -11,6 +11,8 @@
 // Qué genera (junto a los demás, en assets/proyectos/<categoria>/):
 //   imagen → <cat>-<n>.avif (si no tiene transparencia) + <cat>-<n>.webp   (máx. 1600 px por lado)
 //   video  → <cat>-<n>.mp4 (H.264, faststart, máx. 1920 px, ≤30 fps) + <cat>-<n>-poster.webp
+//   HD     → <cat>-<n>-hd.webp (máx. 3200 px) solo si el original de _src/ supera los 1600 px: lo usa
+//            el visor a pantalla completa (G1) y se baja recién al abrirlo
 //
 // Reglas:
 //   · Un "máster" ya existente (<cat>-<n>.jpg/.png/.mp4, los aprobados que ya están en el sitio)
@@ -33,6 +35,7 @@ const IMG = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.tif', '.tiff']
 const VID = ['.mp4', '.mov', '.m4v', '.webm', '.mkv']
 const MAX_IMG = 1600
 const MAX_VID = 1920
+const MAX_HD = 3200
 
 const args = process.argv.slice(2)
 const force = args.includes('--force')
@@ -81,6 +84,21 @@ function image(id, input, dir) {
     out.push(`avif ${kb(avif)}`)
   }
   return { type: 'image', out }
+}
+
+// versión HD para el visor (G1): desde el ORIGINAL de _src/ (el máster aprobado suele venir ya
+// reducido a 1600 px). Si el original no es más grande que la versión normal, no hace falta.
+function hd(id, input, dir) {
+  const file = join(dir, `${id}-hd.webp`)
+  const v = probe(input).streams.find((s) => s.codec_type === 'video')
+  if (Math.max(v?.width || 0, v?.height || 0) <= MAX_IMG) {
+    if (existsSync(file)) unlinkSync(file)
+    return null
+  }
+  if (forced(id) || !fresh(file, input)) {
+    run(FFMPEG, ['-v', 'error', '-y', '-i', input, '-vf', fit(MAX_HD), '-c:v', 'libwebp', '-quality', '80', '-compression_level', '6', file])
+  }
+  return `hd ${kb(file)}`
 }
 
 function video(id, input, dir, isMaster) {
@@ -139,6 +157,11 @@ for (const cat of readdirSync(ROOT).filter((d) => statSync(join(ROOT, d)).isDire
     const ext = extname(input).toLowerCase()
     try {
       const r = VID.includes(ext) ? video(id, input, dir, !useSrc) : image(id, input, dir)
+      const orig = numbered.get(n)?.file
+      if (r.type === 'image' && orig && IMG.includes(extname(orig).toLowerCase())) {
+        const h = hd(id, orig, dir)
+        if (h) r.out.push(h)
+      }
       report.push({ id, from: useSrc ? `_src/${basename(input)}` : basename(input), ...r })
     } catch (e) {
       report.push({ id, from: basename(input), error: e.message.split('\n')[0] })

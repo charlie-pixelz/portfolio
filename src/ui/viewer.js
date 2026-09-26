@@ -1,7 +1,8 @@
 // viewer.js — G1 (revisión 25/9): visor a pantalla completa de la galería. Clic en la obra → crece
 // desde el letrero hasta llenar la pantalla sobre fondo void (por encima del CRT: acá se evalúa el
-// detalle). En imágenes: zoom con rueda, pellizco o doble clic, y arrastre para moverse. Flechas,
-// teclado, deslizar y Esc funcionan igual que en la galería.
+// detalle). En imágenes: zoom con rueda, pellizco o doble clic, y arrastre para moverse. Un clic
+// (o toque) cierra, como pidió Charlie. Flechas, teclado, deslizar y Esc funcionan igual que en la
+// galería.
 //
 // El visor no crea su propia copia de la obra: TOMA PRESTADO el nodo que está en el letrero (el
 // <picture> o el <video>) y lo devuelve al cerrar. Así un video sigue donde iba, con su sonido, y no
@@ -16,21 +17,24 @@ const TXT = {
     close: 'Cerrar visor',
     prev: 'Obra anterior',
     next: 'Obra siguiente',
-    hintImg: 'Rueda o pellizco para ampliar · arrastra para moverte · Esc para cerrar',
-    hintTouch: 'Pellizca para ampliar · desliza para cambiar de obra',
-    hint: 'Esc para cerrar',
+    hintImg: 'Rueda o doble clic para ampliar · clic para cerrar',
+    hintTouch: 'Pellizca para ampliar · toca para cerrar',
+    hint: 'Clic o Esc para cerrar',
   },
   en: {
     dialog: 'Artwork viewer',
     close: 'Close viewer',
     prev: 'Previous work',
     next: 'Next work',
-    hintImg: 'Scroll or pinch to zoom · drag to pan · Esc to close',
-    hintTouch: 'Pinch to zoom · swipe to change work',
-    hint: 'Esc to close',
+    hintImg: 'Scroll or double-click to zoom · click to close',
+    hintTouch: 'Pinch to zoom · tap to close',
+    hint: 'Click or Esc to close',
   },
 }
 const MAX_ZOOM = 4
+// el zoom no pasa de 1.5 px de pantalla por píxel real de la imagen: más allá solo se ven píxeles
+// (el caso 2 de Ilustraciones mide 626 px de origen y se pixelaba)
+const PX_PER_IMAGE_PX = 1.5
 
 // rectángulo de una media de proporción w/h encajada (contain) dentro de r
 const fitRect = (w, h, r) => {
@@ -113,7 +117,8 @@ export function createViewer({ lang, onNav, onClose }) {
     const r = box.getBoundingClientRect()
     const cx = px - (r.left + r.width / 2)
     const cy = py - (r.top + r.height / 2)
-    const next = Math.max(1, Math.min(MAX_ZOOM, s))
+    const cap = Math.max(1.2, Math.min(MAX_ZOOM, ((media?.naturalWidth || nat.w) * PX_PER_IMAGE_PX) / (box.offsetWidth || 1)))
+    const next = Math.max(1, Math.min(cap, s))
     z.x = cx - ((cx - z.x) * next) / z.s
     z.y = cy - ((cy - z.y) * next) / z.s
     z.s = next
@@ -143,7 +148,8 @@ export function createViewer({ lang, onNav, onClose }) {
     const r = box.getBoundingClientRect()
     return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
   }
-  root.addEventListener('dblclick', (e) => zoomable && inBox(e.clientX, e.clientY) && zoomAt(z.s > 1.01 ? 1 : 2.5, e.clientX, e.clientY, true))
+  let lastTap = null
+  let tapTimer
 
   // punteros: 1 dedo/mouse = arrastrar (con zoom) o deslizar para cambiar de obra (sin zoom);
   // 2 dedos = pellizco
@@ -184,8 +190,24 @@ export function createViewer({ lang, onNav, onClose }) {
       const dy = e.clientY - start.y
       // deslizar sin zoom = cambiar de obra
       if (!start.moved && z.s <= 1.01 && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) onNav(dx < 0 ? 1 : -1)
-      // toque en el fondo (fuera de la obra), sin arrastre = cerrar
-      else if (!start.moved && Math.hypot(dx, dy) < 6 && !inBox(e.clientX, e.clientY)) onClose()
+      // toque sin arrastre = cerrar (en la obra o en el fondo). En imágenes se espera un instante por
+      // si llega un segundo toque: doble toque/clic sobre la obra = ampliar / volver a 1:1
+      else if (!start.moved && Math.hypot(dx, dy) < 6) {
+        const now = performance.now()
+        const x = e.clientX
+        const y = e.clientY
+        clearTimeout(tapTimer)
+        if (zoomable && lastTap && now - lastTap.t < 300 && Math.hypot(x - lastTap.x, y - lastTap.y) < 30 && inBox(x, y)) {
+          lastTap = null
+          zoomAt(z.s > 1.01 ? 1 : 2.5, x, y, true)
+        } else {
+          lastTap = { t: now, x, y }
+          tapTimer = setTimeout(() => {
+            lastTap = null
+            onClose()
+          }, zoomable && inBox(x, y) ? 280 : 0)
+        }
+      }
       start = null
     } else {
       // queda un dedo tras un pellizco: sigue arrastrando desde acá, sin salto
@@ -280,6 +302,7 @@ export function createViewer({ lang, onNav, onClose }) {
   // sin animación (el router se va a otra vista con el visor abierto)
   const close = (toRect, giveBack, instant = false) => {
     if (!isOpen) return
+    clearTimeout(tapTimer)
     const finish = () => {
       isOpen = false
       busy = false
@@ -310,5 +333,5 @@ export function createViewer({ lang, onNav, onClose }) {
     })
   }
 
-  return { open, update, close, isOpen: () => isOpen }
+  return { open, update, close, isOpen: () => isOpen, root }
 }
