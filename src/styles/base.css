@@ -1080,6 +1080,7 @@ body.route-category .crt {
     top: 76%; /* un poco más abajo (pedido de Charlie 30/7) — el lienzo termina en 68.96% */
     width: 90%;
     padding: 1em 1.2em 1.2em;
+    margin-top: calc(-1 * var(--info-lift, 0px)); /* category.js: sube si no cabe en la pantalla */
   }
   .cat__title {
     font-size: clamp(1.15rem, 5.5cqw, 1.7rem);
@@ -1091,8 +1092,15 @@ body.route-category .crt {
     font-size: clamp(0.68rem, 2.6cqw, 0.85rem);
   }
   .cat__link {
+    position: relative;
     font-size: clamp(0.85rem, 3.8cqw, 1.1rem);
-    padding: 0.75em 1.1em; /* área táctil ~44 px */
+    padding: 0.5em 1em 0.55em;
+  }
+  /* área táctil ~44 px sin agrandar el botón (ni la caja) */
+  .cat__link::after {
+    content: '';
+    position: absolute;
+    inset: -8px -6px;
   }
   /* red de seguridad: la sala desktop nunca debe verse en mobile, sea cual sea el estado del
      router (belt-and-suspenders, no depende solo de la lógica JS) */

@@ -53,7 +53,22 @@ export function initCategory({ lang }) {
   const prevBtn = el.querySelector('.cat__arrow--prev')
   const nextBtn = el.querySelector('.cat__arrow--next')
   const reveal = [...el.querySelectorAll('.cat__reveal')] // flechas, caja, volver → aparecen tras el encendido
+  const infoEl = el.querySelector('.cat__info')
   const ui = UI[lang] || UI.es
+
+  // mobile: la caja cuelga del 76 % del letrero y, con una descripción larga + "Ver sitio", se
+  // pasaba del borde inferior en pantallas bajas (Charlie, 26/9). Si no cabe, sube lo justo
+  // (margin, no transform: el transform lo usa GSAP al aparecer). Medida de layout, sin transforms.
+  const fitInfo = () => {
+    if (!infoEl || el.hidden) return
+    infoEl.style.removeProperty('--info-lift')
+    if (!matchMedia('(max-width: 768px)').matches) return
+    const bottom = infoEl.offsetParent.getBoundingClientRect().top + infoEl.offsetTop + infoEl.offsetHeight
+    const over = bottom - (innerHeight - 10)
+    if (over > 0) infoEl.style.setProperty('--info-lift', `${Math.ceil(over)}px`)
+  }
+  if (infoEl) new ResizeObserver(fitInfo).observe(infoEl) // cambia de obra o se muestra
+  addEventListener('resize', fitInfo)
 
   // G2: índice de obras (marcas pixeladas clickeables) en lugar del "1 / 4"
   const indexEl = document.createElement('div')
@@ -291,6 +306,7 @@ export function initCategory({ lang }) {
         linkEl.removeAttribute('href')
       }
     }
+    fitInfo()
 
     // (al final: el bloque de la bocina de arriba silencia por defecto)
     // con el visor abierto, la obra nueva pasa directo a él (con su HD / su sonido)
