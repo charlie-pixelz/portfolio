@@ -20,7 +20,7 @@
 import { gsap } from 'gsap'
 import { quality } from './quality.js'
 import { flattenScreen } from '../ui/screens.js'
-import { heroLens } from '../gl/hero.js'
+import { heroLens, heroFx } from '../gl/hero.js'
 
 const SEG = { es: 'proyectos', en: 'projects' }
 const BIO = { es: 'biografia', en: 'biography' }
@@ -30,8 +30,11 @@ const TITLE = {
   es: { home: null, projects: 'Proyectos — Charlie Pixelz', bio: 'Biografía — Charlie Pixelz', contacto: 'Contacto — Charlie Pixelz' },
   en: { home: null, projects: 'Projects — Charlie Pixelz', bio: 'Biography — Charlie Pixelz', contacto: 'Contact — Charlie Pixelz' },
 }
-const DUR = 0.8
-const XF = 0.18
+// T1 (revisión 25/9): zooms de 0.8 s con aceleración pareja → 0.65 s con expo.inOut. Arranca y
+// frena fuerte: se siente ~20 % más rápido sin perder suavidad (el ojo lee la llegada, no la duración)
+const DUR = 0.65
+const XF = 0.15
+const ZOOM_EASE = 'expo.inOut'
 // factor del encuadre de la pantalla horizontal (sala móvil) para que el personaje calce con el
 // del hero real en vez de verse más grande — ver el comentario de zoomTo()
 const HERO_MATCH = 0.88
@@ -120,7 +123,15 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
     const inEl = entering ? [contacto.el] : home
     const HALF = DUR / 2
     const dir = entering ? 1 : -1 // +1 = hacia abajo (entrar) · -1 = hacia arriba (salir)
-    const setBlur = (els, px) => els.forEach((n) => (n.style.filter = px > 0.05 ? `blur(${px.toFixed(1)}px)` : ''))
+    // T3: el canvas del hero se desenfoca en su shader (antes: filter: blur() de CSS sobre un canvas
+    // a pantalla completa, lo más caro de toda la navegación en celular). El resto (letreros, video
+    // de Contacto) conserva el blur CSS solo en equipos potentes; en el resto se mueve nítido.
+    const cssBlur = !quality.isTouch && quality.tier === 'high'
+    const setBlur = (els, px) =>
+      els.forEach((n) => {
+        if (n === gl) heroFx.blur(px)
+        else if (cssBlur) n.style.filter = px > 0.05 ? `blur(${px.toFixed(1)}px)` : ''
+      })
 
     if (entering) contacto.el.hidden = false
     gsap.set(outEl, { yPercent: 0, scale: 1, opacity: 1 })
@@ -190,6 +201,74 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
         .to(b, { v: 9, duration: DUR / 2, ease: 'power2.in', onUpdate: setBlur })
         .to(b, { v: 0, duration: DUR / 2, ease: 'power2.out', onUpdate: setBlur })
     }
+  }
+
+  // ── T2: la sala se enciende al alejarse ──
+  // En el zoom-out los 4 monitores de categoría arrancan APAGADOS y se encienden (parpadeo de CRT)
+  // a medida que entran al cuadro; antes aparecían ya encendidos. El monitor del que se viene
+  // (catToProjects) nunca se apaga. Más un desenfoque radial breve por velocidad: 2 copias del
+  // fondo de la sala, un poco más grandes y tenues, que siguen al frame y se apagan al frenar.
+  const ghosts = [1, 2].map((i) => {
+    const g = document.createElement('div')
+    g.className = 'room__ghost'
+    g.setAttribute('aria-hidden', 'true')
+    const f = document.createElement('div')
+    f.className = 'room__ghost-frame'
+    g.append(f)
+    room.insertBefore(g, frame.nextSibling)
+    return { g, f, i }
+  })
+  const setGhosts = (b) => {
+    ghosts.forEach(({ g, f, i }) => {
+      if (b < 0.01) return (g.style.opacity = 0)
+      g.style.opacity = ((b * 0.26) / i).toFixed(3)
+      g.style.transform = `scale(${(1 + b * 0.045 * i).toFixed(4)})`
+      f.style.transform = frame.style.transform
+    })
+  }
+  const powerRoom = (fromCat) => {
+    const pending = CATS.filter((c) => c !== fromCat && catScreens[c])
+    pending.forEach((c) => catScreens[c].classList.add('is-off'))
+    const light = (c) => {
+      const el = catScreens[c]
+      // desfase chico y distinto por monitor: la cascada se siente orgánica, no un bloque
+      setTimeout(() => {
+        el.classList.remove('is-off')
+        el.classList.add('is-powering')
+        setTimeout(() => el.classList.remove('is-powering'), 460)
+      }, Math.random() * 90)
+    }
+    return {
+      // se llama en cada cuadro del zoom: enciende los que ya entraron al cuadro
+      update: () => {
+        const vw = innerWidth
+        const vh = innerHeight
+        for (let i = pending.length - 1; i >= 0; i--) {
+          const r = catScreens[pending[i]].getBoundingClientRect()
+          const w = Math.min(r.right, vw) - Math.max(r.left, 0)
+          const h = Math.min(r.bottom, vh) - Math.max(r.top, 0)
+          if (w > r.width * 0.6 && h > r.height * 0.6) light(pending.splice(i, 1)[0])
+        }
+      },
+      done: () => pending.splice(0).forEach(light),
+    }
+  }
+  // tween del zoom-out con los dos efectos de T2
+  const zoomOut = (vars, fromCat) => {
+    const power = powerRoom(fromCat)
+    const tw = gsap.to(frame, {
+      ...vars,
+      onUpdate: () => {
+        power.update()
+        setGhosts(Math.sin(Math.PI * tw.progress()))
+      },
+      onComplete: () => {
+        setGhosts(0)
+        power.done()
+        vars.onComplete?.()
+      },
+    })
+    return tw
   }
 
   let current = 'home'
@@ -277,7 +356,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
       y: z.y,
       scale: z.scale,
       duration: DUR,
-      ease: 'power3.inOut',
+      ease: ZOOM_EASE,
       onComplete: () => {
         tvGlitch() // enmascara el empalme captura-central → hero real
         gsap.to(room, {
@@ -305,13 +384,13 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
     gsap.set(frame, { x: z.x, y: z.y, scale: z.scale })
     gsap.set(room, { opacity: 0 })
     gsap.to(room, { opacity: 1, duration: XF, onComplete: () => (hero.hidden = true) })
-    gsap.to(frame, {
+    zoomOut({
       x: 0,
       y: 0,
       scale: 1,
       duration: DUR,
       delay: XF,
-      ease: 'power3.inOut',
+      ease: ZOOM_EASE,
       onComplete: () => {
         resetHover()
         done()
@@ -345,7 +424,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
         y: z.y,
         scale: z.scale,
         duration: DUR,
-        ease: 'power3.inOut',
+        ease: ZOOM_EASE,
         onComplete: () => {
           tvGlitch() // enmascara el empalme sala↔menú (misma textura, pero el encuadre cambia)
           projectsMenuEl.hidden = false
@@ -369,7 +448,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
       y: 0,
       scale: 1,
       duration: DUR,
-      ease: 'power3.inOut',
+      ease: ZOOM_EASE,
       onComplete: () => {
         if (!firstTime) return zoomInToMenu() // visitas repetidas: sin el beat de "peek"
         // 1.ª vez: deja ver la sala completa un momento (tap la salta)
@@ -409,7 +488,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
       scale: 1,
       duration: DUR,
       delay: XF,
-      ease: 'power3.inOut',
+      ease: ZOOM_EASE,
       onComplete: () => {
         // sala completa visible un instante → zoom-in a la pantalla horizontal (mismo destino
         // visual que el hero) y AHÍ se revela el hero real, tapado por la glitch
@@ -419,7 +498,7 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
           y: zOut.y,
           scale: zOut.scale,
           duration: DUR,
-          ease: 'power3.inOut',
+          ease: ZOOM_EASE,
           onComplete: () => {
             tvGlitch()
             hero.hidden = false
@@ -440,14 +519,14 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
     gsap.set(frame, { x: 0, y: 0, scale: 1 })
     flattenScreen(catKey, 0)
     const flat = { t: 0 }
-    gsap.to(flat, { t: 1, duration: DUR, ease: 'power3.inOut', onUpdate: () => flattenScreen(catKey, flat.t) })
+    gsap.to(flat, { t: 1, duration: DUR, ease: ZOOM_EASE, onUpdate: () => flattenScreen(catKey, flat.t) })
     const z = zoomTo(catScreens[catKey], 'cover')
     gsap.to(frame, {
       x: z.x,
       y: z.y,
       scale: z.scale,
       duration: DUR,
-      ease: 'power3.inOut',
+      ease: ZOOM_EASE,
       onComplete: () => {
         category.el.hidden = false
         gsap.set(category.el, { opacity: 0 })
@@ -485,19 +564,22 @@ export function initRouter({ lang, base, category, bio, contacto, isMobile = fal
       },
     })
     const flat = { t: 1 }
-    gsap.to(flat, { t: 0, duration: DUR, delay: XF, ease: 'power3.inOut', onUpdate: () => flattenScreen(catKey, flat.t) })
-    gsap.to(frame, {
-      x: 0,
-      y: 0,
-      scale: 1,
-      duration: DUR,
-      delay: XF,
-      ease: 'power3.inOut',
-      onComplete: () => {
-        resetHover()
-        done()
+    gsap.to(flat, { t: 0, duration: DUR, delay: XF, ease: ZOOM_EASE, onUpdate: () => flattenScreen(catKey, flat.t) })
+    zoomOut(
+      {
+        x: 0,
+        y: 0,
+        scale: 1,
+        duration: DUR,
+        delay: XF,
+        ease: ZOOM_EASE,
+        onComplete: () => {
+          resetHover()
+          done()
+        },
       },
-    })
+      catKey,
+    )
   }
 
   // MOBILE — Parte: menú de Proyectos visible. Llega a: categoría visible (billboard), menú

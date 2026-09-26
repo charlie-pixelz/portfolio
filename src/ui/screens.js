@@ -4,6 +4,12 @@
 // se ve "proyectado" en la pantalla inclinada, no como un recorte plano pegado.
 // Basado en el clásico general-2D-projection (Paul Nash / MDN matrix3d).
 
+import { quality } from '../core/quality.js'
+
+// T4: clip de 3 s por categoría (scripts/previews.mjs). Se bajan recién al primer hover.
+const previewUrls = import.meta.glob('../../assets/proyectos/previews/*.mp4', { eager: true, query: '?url', import: 'default' })
+const previewFor = (cat) => Object.entries(previewUrls).find(([p]) => p.endsWith(`/${cat}.mp4`))?.[1]
+
 function adj(m) {
   return [
     m[4] * m[8] - m[5] * m[7], m[2] * m[7] - m[1] * m[8], m[1] * m[5] - m[2] * m[4],
@@ -83,6 +89,7 @@ export function flattenScreen(cat, t) {
 
 export function initScreens() {
   const screens = [...document.querySelectorAll('.screen[data-cat]')]
+  const central = document.querySelector('.screen--central')
   if (!screens.length) return
 
   screens.forEach((screen) => {
@@ -94,6 +101,58 @@ export function initScreens() {
       .split(/\s+/)
       .map((p) => p.split(',').map(Number))
   })
+
+  // ── T4: vista previa al pasar el cursor ── el monitor reproduce el clip de su categoría, uno
+  // solo a la vez (ANIMATION_SPEC: máx. 1 video activo). Solo con mouse y sin movimiento reducido.
+  if (!quality.isTouch && !quality.reducedMotion && matchMedia('(hover: hover)').matches) {
+    let playing = null
+    // tras un clic (zoom a una categoría o de vuelta a Inicio) no hay vistas previas hasta que la
+    // sala se vuelva a mostrar: el pointermove durante el zoom las reactivaría
+    let locked = false
+    addEventListener('cp:refit-screens', () => (locked = false))
+    const stop = (screen) => {
+      screen.classList.remove('is-previewing')
+      screen.querySelector('.screen__preview')?.pause()
+      if (playing === screen) playing = null
+    }
+    screens.forEach((screen) => {
+      const src = previewFor(screen.dataset.cat)
+      if (!src) return
+      const video = document.createElement('video')
+      video.className = 'screen__preview'
+      video.muted = true
+      video.loop = true
+      video.playsInline = true
+      video.preload = 'none'
+      video.setAttribute('aria-hidden', 'true')
+      planeOf[screen.dataset.cat].prepend(video) // dentro del plano: hereda la homografía
+      const start = () => {
+        if (playing === screen || locked) return
+        // apagado (T2, todavía no entró al cuadro) o recién terminado un zoom (el hover aún no se
+        // re-evaluó): no hay vista previa
+        if (screen.classList.contains('is-off') || document.body.classList.contains('cp-hover-reset')) return
+        if (playing) stop(playing)
+        playing = screen
+        if (!video.src) video.src = src
+        video.currentTime = 0
+        // se muestra recién cuando hay imagen (antes quedaría el monitor en negro)
+        video.play().then(() => playing === screen && screen.classList.add('is-previewing')).catch(() => {})
+      }
+      screen.addEventListener('pointerenter', start)
+      // si el cursor ya estaba sobre el monitor al terminar un zoom, no hay pointerenter nuevo:
+      // arranca con el primer movimiento
+      screen.addEventListener('pointermove', start, { passive: true })
+      screen.addEventListener('pointerleave', () => stop(screen))
+      screen.addEventListener('click', () => {
+        locked = true
+        stop(screen) // el zoom a la categoría no arrastra el clip
+      })
+    })
+    central?.addEventListener('click', () => {
+      locked = true
+      if (playing) stop(playing)
+    })
+  }
 
   const fit = () => screens.forEach((s) => applyPlane(s.dataset.cat, 0)) // t=0 → perspectiva de sala
 

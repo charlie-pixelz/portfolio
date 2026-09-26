@@ -45,6 +45,7 @@ const fragment = /* glsl */ `
   uniform vec2 uLens;
   uniform float uLensR;
   uniform float uLensFill;
+  uniform float uVBlur; // T3: desenfoque vertical del barrido a Contacto, en px de pantalla (0 = nítido)
   uniform float uWipe; // celular: altura ya escaneada desde arriba (0..1), la radiografía queda por encima
   varying vec2 vUv;
 
@@ -104,6 +105,13 @@ const fragment = /* glsl */ `
       comp.b = scene(suv - vec2(ca, 0.0), look).b;
       float st = hash(cuv * vec2(420.0, 320.0) + uTime); // estática
       comp += (st - 0.5) * 0.35 * g;
+    } else if (uVBlur > 0.3) {
+      // T3: el barrido a Contacto desenfocaba el canvas con filter: blur() de CSS (lo más caro de
+      // toda la navegación en celular). Acá son 7 muestras en vertical, en la GPU.
+      float stepv = uVBlur / (uResolution.y * scale.y) / 3.0;
+      comp = vec3(0.0);
+      for (int i = -3; i <= 3; i++) comp += scene(suv + vec2(0.0, float(i) * stepv), look);
+      comp /= 7.0;
     } else {
       comp = scene(suv, look);
     }
@@ -154,6 +162,8 @@ const SIGN_DEPTH = {
 
 // B4 — lente de rayos X (solo desktop). El router la usa como transición Inicio ↔ Biografía cuando
 // está lista; si no (celular, movimiento reducido, textura sin bajar), sigue con el fundido.
+// T3 — el router pide el desenfoque del barrido a Contacto en px (lo aplica el shader, no CSS)
+export const heroFx = { blur: () => {} }
 export const heroLens = { ready: false, expand: (done) => done(), contract: (done) => done() }
 // centro del cráneo en la imagen (x desde la izquierda, y desde ABAJO), medido sobre bio_desktop_2400w
 const HEAD = [0.495, 0.574]
@@ -223,6 +233,7 @@ export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
       uLensR: { value: 0 },
       uLensFill: { value: 0 },
       uWipe: { value: 0 },
+      uVBlur: { value: 0 },
     },
   })
   const mesh = new Mesh(gl, { geometry: new Plane(gl, { width: 2, height: 2 }), program })
@@ -284,6 +295,8 @@ export function initHero(bgUrl, charUrl, depthUrl, xrayUrl) {
     },
     { passive: true },
   )
+
+  heroFx.blur = (px) => (program.uniforms.uVBlur.value = px)
 
   // ── B4: lente de rayos X ──
   // Desktop: al pasar el cursor por el letrero "Biografía" se abre una lente sobre el cráneo del

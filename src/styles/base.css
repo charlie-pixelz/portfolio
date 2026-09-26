@@ -385,6 +385,103 @@ body.cp-hover-reset .screen[data-cat]:hover .screen__label {
     opacity: 0;
   }
 }
+/* ── T2 (revisión 25/9): la sala se enciende al alejarse ──
+   Estela del zoom-out: copias del fondo de la sala, más grandes y tenues, que siguen al frame
+   (router.js las mueve y las apaga al frenar). Solo fondo: los monitores no se duplican. */
+.room__ghost {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+.room__ghost-frame {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(100vw, calc(100vh * 2400 / 1344));
+  aspect-ratio: 2400 / 1344;
+  background: var(--room-bg) center / cover no-repeat;
+  transform-origin: 0 0;
+}
+/* monitor apagado mientras todavía no entra al cuadro */
+.screen[data-cat].is-off {
+  filter: brightness(0.07) saturate(0.4);
+}
+.screen[data-cat].is-off .screen__label {
+  opacity: 0;
+}
+/* encendido de CRT: un destello y un rebote (un solo destello fuerte por monitor, en cascada y en
+   un área chica: dentro de WCAG 2.3.1) + la línea brillante que se abre en vertical */
+.screen[data-cat].is-powering {
+  animation: crtOn 0.42s steps(1, end);
+}
+@keyframes crtOn {
+  0% {
+    filter: brightness(0.07) saturate(0.4);
+  }
+  14% {
+    filter: brightness(1.3) saturate(0.5);
+  }
+  28% {
+    filter: brightness(0.22) saturate(0.8);
+  }
+  52% {
+    filter: brightness(0.95) saturate(1.1);
+  }
+  100% {
+    filter: brightness(0.82) saturate(1.05) contrast(1.05);
+  }
+}
+.screen[data-cat]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(214, 255, 226, 0.85);
+  opacity: 0;
+  transform: scaleY(0.02);
+  pointer-events: none;
+}
+.screen[data-cat].is-powering::before {
+  animation: crtLine 0.3s ease-out;
+}
+@keyframes crtLine {
+  0% {
+    opacity: 1;
+    transform: scaleX(0.5) scaleY(0.02);
+  }
+  45% {
+    opacity: 0.7;
+    transform: scaleX(1) scaleY(0.04);
+  }
+  100% {
+    opacity: 0;
+    transform: scaleX(1) scaleY(1);
+  }
+}
+/* ── T4: vista previa en el monitor ── clip de 3 s (screens.js; uno solo a la vez). La etiqueta
+   baja al borde inferior para no tapar el clip. */
+.screen__preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+}
+.screen.is-previewing .screen__preview {
+  opacity: 1;
+  animation: crtOn 0.3s steps(1, end); /* cambio de canal */
+}
+.screen__label {
+  transition: top 0.25s ease;
+}
+.screen.is-previewing .screen__label {
+  top: 82%;
+}
 /* etiqueta de categoría: ancha y alta. Va DENTRO del plano deformado, así hereda
    la perspectiva del monitor sin skew manual. */
 .screen__label {
