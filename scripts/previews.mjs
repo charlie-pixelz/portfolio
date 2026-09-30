@@ -23,8 +23,12 @@ const FPS = 24
 const SOURCES = {
   // lote 2 (30/9): sin los casos que salieron (ilustracion-4, ia-1). Si cambia pipeline-el-comparador
   // por su versión definitiva, correr de nuevo: node scripts/previews.mjs
-  ilustracion: { video: 'ilustracion/brandbook-2026.mp4', start: 2 },
-  motion: { video: 'motion/motion-2.mp4', start: 4 },
+  // Charlie (30/9): la portada del Brandbook (su poster) y otras dos piezas, no el video: el video
+  // se comía los 3 s y apenas mostraba la portada + una miniatura
+  ilustracion: { images: ['ilustracion/brandbook-2026-poster.webp', 'ilustracion/ilustracion-1.jpg', 'ilustracion/ilustracion-3.jpg'] },
+  // presentación EILA (motion-2): del 9.6 al 12.6 s, el tramo con más animación de todos los videos
+  // de la categoría (medido por diferencia entre cuadros; Charlie 30/9)
+  motion: { video: 'motion/motion-2.mp4', start: 9.6 },
   web: { images: ['web/web-2.jpg', 'web/web-3.jpg', 'web/web-4.jpg'] }, // Charlie (25/9): paneo de las imágenes, no el video
   ia: { images: ['ia/pipeline-el-comparador.webp', 'ia/ia-2.jpg'] },
 }
