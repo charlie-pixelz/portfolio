@@ -6,6 +6,7 @@
 import { gsap } from 'gsap'
 import { quality } from '../core/quality.js'
 import { sfx } from '../core/sound.js'
+import perfil from '../../files/proyectos/perfil.json'
 import webmUrl from '../../assets/efecto-loop/contacto_loop_1080.webm'
 import mp4Url from '../../assets/efecto-loop/contacto_loop_1080_h264.mp4'
 import posterUrl from '../../assets/efecto-loop/contacto_poster.webp'
@@ -33,15 +34,15 @@ const CONTENT = {
     cv: 'Download PDF',
   },
 }
-const EMAIL = 'c.perez.grafica@gmail.com'
+const EMAIL = perfil.email
 // C1: solo el PDF del idioma de la página (public/cv/). Charlie (26/9) quitó el acceso al otro
 // idioma: daba la impresión de que solo ese se podía descargar
 const CV = { es: '/cv/CV_Carlos_Perez_2026_ES.pdf', en: '/cv/CV_Carlos_Perez_2026_EN.pdf' }
 // links reales (los abre el usuario con su clic; wa.me/linkedin en pestaña nueva)
 const LINKS = [
-  { label: 'WhatsApp', value: '+56 9 9473 8880', href: 'https://wa.me/56994738880', ext: true },
+  { label: 'WhatsApp', value: perfil.whatsapp.label, href: perfil.whatsapp.href, ext: true },
   { label: 'Email', value: EMAIL, href: `mailto:${EMAIL}`, ext: false, copy: true },
-  { label: 'LinkedIn', value: '/in/charlie-pixelz', href: 'https://www.linkedin.com/in/charlie-pixelz', ext: true },
+  { label: 'LinkedIn', value: '/in/' + perfil.linkedin.split('/in/')[1], href: perfil.linkedin, ext: true },
 ]
 
 export function initContacto({ lang, isMobile = false }) {

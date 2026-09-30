@@ -21,10 +21,12 @@ const DUR = 3
 const FPS = 24
 
 const SOURCES = {
-  ilustracion: { images: ['ilustracion/ilustracion-1.jpg', 'ilustracion/ilustracion-3.jpg', 'ilustracion/ilustracion-4.jpg'] },
+  // lote 2 (30/9): sin los casos que salieron (ilustracion-4, ia-1). Si cambian brandbook-2026 o
+  // pipeline-el-comparador por sus versiones definitivas, correr de nuevo: node scripts/previews.mjs
+  ilustracion: { images: ['ilustracion/brandbook-2026.webp', 'ilustracion/ilustracion-1.jpg', 'ilustracion/ilustracion-3.jpg'] },
   motion: { video: 'motion/motion-2.mp4', start: 4 },
   web: { images: ['web/web-2.jpg', 'web/web-3.jpg', 'web/web-4.jpg'] }, // Charlie (25/9): paneo de las imágenes, no el video
-  ia: { images: ['ia/ia-1.jpg', 'ia/ia-2.jpg'] },
+  ia: { images: ['ia/pipeline-el-comparador.webp', 'ia/ia-2.jpg'] },
 }
 
 const fit = `scale=${W}:${H}:force_original_aspect_ratio=increase,crop=${W}:${H}`

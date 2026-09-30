@@ -3,10 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Charlie Pixelz — Portafolio</title>
+    <!-- Lote 1 (30/9): quien ya eligió idioma no vuelve a pasar por la pantalla de carga. Va primero
+         en el <head> para salir antes de descargar nada. ?intro la muestra igual (pruebas). -->
+    <script>
+      try {
+        var l = localStorage.getItem('cp-lang')
+        if ((l === 'es' || l === 'en') && !/[?&]intro\b/.test(location.search)) location.replace('/' + l + '/')
+      } catch (e) {}
+    </script>
+    <title>Charlie Pixelz — Brand Designer &amp; Web Designer/Developer</title>
     <meta
       name="description"
-      content="Portafolio de Charlie Pixelz: ilustración, diseño audiovisual, diseño web y proyectos con IA."
+      content="Portafolio de Charlie Pixelz, Brand Designer &amp; Web Designer/Developer: marca, ilustración, motion, diseño web y proyectos con IA."
     />
     <link rel="alternate" hreflang="es" href="https://charliepixelz.design/es/" />
     <link rel="alternate" hreflang="en" href="https://charliepixelz.design/en/" />
@@ -20,10 +28,10 @@
     <link rel="preload" as="font" type="font/woff2" href="/fonts/Handjet-subset.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/Doto-subset.woff2" crossorigin />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Charlie Pixelz — Portafolio" />
+    <meta property="og:title" content="Charlie Pixelz — Brand Designer &amp; Web Designer/Developer" />
     <meta
       property="og:description"
-      content="Portafolio de Charlie Pixelz: ilustración, diseño audiovisual, diseño web y proyectos con IA."
+      content="Portafolio de Charlie Pixelz, Brand Designer &amp; Web Designer/Developer: marca, ilustración, motion, diseño web y proyectos con IA."
     />
     <meta property="og:url" content="https://charliepixelz.design/" />
     <meta property="og:image" content="https://charliepixelz.design/og-image.jpg" />
@@ -53,8 +61,8 @@
           <a href="es/" data-lang="es">ESP</a>
           <a href="en/" data-lang="en">ENG</a>
         </nav>
-        <!-- H4: sonido elegido al entrar (marcado por defecto; se aplica con el idioma) -->
-        <button class="sound-choice" id="soundChoice" type="button" aria-pressed="true">Sonido · Sound <span class="sound-choice__state">ON</span></button>
+        <!-- H4: sonido elegido al entrar (apagado por defecto desde el 30/9; se aplica con el idioma) -->
+        <button class="sound-choice" id="soundChoice" type="button" aria-pressed="false">Sonido · Sound <span class="sound-choice__state">OFF</span></button>
       </div>
       <div class="preloader__lockup">
         <p
@@ -69,13 +77,14 @@
           0%
         </p>
         <h1 class="brand brand--preloader">
-          <span class="brand__charlie">Charlie</span><span class="brand__pixelz">PIXELZ</span>
+          <span class="brand__charlie">Charlie</span><span class="brand__pixelz">PIXELZ</span><span class="sr-only"> — Brand Designer &amp; Web Designer/Developer</span>
         </h1>
         <p class="tagline tagline--cream">
           Diseño, ilustración, motion y desarrollo web potenciados con IA.
         </p>
       </div>
     </main>
+    <!--seo-summary-->
     <div class="crt" aria-hidden="true"></div>
   </body>
 </html>

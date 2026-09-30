@@ -1,6 +1,7 @@
-// sound.js — H4 (P4.A de ANIMATION_SPEC): capa sonora OPT-IN. Apagada por defecto, se enciende
-// desde el menú Pip-Boy y el estado dura la sesión (sessionStorage, como pide el spec). Nunca
-// suena nada sin ese clic: el AudioContext recién se crea dentro de un gesto del usuario.
+// sound.js — H4 (P4.A de ANIMATION_SPEC): capa sonora OPT-IN. Apagada por defecto (lote 1, 30/9);
+// se enciende en la pantalla de carga o con el parlante bajo el menú, y la elección se recuerda
+// entre visitas (localStorage). Nunca suena nada sin un gesto: el AudioContext recién se crea (o se
+// reanuda) dentro de un clic/tecla del usuario.
 //
 // Sin archivos de audio: cada efecto se sintetiza con Web Audio en el momento → 0 bytes que
 // descargar (nada toca el LCP ni el presupuesto) y ninguna licencia que gestionar. Volúmenes
@@ -15,7 +16,7 @@ const AC = window.AudioContext || window.webkitAudioContext
 
 let on = false
 try {
-  on = sessionStorage.getItem(KEY) === '1'
+  on = localStorage.getItem(KEY) === '1'
 } catch {}
 
 let ctx = null
@@ -292,7 +293,7 @@ export const sound = {
   set(v) {
     on = !!v
     try {
-      sessionStorage.setItem(KEY, on ? '1' : '0')
+      localStorage.setItem(KEY, on ? '1' : '0')
     } catch {}
     apply(on)
     subs.forEach((fn) => fn(on))

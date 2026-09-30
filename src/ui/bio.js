@@ -14,6 +14,7 @@ import { gsap } from 'gsap'
 import { SplitText } from 'gsap/SplitText'
 import { quality } from '../core/quality.js'
 import { sfx } from '../core/sound.js'
+import perfil from '../../files/proyectos/perfil.json'
 
 gsap.registerPlugin(SplitText)
 
@@ -37,9 +38,7 @@ const TOOLS = [
 const CONTENT = {
   es: {
     title: '¿Quién es Charlie?',
-    // (2/8) 2.ª redacción del docx — reemplaza la versión resumida del 1/8
-    about:
-      'Soy desarrollador, diseñador e ilustrador chileno, con 9 años entre retail, consultoras, productoras y startups. Mi trabajo cruza ilustración de personajes, piezas publicitarias, dirección de marca y motion graphics, sostenido por criterio humano: pensamiento crítico y ojo de diseñador, para decidir qué funciona y cómo puede funcionar mejor. Actualmente uso la IA como otra herramienta en mi flujo creativo sin reducir la calidad de mi trabajo.',
+    about: perfil.about.es, // lote 2 (30/9); vive en perfil.json (también la usa el bloque SEO)
     toolsTitle: 'Herramientas',
     skillsTitle: 'Habilidades',
     skills: [
@@ -58,8 +57,7 @@ const CONTENT = {
   },
   en: {
     title: 'Who is Charlie?',
-    about:
-      "I'm a Chilean developer, designer and illustrator with 9 years across retail, consulting, production studios and startups. My work spans character illustration, advertising pieces, brand direction and motion graphics, held together by human judgment: critical thinking and a designer's eye for what works and how it can work better. Recently added generative AI to my creative process without lowering the quality of my work.",
+    about: perfil.about.en,
     toolsTitle: 'Tools',
     skillsTitle: 'Skills',
     skills: [

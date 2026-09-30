@@ -117,13 +117,19 @@ export function initPreloader({ sceneUrl, preloadUrls = [], isMobile = false }) 
   const langSelect = document.getElementById('langSelect')
   const links = langSelect ? [...langSelect.querySelectorAll('a[data-lang]')] : []
 
-  // ambas opciones "apagadas" por defecto (sin preselección lit); Charlie elige.
+  // Lote 1 (30/9): el idioma del navegador viene marcado (es* → ESP, el resto → ENG). Cualquiera
+  // de los dos botones entra con un solo clic; la marca solo indica la sugerencia.
+  let suggested = 'en'
+  try {
+    suggested = /^es\b/i.test(navigator.language || '') ? 'es' : 'en'
+  } catch {}
+  links.forEach((a) => a.classList.toggle('is-suggested', a.dataset.lang === suggested))
 
-  // H4 (Charlie, 26/9): el sonido se elige acá, a la vista, ANTES de que suene nada. Viene
-  // marcado; se guarda al elegir idioma y la página de destino lo arranca con el primer clic
+  // H4: el sonido se elige acá, a la vista, antes de que suene nada. Apagado por defecto (lote 1,
+  // 30/9); se guarda al elegir idioma y la página de destino lo arranca con el primer clic
   // (el navegador no deja sonar sin un gesto en esa página).
   const soundBtn = document.getElementById('soundChoice')
-  let withSound = true
+  let withSound = false
   soundBtn?.addEventListener('click', () => {
     withSound = !withSound
     soundBtn.setAttribute('aria-pressed', String(withSound))
@@ -140,7 +146,7 @@ export function initPreloader({ sceneUrl, preloadUrls = [], isMobile = false }) 
       e.preventDefault()
       try {
         localStorage.setItem('cp-lang', a.dataset.lang)
-        sessionStorage.setItem('cp-sound', withSound ? '1' : '0')
+        localStorage.setItem('cp-sound', withSound ? '1' : '0')
       } catch {}
       if (exiting) return
       exiting = true

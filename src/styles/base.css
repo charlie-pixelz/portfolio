@@ -2712,9 +2712,15 @@ body.route-contacto .pipboy__item[data-route='contacto'] {
   color: color-mix(in srgb, var(--cream) 72%, transparent);
 }
 .lang--cream a:hover,
-.lang--cream a:focus-visible {
+.lang--cream a:focus-visible,
+.lang--cream a.is-suggested {
   background: var(--cream);
   color: var(--void);
+}
+/* al pasar sobre el otro idioma, la sugerencia se apaga: nunca dos botones encendidos */
+.lang--cream:hover a.is-suggested:not(:hover) {
+  background: transparent;
+  color: color-mix(in srgb, var(--cream) 72%, transparent);
 }
 
 @keyframes fadeUp {

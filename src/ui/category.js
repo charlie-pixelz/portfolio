@@ -6,6 +6,7 @@ import { gsap } from 'gsap'
 import { quality } from '../core/quality.js'
 import { sfx } from '../core/sound.js'
 import casos from '../../files/proyectos/casos.json'
+import { CAT_TITLE } from '../core/cats.js'
 import { createViewer } from './viewer.js'
 
 // Media OPTIMIZADA (la genera `npm run media`; los originales viven en _src/, fuera del bundle).
@@ -27,17 +28,13 @@ for (const [path, url] of Object.entries(files)) {
 }
 const idOf = (file) => file.replace(/\.\w+$/, '')
 const srcOf = (it) => media[idOf(it.media)] || {}
+// "type" es opcional en casos.json: sin él, lo decide la extensión del archivo. Así, cambiar una
+// captura provisoria por el video definitivo es solo cambiar el archivo y su nombre en el JSON.
+for (const list of Object.values(casos)) for (const it of list) it.type ||= /\.(mp4|webm|mov|m4v)$/i.test(it.media) ? 'video' : 'image'
 
 const UI = {
   es: { works: 'Obras', work: (n, t) => `Obra ${n}: ${t}`, zoom: (t) => `Ampliar: ${t}` },
   en: { works: 'Works', work: (n, t) => `Work ${n}: ${t}`, zoom: (t) => `Enlarge: ${t}` },
-}
-
-const CAT_TITLE = {
-  ilustracion: { es: 'Ilustraciones', en: 'Illustrations' },
-  motion: { es: 'Diseño Audiovisual', en: 'Motion Design' },
-  web: { es: 'Diseño Web', en: 'Web Design' },
-  ia: { es: 'Proyectos con IA', en: 'AI Projects' },
 }
 
 export function initCategory({ lang }) {

@@ -1,15 +1,32 @@
 {
   "ilustracion": [
     {
+      "media": "brandbook-2026.webp",
+      "title": {
+        "es": "Brandbook 2026",
+        "en": "2026 Brandbook"
+      },
+      "desc": {
+        "es": "A dos años de un revamp radical, la marca ocupaba menos de la mitad de su manual. Hice un benchmark, audité qué se quedaba y qué salía, rehice paleta, tipografías e iconografía, y construí en Figma un brandbook de 130+ páginas con índice interactivo: estrategia, tono de voz, identidad visual, dirección de arte y guías de prompts para IA.",
+        "en": "Two years after a radical rebrand, the company was using less than half of its brand manual. I ran a benchmark, audited what stayed and what went, rebuilt the palette, typography and iconography, and built a 130+ page brandbook in Figma with an interactive index: strategy, tone of voice, visual identity, art direction and AI prompt guidelines."
+      },
+      "tags": [
+        "Figma",
+        "Brand",
+        "Guidelines",
+        "2026"
+      ]
+    },
+    {
       "media": "ilustracion-1.jpg",
       "type": "image",
       "title": {
         "es": "Revamp Personaje de Marca (3D a 2D)",
-        "en": "Revamp Brand Character (3D to 2D)"
+        "en": "Brand Character Revamp (3D to 2D)"
       },
       "desc": {
-        "es": "El objetivo era rediseñar al antiguo personaje de marca para darle un aire más moderno y minimalista, convirtiéndolo en un recurso más llamativo pero conservando su esencia y reconocimiento.",
-        "en": "The aim was to redesign the old brand character to give it a more modern and minimalist look, making it a more eye-catching resource while preserving its essence and recognition."
+        "es": "Rediseñé el personaje de marca de 3D a 2D para modernizarlo sin perder reconocimiento. Hoy es parte del sistema, con sus propias expresiones y casos de uso documentados en el Brandbook 2026.",
+        "en": "I redesigned the brand character from 3D to 2D to modernize it without losing recognition. It's now part of the system, with its own expressions and use cases documented in the 2026 Brandbook."
       },
       "tags": [
         "Illustrator",
@@ -21,12 +38,12 @@
       "media": "ilustracion-2.png",
       "type": "image",
       "title": {
-        "es": "Pieza promocional para RRSS",
-        "en": "Promotional piece for social media"
+        "es": "Key visual de campaña Black Friday",
+        "en": "Black Friday campaign key visual"
       },
       "desc": {
-        "es": "Pieza creada para promocionar una campaña de Black Friday en redes sociales, adaptable a distintos formatos y dimensiones. Para esto se creó tanto el logotipo como el aspecto visual de la campaña.",
-        "en": "This piece was created to promote a Black Friday campaign on social media, adaptable to different formats and dimensions. Both the logo and the key visual of the campaign were created for this purpose."
+        "es": "Creé el logotipo y el key visual de la campaña, pensados como sistema para adaptarse a RRSS, banners, mailings y ads. Cada campaña de este tipo implicaba entre 45 y 50 piezas por país.",
+        "en": "I created the campaign logo and key visual as a system that adapts to social, banners, email and ads. Each campaign like this meant 45 to 50 assets per country."
       },
       "tags": [
         "Illustrator",
@@ -39,70 +56,72 @@
       "type": "image",
       "title": {
         "es": "Portada y concepto para evento",
-        "en": "Cover and concept for event"
+        "en": "Event cover and concept"
       },
       "desc": {
-        "es": "Ilustración digital en Photoshop para construir la atmósfera visual de un evento privado: funcionó como imagen clave de concepto y portada de presentación, marcando el tono del resto del material gráfico.",
-        "en": "Digital illustration in Photoshop to build the visual mood of a private event: it worked as the key concept image and presentation cover, setting the tone for the rest of the graphic material."
+        "es": "Ilustración digital en Photoshop que definió la atmósfera de un evento privado: fue la imagen clave del concepto y la portada de la presentación, y marcó el tono de todo el material gráfico.",
+        "en": "Digital illustration in Photoshop that set the mood for a private event: it was the key concept image and presentation cover, and set the tone for all the graphic material."
       },
       "tags": [
         "Photoshop",
         "Concept",
         "2019"
       ]
-    },
-    {
-      "media": "ilustracion-4.jpg",
-      "type": "image",
-      "title": {
-        "es": "Fotomontaje para prueba de instalación",
-        "en": "Photomontage for installation test"
-      },
-      "desc": {
-        "es": "Maqueta creada para probar atractivo visual de diseño en frontis del edificio principal del cliente, funciona tanto como muestra de diseño aplicado como sugerencia de presentación.",
-        "en": "Model created to test visual appeal of design on the front of the client's main building, it functions both as a sample of applied design and as a presentation suggestion."
-      },
-      "tags": [
-        "Photoshop",
-        "Illustrator",
-        "2018"
-      ]
     }
   ],
   "motion": [
     {
-      "media": "motion-1.mp4",
+      "media": "motion-4.mp4",
       "type": "video",
       "sound": true,
       "title": {
-        "es": "Post de campaña para RRSS",
-        "en": "Social media campaign post"
+        "es": "Cyber Week: de key visual a animación",
+        "en": "Cyber Week: from key visual to motion"
       },
       "desc": {
-        "es": "Esta pieza se creó para promocionar la campaña de Black Friday con el objetivo de mejorar la conversión y el alcance de la comunicación a una mayor cantidad de usuarios.",
-        "en": "This piece was created to promote the Black Friday campaign with the goal of improving conversion and reaching a larger number of users."
+        "es": "Diseñé el logotipo y los key visuals de la campaña Cyber Week y los llevé a un bumper animado de 6 segundos para ads y YouTube.",
+        "en": "I designed the Cyber Week campaign logo and key visuals, then turned them into a 6-second animated bumper for ads and YouTube."
       },
       "tags": [
         "Illustrator",
         "After Effects",
-        "2024"
+        "Marketing",
+        "2023"
       ]
     },
     {
       "media": "motion-2.mp4",
       "type": "video",
       "title": {
-        "es": "Video presentación para un evento",
-        "en": "Video presentation for an event"
+        "es": "Animación de nuevo logo",
+        "en": "New logo animation"
       },
       "desc": {
-        "es": "Propuesta animada en loop de presentación de la empresa para stand de evento EILA 2026.",
-        "en": "Animated looped proposal for the company presentation for the EILA 2026 event stand."
+        "es": "Animación del nuevo logotipo integrando al avatar de marca, creada como cierre estándar para las piezas audiovisuales publicitarias.",
+        "en": "Animation of the new logo featuring the brand avatar, built as the standard closing for video ads."
       },
       "tags": [
         "Illustrator",
         "After Effects",
         "Brand",
+        "2024"
+      ]
+    },
+    {
+      "media": "motion-1.mp4",
+      "type": "video",
+      "sound": true,
+      "title": {
+        "es": "Post animado Black Friday",
+        "en": "Black Friday animated post"
+      },
+      "desc": {
+        "es": "Post animado para la campaña de Black Friday, parte del mismo sistema visual del key visual y adaptado a los formatos de redes sociales.",
+        "en": "Animated post for the Black Friday campaign, built on the same visual system as the key visual and adapted to social formats."
+      },
+      "tags": [
+        "Illustrator",
+        "After Effects",
         "2024"
       ]
     },
@@ -111,11 +130,11 @@
       "type": "video",
       "title": {
         "es": "Cortina animada para podcast",
-        "en": "Animated intro for podcast"
+        "en": "Animated podcast intro"
       },
       "desc": {
-        "es": "Esta pieza fue creada para utilizar en la post-producción del podcast a modo de introducción y transición entre la presentación y el podcast completo.",
-        "en": "This piece was created for use in the post-production of the podcast as an introduction and transition between the presentation and the full podcast."
+        "es": "Intro animada del podcast de la marca, usada como transición entre la presentación y el episodio.",
+        "en": "Animated intro for the brand's podcast, used as the transition between the opening and the episode."
       },
       "tags": [
         "Illustrator",
@@ -123,28 +142,66 @@
         "Podcast",
         "2025"
       ]
-    },
-    {
-      "media": "motion-4.mp4",
-      "type": "video",
-      "sound": true,
-      "title": {
-        "es": "Animación de pieza promocional",
-        "en": "Promotional piece animation"
-      },
-      "desc": {
-        "es": "Se diseñó tanto el logotipo como las visuales clave de la campaña de Cyberday, luego se creó esta pieza animada para promocionar tanto en ads como en Youtube.",
-        "en": "The logo and key visuals for the Cyberday campaign were designed, then this animated piece was created to promote it in both ads and on YouTube."
-      },
-      "tags": [
-        "Illustrator",
-        "After Effects",
-        "Marketing",
-        "2023"
-      ]
     }
   ],
   "web": [
+    {
+      "media": "web-3.jpg",
+      "type": "image",
+      "title": {
+        "es": "Landing escalable: 21 productos, 34% de conversión",
+        "en": "Scalable landing: 21 products, 34% conversion"
+      },
+      "desc": {
+        "es": "Diseñé y programé con Claude Code una landing sobre HubSpot, con repositorio en GitHub, para superar los límites de su editor visual sin perder su analítica. La optimicé con A/B testing (AB Tasty + Heap) hasta 34% de conversión a cotización en desktop y 32% en mobile, y se convirtió en la plantilla de 21 landings de producto hoy en producción.",
+        "en": "I designed and coded a HubSpot-hosted landing page with Claude Code and a GitHub repo, getting past the visual editor's limits while keeping HubSpot analytics. I optimized it through A/B testing (AB Tasty + Heap) up to 34% desktop and 32% mobile quote conversion, and it became the template for 21 product landings now in production."
+      },
+      "tags": [
+        "Claude Code",
+        "HubSpot",
+        "AB Tasty",
+        "2026"
+      ],
+      "link": "https://charlie-pixelz.github.io/compara-landings/auto.html"
+    },
+    {
+      "media": "web-2.jpg",
+      "type": "image",
+      "title": {
+        "es": "Propuesta de rediseño del home",
+        "en": "Homepage redesign proposal"
+      },
+      "desc": {
+        "es": "Home de la marca reconstruido con Claude Code y skills de diseño web: nuevas interacciones y animaciones para mejorar la experiencia, alineado al sistema visual de la marca.",
+        "en": "The brand's homepage rebuilt with Claude Code and web design skills: new interactions and animations to improve the experience, aligned with the brand's visual system."
+      },
+      "tags": [
+        "Claude Code",
+        "GitHub",
+        "Brand",
+        "2026"
+      ],
+      "link": "https://charlie-pixelz.github.io/compara-landings/"
+    },
+    {
+      "media": "web-4.jpg",
+      "type": "image",
+      "title": {
+        "es": "Este portafolio",
+        "en": "This portfolio"
+      },
+      "desc": {
+        "es": "Planificado con Claude, con recursos creados en Photoshop, Illustrator y Higgsfield, y animaciones programadas con Claude Code. La dirección de arte es mía; la IA aceleró la ejecución.",
+        "en": "Planned with Claude, with assets made in Photoshop, Illustrator and Higgsfield, and animations coded with Claude Code. The art direction is mine; AI sped up the execution."
+      },
+      "tags": [
+        "Claude Code",
+        "Higgsfield",
+        "Photoshop",
+        "Illustrator",
+        "2026"
+      ]
+    },
     {
       "media": "web-1.mp4",
       "type": "video",
@@ -153,89 +210,69 @@
         "en": "First web portfolio"
       },
       "desc": {
-        "es": "Esta fue la primera prueba de diseño web que hice (en una época donde no existía IA), código hecho a mano desde cero programado en Dreamweaver y Atom.",
-        "en": "This was the first web design test I ever did (in a time before AI existed), code written by hand from scratch programmed in Dreamweaver and Atom."
+        "es": "Mi primer sitio, programado a mano desde cero en Dreamweaver y Atom. Aquí partió el perfil híbrido de diseño y código que hoy ejerzo.",
+        "en": "My first site, hand-coded from scratch in Dreamweaver and Atom. It's where my hybrid design-and-code profile started."
       },
       "tags": [
         "Dreamweaver",
-        "Javascript",
+        "JavaScript",
         "2019"
       ]
-    },
-    {
-      "media": "web-4.jpg",
-      "type": "image",
-      "title": {
-        "es": "Nuevo portafolio web",
-        "en": "New web portfolio"
-      },
-      "desc": {
-        "es": "Portafolio construido de principio a fin junto a la IA, desde el preloader hasta contacto, planificado con Claude. Recursos hechos en Photoshop e Illustrator y animaciones programadas junto a Claude Code.",
-        "en": "Portfolio built end to end alongside AI, from preloader to contact, planned with Claude. Assets made in Photoshop and Illustrator, with animations coded together with Claude Code."
-      },
-      "tags": [
-        "Claude",
-        "Photoshop",
-        "Illustrator",
-        "2026"
-      ]
-    },
-    {
-      "media": "web-2.jpg",
-      "type": "image",
-      "title": {
-        "es": "Prueba de desarrollo web con IA",
-        "en": "AI Web Development Test"
-      },
-      "desc": {
-        "es": "Landing principal de la marca rehecha con Claude Code y skills de diseño web, enfocada en mejorar la experiencia de usuario con nuevas interacciones y animaciones más modernas.",
-        "en": "The brand's homepage rebuilt with Claude Code and dedicated web design skills, focused on improving the user experience with new interactions and more modern animations."
-      },
-      "tags": [
-        "Claude",
-        "GitHub",
-        "Brand",
-        "2026"
-      ],
-      "link": "https://charlie-pixelz.github.io/compara-landings/"
-    },
-    {
-      "media": "web-3.jpg",
-      "type": "image",
-      "title": {
-        "es": "Desarrollo web con IA",
-        "en": "Web development with AI"
-      },
-      "desc": {
-        "es": "Landing desarrollada junto a Claude Code, usando Hubspot como host y un repositorio en GitHub, para aprovechar sus ventajas (como analytics) superando las limitaciones de su editor visual.",
-        "en": "Landing page built with Claude Code, using HubSpot as host and a GitHub repository, to keep HubSpot's advantages (like analytics) while overcoming the limits of its visual editor."
-      },
-      "tags": [
-        "Claude",
-        "Hubspot",
-        "Photoshop",
-        "2026"
-      ],
-      "link": "https://charlie-pixelz.github.io/compara-landings/auto.html"
     }
   ],
   "ia": [
     {
-      "media": "ia-1.jpg",
-      "type": "image",
+      "media": "ia-4.mp4",
+      "type": "video",
+      "sound": true,
       "title": {
-        "es": "Desarrollo web potenciado",
-        "en": "Enhanced web development"
+        "es": "Pieza promocional para ads",
+        "en": "Promotional ad piece"
       },
       "desc": {
-        "es": "La IA llevó el desarrollo web a otro nivel: hoy permite ser el propio director de arte de un proyecto, con resultados personalizados. Se usó para programar esta web y para generar sus recursos base.",
-        "en": "AI has taken web development further: it now lets anyone act as their own art director, with personalized results. It was used both to code this site and to generate its core visual assets."
+        "es": "Imagen trabajada en Photoshop, animada con IA generativa (Kling 3.0), compuesta en Illustrator y terminada en After Effects: un flujo que junta una herramienta de cada disciplina que manejo.",
+        "en": "An image worked in Photoshop, animated with generative AI (Kling 3.0), composited in Illustrator and finished in After Effects: one workflow combining a tool from each discipline I work in."
       },
       "tags": [
-        "Claude",
-        "Higgsfield",
+        "Kling",
         "Photoshop",
         "Illustrator",
+        "After Effects",
+        "2026"
+      ]
+    },
+    {
+      "media": "pipeline-el-comparador.webp",
+      "title": {
+        "es": "Pipeline automatizado del blog",
+        "en": "Automated blog pipeline"
+      },
+      "desc": {
+        "es": "Migré desde HubSpot los 120+ artículos de El Comparador, el blog de Compara Chile, y automaticé su publicación con Claude Code, Notion y GitHub. Con 6 a 8 redactores y un editor, publicar cada tanda me tomaba 3 a 4 horas diarias; hoy es un mensaje y un enter: 20 horas semanales liberadas.",
+        "en": "I migrated the 120+ articles of El Comparador, Compara Chile's blog, from HubSpot and automated publishing with Claude Code, Notion and GitHub. With 6 to 8 writers and one editor, publishing each batch took me 3 to 4 hours a day; now it's one message and one enter: 20 hours freed every week."
+      },
+      "tags": [
+        "Claude Code",
+        "Notion",
+        "GitHub",
+        "2026"
+      ],
+      "link": "https://charlie-pixelz.github.io/el-comparador/"
+    },
+    {
+      "media": "ia-3.mp4",
+      "type": "video",
+      "title": {
+        "es": "Pieza audiovisual con IA combinada",
+        "en": "Video piece with combined AI tools"
+      },
+      "desc": {
+        "es": "Experimento de flujo: Claude Design para el layout, Higgsfield para el material generativo, y mi dirección para unir ambos en una pieza terminada.",
+        "en": "A workflow experiment: Claude Design for layout, Higgsfield for generative footage, and my direction to bring both into a finished piece."
+      },
+      "tags": [
+        "Claude Design",
+        "Higgsfield",
         "2026"
       ]
     },
@@ -243,54 +280,17 @@
       "media": "ia-2.jpg",
       "type": "image",
       "title": {
-        "es": "Diseño de Carrusel para RRSS",
-        "en": "Carousel design for social media"
+        "es": "Carrusel para LinkedIn",
+        "en": "LinkedIn carousel"
       },
       "desc": {
-        "es": "Se buscaba convertir una web en un carrusel informativo para LinkedIn: Claude Design maquetó todo el carrusel y los detalles se afinaron en Illustrator. Una tarea de horas, resuelta en minutos junto a la IA.",
-        "en": "The goal was to turn a website into an information carousel for LinkedIn: Claude Design laid out the whole carousel, with details refined in Illustrator. A task that used to take hours, done in minutes with AI."
+        "es": "Convertí una web en un carrusel informativo: Claude Design armó la maqueta y yo afiné jerarquía y detalle en Illustrator. Lo que antes tomaba horas, resuelto en minutos.",
+        "en": "I turned a website into an informative carousel: Claude Design built the layout and I refined hierarchy and detail in Illustrator. Hours of work, done in minutes."
       },
       "tags": [
-        "Claude",
+        "Claude Design",
         "Illustrator",
         "Marketing",
-        "2026"
-      ]
-    },
-    {
-      "media": "ia-3.mp4",
-      "type": "video",
-      "title": {
-        "es": "Creación de piezas audiovisuales",
-        "en": "Creation of audiovisual pieces"
-      },
-      "desc": {
-        "es": "Este trabajo nació como experimento: explorar los límites de las herramientas de IA y cómo complementarlas. La conclusión: Claude Design maqueta y diseña muy bien, pero necesita IA generativa para un resultado completo.",
-        "en": "This project began as an experiment: exploring the limits of AI tools and how to complement them. The conclusion: Claude Design works great for layout and design, but needs generative AI for a complete output."
-      },
-      "tags": [
-        "Claude",
-        "Higgsfield",
-        "2026"
-      ]
-    },
-    {
-      "media": "ia-4.mp4",
-      "type": "video",
-      "sound": true,
-      "title": {
-        "es": "Pieza promocional para ads",
-        "en": "Promotional piece for ads"
-      },
-      "desc": {
-        "es": "Pieza creada con IA generativa (Kling 3.0) sobre una imagen trabajada en Photoshop, compuesta en Illustrator y animada en After Effects: una prueba de proceso que reúne una herramienta de cada disciplina que manejo.",
-        "en": "Piece made with generative AI (Kling 3.0) on an image processed in Photoshop, composited in Illustrator and animated in After Effects: a process that brings together one tool from nearly every discipline I work in."
-      },
-      "tags": [
-        "Kling",
-        "Photoshop",
-        "Illustrator",
-        "After Effects",
         "2026"
       ]
     }
