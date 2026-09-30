@@ -7,8 +7,8 @@
         "en": "2026 Brandbook"
       },
       "desc": {
-        "es": "A dos años de un revamp radical, la marca ocupaba menos de la mitad de su manual. Hice un benchmark, audité qué se quedaba y qué salía, rehice paleta, tipografías e iconografía, y construí en Figma un brandbook de 130+ páginas con índice interactivo: estrategia, tono de voz, identidad visual, dirección de arte y guías de prompts para IA.",
-        "en": "Two years after a radical rebrand, the company was using less than half of its brand manual. I ran a benchmark, audited what stayed and what went, rebuilt the palette, typography and iconography, and built a 130+ page brandbook in Figma with an interactive index: strategy, tone of voice, visual identity, art direction and AI prompt guidelines."
+        "es": "A dos años de un revamp radical, la marca usaba menos de la mitad de su manual. Hice un benchmark, audité qué quedaba y qué salía, rehice paleta, tipografías e iconografía, y armé en Figma un brandbook de 130+ páginas con índice interactivo: estrategia, tono, identidad visual, dirección de arte y prompts para IA.",
+        "en": "Two years after a radical rebrand, the company used less than half of its brand manual. I ran a benchmark, audited what stayed and what went, rebuilt the palette, typography and iconography, and built a 130+ page Figma brandbook with an interactive index: strategy, tone, visual identity, art direction and AI prompts."
       },
       "tags": [
         "Figma",
@@ -153,8 +153,8 @@
         "en": "Scalable landing: 21 products, 34% conversion"
       },
       "desc": {
-        "es": "Diseñé y programé con Claude Code una landing sobre HubSpot, con repositorio en GitHub, para superar los límites de su editor visual sin perder su analítica. La optimicé con A/B testing (AB Tasty + Heap) hasta 34% de conversión a cotización en desktop y 32% en mobile, y se convirtió en la plantilla de 21 landings de producto hoy en producción.",
-        "en": "I designed and coded a HubSpot-hosted landing page with Claude Code and a GitHub repo, getting past the visual editor's limits while keeping HubSpot analytics. I optimized it through A/B testing (AB Tasty + Heap) up to 34% desktop and 32% mobile quote conversion, and it became the template for 21 product landings now in production."
+        "es": "Diseñé y programé con Claude Code una landing sobre HubSpot, con repositorio en GitHub, que supera los límites de su editor sin perder su analítica. Con A/B testing (AB Tasty + Heap) llegó a 34% de conversión a cotización en desktop y 32% en mobile, y hoy es la plantilla de 21 landings de producto.",
+        "en": "I designed and coded a HubSpot landing page with Claude Code and a GitHub repo, getting past the visual editor's limits while keeping its analytics. A/B testing (AB Tasty + Heap) took it to 34% desktop and 32% mobile quote conversion, and it's now the template for 21 product landings."
       },
       "tags": [
         "Claude Code",
@@ -248,8 +248,8 @@
         "en": "Automated blog pipeline"
       },
       "desc": {
-        "es": "Migré desde HubSpot los 120+ artículos de El Comparador, el blog de Compara Chile, y automaticé su publicación con Claude Code, Notion y GitHub. Con 6 a 8 redactores y un editor, publicar cada tanda me tomaba 3 a 4 horas diarias; hoy es un mensaje y un enter: 20 horas semanales liberadas.",
-        "en": "I migrated the 120+ articles of El Comparador, Compara Chile's blog, from HubSpot and automated publishing with Claude Code, Notion and GitHub. With 6 to 8 writers and one editor, publishing each batch took me 3 to 4 hours a day; now it's one message and one enter: 20 hours freed every week."
+        "es": "Migré desde HubSpot los 120+ artículos de El Comparador, el blog de Compara Chile, y automaticé su publicación con Claude Code, Notion y GitHub. Publicar lo de 6 a 8 redactores me tomaba 3 a 4 horas diarias; hoy es un mensaje y un enter: 20 horas liberadas por semana.",
+        "en": "I migrated the 120+ articles of El Comparador, Compara Chile's blog, from HubSpot and automated publishing with Claude Code, Notion and GitHub. Publishing work from 6 to 8 writers took me 3 to 4 hours a day; now it's one message and one enter: 20 hours freed every week."
       },
       "tags": [
         "Claude Code",

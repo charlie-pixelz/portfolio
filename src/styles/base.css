@@ -697,6 +697,7 @@ body.route-room .crt {
   grid-template-columns: 1fr auto;
   column-gap: 1em;
   align-items: end;
+  margin-top: calc(-1 * var(--info-lift, 0px)); /* category.js: sube si no cabe en la pantalla */
 }
 .cat__meta,
 .cat__desc {
@@ -1080,7 +1081,6 @@ body.route-category .crt {
     top: 76%; /* un poco más abajo (pedido de Charlie 30/7) — el lienzo termina en 68.96% */
     width: 90%;
     padding: 1em 1.2em 1.2em;
-    margin-top: calc(-1 * var(--info-lift, 0px)); /* category.js: sube si no cabe en la pantalla */
   }
   .cat__title {
     font-size: clamp(1.15rem, 5.5cqw, 1.7rem);

@@ -54,13 +54,12 @@ export function initCategory({ lang }) {
   const infoEl = el.querySelector('.cat__info')
   const ui = UI[lang] || UI.es
 
-  // mobile: la caja cuelga del 76 % del letrero y, con una descripción larga + "Ver sitio", se
-  // pasaba del borde inferior en pantallas bajas (Charlie, 26/9). Si no cabe, sube lo justo
-  // (margin, no transform: el transform lo usa GSAP al aparecer). Medida de layout, sin transforms.
+  // la caja cuelga bajo el lienzo y, con una descripción larga + "Ver sitio", se pasaba del borde
+  // inferior (celular: Charlie 26/9; desktop 16:9 con los textos del lote 2, 30/9). Si no cabe,
+  // sube lo justo (margin, no transform: el transform lo usa GSAP al aparecer). Medida de layout.
   const fitInfo = () => {
     if (!infoEl || el.hidden) return
     infoEl.style.removeProperty('--info-lift')
-    if (!matchMedia('(max-width: 768px)').matches) return
     const bottom = infoEl.offsetParent.getBoundingClientRect().top + infoEl.offsetTop + infoEl.offsetHeight
     const over = bottom - (innerHeight - 10)
     if (over > 0) infoEl.style.setProperty('--info-lift', `${Math.ceil(over)}px`)
