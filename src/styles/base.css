@@ -683,7 +683,7 @@ body.route-room .crt {
 .cat__info {
   position: absolute;
   left: 22%;
-  top: 71.5%;
+  top: calc(71.5% + 1cqw); /* +~11 px de aire bajo el marco del lienzo (Charlie, 30/9: se veía pegada) */
   width: 56%;
   box-sizing: border-box;
   padding: 1em 1.4em 1.1em;
