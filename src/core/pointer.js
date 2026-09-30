@@ -75,10 +75,19 @@ export const pointer = {
     window.addEventListener('mousemove', onMouse, { passive: true })
     window.addEventListener('touchmove', onTouch, { passive: true })
     window.addEventListener('touchstart', () => (lastTouch = performance.now()), { passive: true })
-    // sin permiso (iOS que llegó directo a /es/ sin pasar por el preloader) simplemente no llegan
-    // eventos: queda el parallax por touch de siempre
     if (quality.isTouch && !quality.reducedMotion) {
       window.addEventListener('deviceorientation', onTilt, { passive: true })
+      // iOS: el permiso se pedía solo al elegir idioma en el preloader. Desde el lote 1 (30/9) las
+      // visitas siguientes (y los links directos a /es/ /en/) lo saltan, así que se pide con el
+      // PRIMER toque de la página si todavía no llegó ninguna lectura del sensor. En Android no
+      // existe requestPermission (requestGyro resuelve al instante) y esto no hace nada.
+      if (typeof window.DeviceOrientationEvent?.requestPermission === 'function') {
+        const ask = () => {
+          window.removeEventListener('touchend', ask, true)
+          if (base.b === null) requestGyro()
+        }
+        window.addEventListener('touchend', ask, true)
+      }
     }
     ticker.add((t, dt) => {
       const px = pos.x
