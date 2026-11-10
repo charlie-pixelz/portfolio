@@ -80,7 +80,9 @@ export function initContacto({ lang, isMobile = false }) {
 
   const rows = [
     ...LINKS.map((l) => ({ ...l, ev: l.label.toLowerCase() })),
-    { label: 'CV', value: c.cv, href: CV[lang], download: true, ev: `cv-${lang}` },
+    // 10/11 (Charlie): los PDF siguen en public/cv/ pero sin descarga por ahora ("cv": false en
+    // perfil.json); con true vuelve el botón
+    perfil.cv ? { label: 'CV', value: c.cv, href: CV[lang], download: true, ev: `cv-${lang}` } : { label: 'CV', off: true },
   ]
   linksUl.innerHTML = rows
     .map((l) =>
