@@ -1,0 +1,5 @@
+# 10/11/2026: los PDF no pueden llevar la etiqueta noindex (GitHub Pages no permite cabeceras
+# propias), así que se le pide a los buscadores no leerlos. El resto del sitio NO se bloquea acá
+# a propósito: lleva <meta name="robots" content="noindex"> y Google necesita leerla.
+User-agent: *
+Disallow: /cv/

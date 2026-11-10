@@ -1863,6 +1863,21 @@ body.route-category .crt {
   opacity: 1;
   transform: translateX(0);
 }
+/* fila apagada (dato no disponible por ahora): visible, sin link ni hover */
+.contacto__link.is-off,
+.contacto__link.is-off:hover {
+  padding-left: 1.1em;
+  background: none;
+  cursor: default;
+}
+.contacto__link.is-off::before {
+  content: none;
+}
+.contacto__link.is-off .contacto__link-label,
+.contacto__link.is-off .contacto__link-value {
+  color: var(--phosphor-dim);
+  text-shadow: none;
+}
 .contacto__link:hover .contacto__link-label,
 .contacto__link:focus-visible .contacto__link-label {
   text-shadow: 0 0 12px var(--phosphor-glow);

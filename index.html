@@ -3,6 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- 10/11/2026 (Charlie): el portafolio queda fuera de los buscadores por un tiempo. Quien tenga
+         el link lo ve igual. Para volver a indexar: quitar esta línea en index.html, es/ y en/
+         (y el Disallow de public/robots.txt). NO bloquear el sitio en robots.txt:
+         Google tiene que poder leer esta etiqueta para sacar la página de los resultados. -->
+    <meta name="robots" content="noindex" />
     <!-- Lote 1 (30/9): quien ya eligió idioma no vuelve a pasar por la pantalla de carga. Va primero
          en el <head> para salir antes de descargar nada. ?intro la muestra igual (pruebas). -->
     <script>

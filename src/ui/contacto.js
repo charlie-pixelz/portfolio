@@ -22,6 +22,7 @@ const CONTENT = {
     copy: 'Copiar',
     copied: 'Copiado',
     copiedSr: 'Email copiado al portapapeles',
+    off: 'No disponible por ahora',
     cv: 'Descargar PDF',
   },
   en: {
@@ -31,6 +32,7 @@ const CONTENT = {
     copy: 'Copy',
     copied: 'Copied',
     copiedSr: 'Email copied to clipboard',
+    off: 'Currently unavailable',
     cv: 'Download PDF',
   },
 }
@@ -38,10 +40,13 @@ const EMAIL = perfil.email
 // C1: solo el PDF del idioma de la página (public/cv/). Charlie (26/9) quitó el acceso al otro
 // idioma: daba la impresión de que solo ese se podía descargar
 const CV = { es: '/cv/CV_Carlos_Perez_2026_ES.pdf', en: '/cv/CV_Carlos_Perez_2026_EN.pdf' }
-// links reales (los abre el usuario con su clic; wa.me/linkedin en pestaña nueva)
+// links reales (los abre el usuario con su clic; wa.me/linkedin en pestaña nueva).
+// 10/11 (Charlie cambia de número y de correo): con `whatsapp` o `email` en null en perfil.json,
+// su fila queda visible pero apagada ("No disponible por ahora"), sin link ni botón Copiar. Al
+// cargar los datos nuevos en perfil.json vuelve todo solo (fila, Copiar y resumen SEO).
 const LINKS = [
-  { label: 'WhatsApp', value: perfil.whatsapp.label, href: perfil.whatsapp.href, ext: true },
-  { label: 'Email', value: EMAIL, href: `mailto:${EMAIL}`, ext: false, copy: true },
+  perfil.whatsapp ? { label: 'WhatsApp', value: perfil.whatsapp.label, href: perfil.whatsapp.href, ext: true } : { label: 'WhatsApp', off: true },
+  EMAIL ? { label: 'Email', value: EMAIL, href: `mailto:${EMAIL}`, ext: false, copy: true } : { label: 'Email', off: true },
   { label: 'LinkedIn', value: '/in/' + perfil.linkedin.split('/in/')[1], href: perfil.linkedin, ext: true },
 ]
 
@@ -78,9 +83,11 @@ export function initContacto({ lang, isMobile = false }) {
     { label: 'CV', value: c.cv, href: CV[lang], download: true, ev: `cv-${lang}` },
   ]
   linksUl.innerHTML = rows
-    .map(
-      (l) =>
-        `<li><a class="contacto__link" href="${l.href}" data-ev="${l.ev}"` +
+    .map((l) =>
+      l.off
+        ? `<li><span class="contacto__link is-off"><span class="contacto__link-label">${l.label}</span>` +
+          `<span class="contacto__link-value">${c.off}</span></span></li>`
+        : `<li><a class="contacto__link" href="${l.href}" data-ev="${l.ev}"` +
         (l.ext ? ' target="_blank" rel="noopener"' : '') +
         (l.download ? ' download' : '') +
         `><span class="contacto__link-label">${l.label}</span>` +

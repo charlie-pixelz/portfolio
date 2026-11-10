@@ -33,7 +33,7 @@ function seoSummary() {
         `<h2>${ui.about}</h2><p>${esc(perfil.about[lang])}</p>` +
         `<h2>${ui.projects}</h2>${cats}` +
         `<h2>${ui.contact}</h2><ul>` +
-        `<li><a href="mailto:${esc(perfil.email)}" tabindex="-1">Email: ${esc(perfil.email)}</a></li>` +
+        (perfil.email ? `<li><a href="mailto:${esc(perfil.email)}" tabindex="-1">Email: ${esc(perfil.email)}</a></li>` : '') +
         `<li><a href="${esc(perfil.linkedin)}" tabindex="-1">LinkedIn</a></li></ul>` +
         `</section>`
       return html.replace('<!--seo-summary-->', block)
